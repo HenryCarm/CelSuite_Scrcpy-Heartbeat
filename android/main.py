@@ -227,15 +227,17 @@ class ColoredBoxLayout(BoxLayout):
 
 # Custom button with touch slop to prevent accidental clicks when dragging away
 class SlopButton(Button):
-    touch_slop = dp(20)  # pixels finger can move before cancelling press
+    touch_slop = dp(35)  # pixels finger can move before cancelling press
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._touch_start_pos = None
+        self._touch_cancelled = False
     
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             self._touch_start_pos = touch.pos
+            self._touch_cancelled = False
             touch.grab(self)
         return super().on_touch_down(touch)
     
@@ -246,10 +248,15 @@ class SlopButton(Button):
             if max(dx, dy) > self.touch_slop:
                 touch.ungrab(self)
                 self.state = 'normal'
+                self._touch_cancelled = True
                 self._touch_start_pos = None
         return super().on_touch_move(touch)
     
     def on_touch_up(self, touch):
+        if self._touch_cancelled:
+            self._touch_cancelled = False
+            self._touch_start_pos = None
+            return True  # consume the event, don't trigger button
         self._touch_start_pos = None
         return super().on_touch_up(touch)
 

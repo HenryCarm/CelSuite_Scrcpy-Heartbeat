@@ -2,5 +2,9 @@
   "heartbeat_port": 5556,
   "discovery_port": 5557,
   "adb_port": 5555,
-  "scrcpy_bin": "scrcpy"
+  "scrcpy_bin": "scrcpy",
+  "last_ip_file": "/home/henry/Desktop/last_ip.txt",
+  "log_file": "/home/henry/Documents/Projects/Python/ScrcpyUltimateLink/ScrcpyUltimateLink_debug.log",
+  "logging_enabled": false,
+  "connection_mode": "heartbeat"
 }

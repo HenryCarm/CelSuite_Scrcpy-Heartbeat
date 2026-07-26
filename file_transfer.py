@@ -205,9 +205,10 @@ class FileTransferScreen(QWidget):
     """Complete File Transfer screen with DropZone, progress, and transfer controls"""
     back_requested = pyqtSignal()
     
-    def __init__(self, get_device_ip_func):
+    def __init__(self, get_device_ip_func, log_callback=None):
         super().__init__()
         self.get_device_ip = get_device_ip_func
+        self.log = log_callback or print
         self.worker = FileTransferWorker()
         self.worker.progress_updated.connect(self.update_progress)
         self.worker.transfer_finished.connect(self.on_transfer_finished)
@@ -335,6 +336,7 @@ class FileTransferScreen(QWidget):
         self.send_btn.setEnabled(False)
         self.send_btn.setText("Sending...")
         self.status_label.setText(f"Pushing to {device_ip}...")
+        self.log(f"Starting file push: {os.path.basename(self.selected_file)} -> {device_ip}")
         self.worker.start_transfer(self.selected_file, device_ip)
 
     def update_progress(self, percent, speed_mbps, eta_seconds):
@@ -356,9 +358,11 @@ class FileTransferScreen(QWidget):
             self.status_label.setText(message)
             self.status_label.setStyleSheet("color: #00d9a5; font-size: 13px;")
             self.progress_bar.setValue(100)
+            self.log(f"File push complete: {message}")
         else:
             self.status_label.setText(message)
             self.status_label.setStyleSheet("color: #ff6b6b; font-size: 13px;")
+            self.log(f"File push failed: {message}")
 
 
 class PullFileWorker(QObject):
@@ -489,9 +493,10 @@ class PullScreen(QWidget):
     """Phone -> PC Pull screen with remote file browser and pull controls"""
     back_requested = pyqtSignal()
     
-    def __init__(self, get_device_ip_func):
+    def __init__(self, get_device_ip_func, log_callback=None):
         super().__init__()
         self.get_device_ip = get_device_ip_func
+        self.log = log_callback or print
         self.worker = PullFileWorker()
         self.worker.progress_updated.connect(self.update_progress)
         self.worker.transfer_finished.connect(self.on_transfer_finished)

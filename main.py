@@ -9,11 +9,12 @@ from datetime import datetime
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit, QMainWindow, 
     QSpinBox, QHBoxLayout, QTabWidget, QPushButton, QFileDialog, QCheckBox,
-    QGroupBox, QFormLayout, QLineEdit, QMessageBox, QStackedWidget
+    QGroupBox, QFormLayout, QLineEdit, QMessageBox, QStackedWidget,
+    QRadioButton, QButtonGroup
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QObject
 from PyQt6.QtGui import QIcon
-from heartbeat_listener import start_scrcpy, get_local_ip, LOG_FILE
+from heartbeat_listener import start_scrcpy, get_local_ip, LOG_FILE, set_gui_log_callback
 from file_transfer import FileTransferScreen, PullScreen
 
 APP_VERSION = "4.27.0"
@@ -75,7 +76,7 @@ def gui_log(msg):
     global _log_panel
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     line = f"[{timestamp}] {msg}"
-    # Always display in panel
+    # Display in panel (called from main thread, safe)
     if _log_panel:
         _log_panel.append(line)
         scrollbar = _log_panel.verticalScrollBar()
@@ -84,7 +85,6 @@ def gui_log(msg):
     if LOGGING_ENABLED:
         with open(LOG_FILE, "a") as f:
             f.write(line + "\n")
-    print(line, flush=True)
 
 class DiscoveryBroadcaster:
     def __init__(self, local_ip, port=DISCOVERY_PORT):
@@ -165,8 +165,11 @@ class HeartbeatWorker(QObject):
 
 
 class ScrcpyUltimateLink(QMainWindow):
+    log_signal = pyqtSignal(str)
+    
     def __init__(self):
         super().__init__()
+        self.log_signal.connect(self.add_log)
         self.setWindowTitle(f"Scrcpy Ultimate Link v{APP_VERSION}")
         self.setMinimumSize(700, 550)
         icon_path = os.path.join(APP_DIR, "android", "icon.png")
@@ -235,6 +238,13 @@ class ScrcpyUltimateLink(QMainWindow):
         log_layout.addWidget(self.log_area)
         main_layout.addWidget(log_group)
 
+        # Wire up log panel so gui_log() actually writes to it
+        global _log_panel
+        _log_panel = self.log_area
+
+        # Set callback so heartbeat_listener logs appear in GUI panel (thread-safe via signal)
+        set_gui_log_callback(lambda msg: self.log_signal.emit(msg))
+
         self.tabs.addTab(self.main_tab, "Mirror Phone")
         # --- FILE TRANSFER TAB ---
         self.file_transfer_tab = QWidget()
@@ -250,10 +260,12 @@ class ScrcpyUltimateLink(QMainWindow):
         """)
         
         self.file_transfer_screen = FileTransferScreen(
-            get_device_ip_func=lambda: self.get_current_phone_ip()
+            get_device_ip_func=lambda: self.get_current_phone_ip(),
+            log_callback=gui_log
         )
         self.pull_screen = PullScreen(
-            get_device_ip_func=lambda: self.get_current_phone_ip()
+            get_device_ip_func=lambda: self.get_current_phone_ip(),
+            log_callback=gui_log
         )
         
         file_tabs.addTab(self.file_transfer_screen, "Push to Phone")
@@ -351,14 +363,21 @@ class ScrcpyUltimateLink(QMainWindow):
         conn_mode_group = QGroupBox("Default Connection Mode")
         conn_mode_layout = QVBoxLayout(conn_mode_group)
         
-        self.conn_mode_heartbeat = QCheckBox("Auto-Discover via Heartbeat (recommended)")
-        self.conn_mode_heartbeat.setChecked(CONNECTION_MODE == "heartbeat")
-        self.conn_mode_heartbeat.toggled.connect(self.on_conn_mode_changed)
-        conn_mode_layout.addWidget(self.conn_mode_heartbeat)
+        self.conn_mode_heartbeat = QRadioButton("Auto-Discover via Heartbeat (recommended)")
+        self.conn_mode_saved = QRadioButton("Connect Using Saved IP File")
         
-        self.conn_mode_saved = QCheckBox("Connect Using Saved IP File")
-        self.conn_mode_saved.setChecked(CONNECTION_MODE == "saved_ip")
-        self.conn_mode_saved.toggled.connect(self.on_conn_mode_changed)
+        self.conn_mode_btn_group = QButtonGroup(self)
+        self.conn_mode_btn_group.addButton(self.conn_mode_heartbeat, 0)
+        self.conn_mode_btn_group.addButton(self.conn_mode_saved, 1)
+        
+        if CONNECTION_MODE == "saved_ip":
+            self.conn_mode_saved.setChecked(True)
+        else:
+            self.conn_mode_heartbeat.setChecked(True)
+        
+        self.conn_mode_btn_group.idClicked.connect(self.on_conn_mode_changed)
+        
+        conn_mode_layout.addWidget(self.conn_mode_heartbeat)
         conn_mode_layout.addWidget(self.conn_mode_saved)
         
         settings_layout.addWidget(conn_mode_group)
@@ -470,7 +489,7 @@ class ScrcpyUltimateLink(QMainWindow):
 
     def connect_using_saved_ip(self):
         """Read IP from saved file and connect"""
-        ip = self.read_saved_ip()
+        ip = self.get_current_phone_ip()
         if not ip:
             self.status_label.setText("No saved IP found!")
             self.status_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #ff6b6b;")
@@ -503,7 +522,11 @@ class ScrcpyUltimateLink(QMainWindow):
         return None
 
     def get_current_phone_ip(self):
-        """Return the last known phone IP"""
+        """Return the actual ADB-connected phone IP, not the stale saved one"""
+        from heartbeat_listener import get_connected_phone_ip
+        ip = get_connected_phone_ip()
+        if ip:
+            return ip
         return self.read_saved_ip()
 
     def on_port_changed(self):
@@ -554,17 +577,12 @@ class ScrcpyUltimateLink(QMainWindow):
         gui_log(f"Logging {'enabled' if checked else 'disabled'}")
         self.add_log(f"Logging {'enabled' if checked else 'disabled'}")
 
-    def on_conn_mode_changed(self):
+    def on_conn_mode_changed(self, btn_id):
         global CONNECTION_MODE
-        if self.conn_mode_heartbeat.isChecked():
+        if btn_id == 0:
             CONNECTION_MODE = "heartbeat"
-            self.conn_mode_saved.setChecked(False)
-        elif self.conn_mode_saved.isChecked():
-            CONNECTION_MODE = "saved_ip"
-            self.conn_mode_heartbeat.setChecked(False)
         else:
-            CONNECTION_MODE = "heartbeat"
-            self.conn_mode_heartbeat.setChecked(True)
+            CONNECTION_MODE = "saved_ip"
         
         config = load_config()
         config["connection_mode"] = CONNECTION_MODE

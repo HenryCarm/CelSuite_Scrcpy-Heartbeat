@@ -54,14 +54,23 @@ scrcpy_process = None
 scrcpy_lock = threading.Lock()
 current_phone_ip = None
 
+# Callback for GUI log panel display
+_gui_log_callback = None
+
+def set_gui_log_callback(callback):
+    global _gui_log_callback
+    _gui_log_callback = callback
+
 def log(msg, also_print=True):
-    """Write to both log file and stdout."""
+    """Write to log file, print to stdout, and update GUI panel."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     line = f"[{timestamp}] {msg}"
     with open(LOG_FILE, "a") as f:
         f.write(line + "\n")
     if also_print:
         print(line, flush=True)
+    if _gui_log_callback:
+        _gui_log_callback(line)
 
 def get_local_ip():
     """Get the actual local IP."""
@@ -99,6 +108,15 @@ def is_phone_connected(phone_ip, adb_port=ADB_PORT):
             return True
     return False
 
+def get_connected_phone_ip():
+    """Get the actual phone IP from adb devices (the one ADB can reach)."""
+    devices = get_adb_devices()
+    for d in devices:
+        if d["status"] == "device" and ":" in d["serial"]:
+            ip = d["serial"].split(":")[0]
+            return ip
+    return None
+
 def start_scrcpy(phone_ip=None, adb_port=ADB_PORT):
     """Connects to the device, saves IP to desktop, and launches scrcpy."""
     global scrcpy_process, current_phone_ip
@@ -108,9 +126,16 @@ def start_scrcpy(phone_ip=None, adb_port=ADB_PORT):
         if not target_ip:
             log("ERROR: No phone IP provided")
             return False
+        
+        # Check if phone is already connected via ADB — use THAT IP instead
+        connected_ip = get_connected_phone_ip()
+        if connected_ip:
+            log(f"Phone already connected via ADB at {connected_ip} (ignoring heartbeat IP {target_ip})")
+            target_ip = connected_ip
+        
         current_phone_ip = target_ip
         
-        # Save IP to desktop file immediately so Hen's .sh scripts work automatically!
+        # Save the ACTUAL working IP to file
         try:
             with open(LAST_IP_FILE, "w") as f:
                 f.write(str(target_ip))
