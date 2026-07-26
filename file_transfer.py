@@ -1,8 +1,10 @@
 import os
 import time
+import subprocess
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
-    QProgressBar, QFileDialog, QMessageBox, QFrame, QGroupBox
+    QProgressBar, QFileDialog, QMessageBox, QFrame, QGroupBox,
+    QListWidget, QListWidgetItem, QSplitter
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QProcess, QTimer, QObject
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent
@@ -347,6 +349,371 @@ class FileTransferScreen(QWidget):
     def on_transfer_finished(self, success, message):
         self.send_btn.setEnabled(True)
         self.send_btn.setText("Send to Phone")
+        
+        if success:
+            self.status_label.setText(message)
+            self.status_label.setStyleSheet("color: #00d9a5; font-size: 13px;")
+            self.progress_bar.setValue(100)
+        else:
+            self.status_label.setText(message)
+            self.status_label.setStyleSheet("color: #ff6b6b; font-size: 13px;")
+
+
+class PullFileWorker(QObject):
+    """Handles ADB pull with QProcess + QTimer progress polling"""
+    progress_updated = pyqtSignal(int, float, float)  # percent, speed_mbps, eta_seconds
+    transfer_finished = pyqtSignal(bool, str)  # success, message
+    file_list_ready = pyqtSignal(list)  # list of (filename, size) tuples
+    
+    def __init__(self):
+        super().__init__()
+        self.process = None
+        self.poll_timer = QTimer()
+        self.poll_timer.timeout.connect(self.poll_progress)
+        self.local_path = ""
+        self.remote_path = ""
+        self.total_bytes = 0
+        self.last_bytes = 0
+        self.last_time = 0
+        self.device_ip = ""
+        self.device_port = 5555
+
+    def list_remote_files(self, device_ip, device_port=5555):
+        """List files in /sdcard/ScrcpyUltimateLink/ on the device"""
+        self.device_ip = device_ip
+        self.device_port = device_port
+        
+        try:
+            cmd = ["adb", "-s", f"{device_ip}:{device_port}", "shell", "ls", "-l", "/sdcard/ScrcpyUltimateLink/"]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            
+            files = []
+            if result.returncode == 0:
+                for line in result.stdout.strip().split('\n'):
+                    if not line or line.startswith('total'):
+                        continue
+                    parts = line.split()
+                    if len(parts) >= 7:
+                        # Parse: permissions links owner group size month day time name
+                        size = int(parts[4]) if parts[4].isdigit() else 0
+                        filename = ' '.join(parts[6:])  # Handle filenames with spaces
+                        if not os.path.isdir(filename):  # Skip directories
+                            files.append((filename, size))
+            
+            self.file_list_ready.emit(files)
+        except Exception as e:
+            self.file_list_ready.emit([])
+
+    def start_pull(self, remote_filename, device_ip, device_port=5555, local_dir=""):
+        """Start pulling a file from phone to PC"""
+        self.device_ip = device_ip
+        self.device_port = device_port
+        self.remote_path = f"/sdcard/ScrcpyUltimateLink/{remote_filename}"
+        
+        # Default to Downloads folder
+        if not local_dir:
+            local_dir = os.path.expanduser("~/Downloads")
+        
+        self.local_path = os.path.join(local_dir, remote_filename)
+        self.last_bytes = 0
+        self.last_time = time.time()
+        
+        # Get remote file size first
+        try:
+            cmd = ["adb", "-s", f"{device_ip}:{device_port}", "shell", "stat", "-c", "%s", self.remote_path]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=3)
+            self.total_bytes = int(result.stdout.strip()) if result.stdout.strip().isdigit() else 0
+        except:
+            self.total_bytes = 0
+        
+        # Start adb pull via QProcess
+        self.process = QProcess()
+        self.process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+        self.process.finished.connect(self.on_process_finished)
+        
+        cmd = ["-s", f"{device_ip}:{device_port}", "pull", self.remote_path, self.local_path]
+        self.process.start("adb", cmd)
+        
+        # Start polling every 500ms
+        self.poll_timer.start(500)
+
+    def poll_progress(self):
+        if not self.process or self.process.state() != QProcess.ProcessState.Running:
+            return
+        
+        try:
+            # Check local file size (growing as pull progresses)
+            if os.path.exists(self.local_path):
+                current_bytes = os.path.getsize(self.local_path)
+            else:
+                current_bytes = 0
+        except:
+            current_bytes = 0
+        
+        now = time.time()
+        dt = now - self.last_time
+        if dt > 0:
+            bytes_delta = current_bytes - self.last_bytes
+            speed_bps = bytes_delta / dt if dt > 0 else 0
+            speed_mbps = speed_bps / (1024 * 1024)
+            
+            percent = int((current_bytes / self.total_bytes) * 100) if self.total_bytes > 0 else 0
+            percent = min(percent, 100)
+            
+            remaining_bytes = self.total_bytes - current_bytes
+            eta = remaining_bytes / speed_bps if speed_bps > 0 else 0
+            
+            self.progress_updated.emit(percent, speed_mbps, eta)
+            
+            self.last_bytes = current_bytes
+            self.last_time = now
+
+    def on_process_finished(self, exit_code, exit_status):
+        self.poll_timer.stop()
+        if exit_code == 0:
+            self.progress_updated.emit(100, 0, 0)
+            self.transfer_finished.emit(True, f"File pulled successfully!\nSaved to: {self.local_path}")
+        else:
+            error = self.process.readAllStandardOutput().data().decode()
+            self.transfer_finished.emit(False, f"Pull failed: {error}")
+
+    def cancel(self):
+        if self.process and self.process.state() == QProcess.ProcessState.Running:
+            self.process.kill()
+        self.poll_timer.stop()
+
+
+class PullScreen(QWidget):
+    """Phone -> PC Pull screen with remote file browser and pull controls"""
+    def __init__(self, get_device_ip_func):
+        super().__init__()
+        self.get_device_ip = get_device_ip_func
+        self.worker = PullFileWorker()
+        self.worker.progress_updated.connect(self.update_progress)
+        self.worker.transfer_finished.connect(self.on_transfer_finished)
+        self.worker.file_list_ready.connect(self.on_file_list_ready)
+        
+        self._setup_ui()
+
+    def _setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setSpacing(20)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        # Title
+        title = QLabel("Pull Files (Phone -> PC)")
+        title.setStyleSheet("font-size: 24px; font-weight: bold; color: #00d9a5;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title)
+
+        # Refresh button
+        refresh_layout = QHBoxLayout()
+        self.refresh_btn = QPushButton("Refresh File List")
+        self.refresh_btn.setMinimumHeight(40)
+        self.refresh_btn.setStyleSheet("""
+            QPushButton { 
+                background-color: #0f3460; 
+                color: #00d9a5; 
+                border: 1px solid #00d9a5; 
+                border-radius: 6px; 
+                padding: 8px 16px; 
+                font-weight: bold; 
+            }
+            QPushButton:hover { background-color: #00d9a5; color: #1a1a2e; }
+        """)
+        self.refresh_btn.clicked.connect(self.refresh_file_list)
+        refresh_layout.addWidget(self.refresh_btn)
+        refresh_layout.addStretch()
+        layout.addLayout(refresh_layout)
+
+        # Remote file list
+        self.file_list = QListWidget()
+        self.file_list.setStyleSheet("""
+            QListWidget { 
+                background-color: #1a1a2e; 
+                color: #e0e0e0; 
+                border: 2px solid #0f3460; 
+                border-radius: 8px; 
+                padding: 8px; 
+                font-size: 14px; 
+            }
+            QListWidget::item { 
+                padding: 8px; 
+                border-bottom: 1px solid #0f3460; 
+            }
+            QListWidget::item:selected { 
+                background-color: #0f3460; 
+                color: #00d9a5; 
+            }
+            QListWidget::item:hover { 
+                background-color: #16213e; 
+            }
+        """)
+        self.file_list.setMinimumHeight(200)
+        layout.addWidget(self.file_list)
+
+        # Selected file info
+        self.selected_info = QLabel("No file selected")
+        self.selected_info.setStyleSheet("color: #888; font-size: 14px;")
+        self.selected_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.selected_info)
+
+        # Progress Group
+        progress_group = QGroupBox("Pull Progress")
+        progress_group.setStyleSheet("""
+            QGroupBox { color: #00d9a5; font-weight: bold; border: 2px solid #0f3460; border-radius: 8px; margin-top: 12px; padding-top: 10px; }
+            QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }
+        """)
+        progress_layout = QVBoxLayout(progress_group)
+
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setFormat("%p%")
+        self.progress_bar.setStyleSheet("""
+            QProgressBar { border: 1px solid #0f3460; border-radius: 6px; text-align: center; color: white; font-weight: bold; height: 28px; background-color: #1a1a2e; }
+            QProgressBar::chunk { background-color: #00d9a5; border-radius: 5px; }
+        """)
+        progress_layout.addWidget(self.progress_bar)
+
+        # Stats row
+        stats_layout = QHBoxLayout()
+        self.speed_label = QLabel("Speed: -- MB/s")
+        self.speed_label.setStyleSheet("color: #888; font-size: 13px;")
+        self.eta_label = QLabel("ETA: --:--")
+        self.eta_label.setStyleSheet("color: #888; font-size: 13px;")
+        self.size_label = QLabel("Size: --")
+        self.size_label.setStyleSheet("color: #888; font-size: 13px;")
+        stats_layout.addWidget(self.speed_label)
+        stats_layout.addWidget(self.eta_label)
+        stats_layout.addWidget(self.size_label)
+        progress_layout.addLayout(stats_layout)
+
+        layout.addWidget(progress_group)
+
+        # Pull Button
+        self.pull_btn = QPushButton("Pull to Desktop")
+        self.pull_btn.setMinimumHeight(50)
+        self.pull_btn.setEnabled(False)
+        self.pull_btn.setStyleSheet("""
+            QPushButton { 
+                background-color: #0f3460; 
+                color: #00d9a5; 
+                border: 2px solid #00d9a5; 
+                border-radius: 8px; 
+                padding: 14px; 
+                font-size: 16px; 
+                font-weight: bold; 
+            }
+            QPushButton:hover { background-color: #00d9a5; color: #1a1a2e; }
+            QPushButton:disabled { background-color: #1a1a2e; color: #666; border-color: #444; }
+        """)
+        self.pull_btn.clicked.connect(self.start_pull)
+        layout.addWidget(self.pull_btn)
+
+        # Status
+        self.status_label = QLabel("")
+        self.status_label.setStyleSheet("color: #888; font-size: 13px;")
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.status_label)
+
+        layout.addStretch()
+
+    def refresh_file_list(self):
+        device_ip = self.get_device_ip()
+        if not device_ip:
+            QMessageBox.warning(self, "No Device", "No phone connected!\n\nUse Mirror Phone first to discover your device.")
+            return
+        
+        self.file_list.clear()
+        self.file_list.addItem("Loading files...")
+        self.refresh_btn.setEnabled(False)
+        self.worker.list_remote_files(device_ip)
+
+    def on_file_list_ready(self, files):
+        self.refresh_btn.setEnabled(True)
+        self.file_list.clear()
+        
+        if not files:
+            self.file_list.addItem("No files found in /sdcard/ScrcpyUltimateLink/")
+            return
+        
+        self.remote_files = files
+        for filename, size in files:
+            icon = get_file_type_icon(filename)
+            item_text = f"{icon} {filename}  ({format_size(size)})"
+            item = QListWidgetItem(item_text)
+            item.setData(Qt.ItemDataRole.UserRole, filename)
+            self.file_list.addItem(item)
+        
+        self.file_list.itemClicked.connect(self.on_file_selected)
+
+    def on_file_selected(self, item):
+        filename = item.data(Qt.ItemDataRole.UserRole)
+        # Find the file info
+        for fname, size in self.remote_files:
+            if fname == filename:
+                self.selected_info.setText(f"{get_file_type_icon(filename)} {filename}  ({format_size(size)})")
+                self.selected_info.setStyleSheet("color: #00d9a5; font-size: 14px;")
+                self.selected_filename = filename
+                self.selected_size = size
+                self.pull_btn.setEnabled(True)
+                break
+
+    def start_pull(self):
+        if not hasattr(self, 'selected_filename'):
+            return
+        
+        device_ip = self.get_device_ip()
+        if not device_ip:
+            QMessageBox.warning(self, "No Device", "No phone connected!")
+            return
+        
+        # Ask for save location
+        save_path, _ = QFileDialog.getSaveFileName(
+            self, "Save File As", 
+            os.path.expanduser(f"~/Downloads/{self.selected_filename}"),
+            "All Files (*)"
+        )
+        
+        if not save_path:
+            return
+        
+        # Check if file exists and confirm overwrite
+        if os.path.exists(save_path):
+            reply = QMessageBox.question(
+                self, "File Exists",
+                f"File already exists:\n{save_path}\n\nOverwrite?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+        
+        self.pull_btn.setEnabled(False)
+        self.pull_btn.setText("Pulling...")
+        self.status_label.setText(f"Pulling {self.selected_filename} from {device_ip}...")
+        
+        # Override local path with user's choice
+        self.worker.local_path = save_path
+        self.worker.start_pull(self.selected_filename, device_ip, local_dir=os.path.dirname(save_path))
+
+    def update_progress(self, percent, speed_mbps, eta_seconds):
+        self.progress_bar.setValue(percent)
+        self.speed_label.setText(f"Speed: {speed_mbps:.1f} MB/s")
+        
+        if eta_seconds > 0 and percent < 100:
+            mins = int(eta_seconds // 60)
+            secs = int(eta_seconds % 60)
+            self.eta_label.setText(f"ETA: {mins:02d}:{secs:02d}")
+        else:
+            self.eta_label.setText("ETA: --:--")
+
+    def on_transfer_finished(self, success, message):
+        self.pull_btn.setEnabled(True)
+        self.pull_btn.setText("Pull to Desktop")
         
         if success:
             self.status_label.setText(message)

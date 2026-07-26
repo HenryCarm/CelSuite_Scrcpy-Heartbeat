@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, pyqtSignal, QObject
 from PyQt6.QtGui import QIcon
 from heartbeat_listener import start_scrcpy, get_local_ip, LOG_FILE
-from file_transfer import FileTransferScreen
+from file_transfer import FileTransferScreen, PullScreen
 
 APP_VERSION = "4.27.0"
 APP_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -475,11 +475,33 @@ class ScrcpyUltimateLink(QMainWindow):
         # Add tabs widget to main_tabs
         self.stacked.addWidget(self.main_tabs)
 
-        # --- FILE TRANSFER SCREEN (Index 2) ---
+        # --- FILE TRANSFER SCREEN (Index 2) with Push/Pull tabs ---
+        from PyQt6.QtWidgets import QTabWidget
+        
+        file_transfer_container = QWidget()
+        file_transfer_layout = QVBoxLayout(file_transfer_container)
+        file_transfer_layout.setContentsMargins(0, 0, 0, 0)
+        
+        file_tabs = QTabWidget()
+        file_tabs.setStyleSheet("""
+            QTabWidget::pane { border: 1px solid #0f3460; border-radius: 8px; background-color: #1a1a2e; }
+            QTabBar::tab { background-color: #16213e; color: #888; padding: 10px 20px; margin-right: 2px; border-top-left-radius: 6px; border-top-right-radius: 6px; }
+            QTabBar::tab:selected { background-color: #0f3460; color: #00d9a5; font-weight: bold; }
+            QTabBar::tab:hover { background-color: #1a1a2e; color: #00d9a5; }
+        """)
+        
         self.file_transfer_screen = FileTransferScreen(
             get_device_ip_func=lambda: self.get_current_phone_ip()
         )
-        self.stacked.addWidget(self.file_transfer_screen)
+        self.pull_screen = PullScreen(
+            get_device_ip_func=lambda: self.get_current_phone_ip()
+        )
+        
+        file_tabs.addTab(self.file_transfer_screen, "Push to Phone")
+        file_tabs.addTab(self.pull_screen, "Pull from Phone")
+        
+        file_transfer_layout.addWidget(file_tabs)
+        self.stacked.addWidget(file_transfer_container)
 
         # Initialize threads
         self.discovery = None

@@ -671,6 +671,27 @@ class HeartbeatApp(App):
         sm.add_widget(SettingsScreen(name='settings'))
         sm.add_widget(HelpScreen(name='help'))
         sm.add_widget(VaultScreen(name='vault'))
+        
+        # Register broadcast receiver for Quick Settings Tile toggle
+        try:
+            from android.broadcast import BroadcastReceiver
+            
+            def on_tile_toggle(context, intent):
+                is_active = intent.getBooleanExtra("active", False)
+                main_screen = sm.get_screen('main')
+                if is_active:
+                    app_log("Quick Settings Tile: Starting heartbeat...")
+                    Clock.schedule_once(lambda dt: main_screen.restart_connection(None))
+                else:
+                    app_log("Quick Settings Tile: Stopping heartbeat...")
+                    Clock.schedule_once(lambda dt: main_screen._stop_services())
+            
+            receiver = BroadcastReceiver(on_tile_toggle, actions=["org.henry.scrcpy.TOGGLE_HEARTBEAT"])
+            receiver.start()
+            app_log("Quick Settings Tile receiver registered")
+        except Exception as e:
+            app_log(f"Tile receiver setup failed: {e}")
+        
         return sm
 
 if __name__ == "__main__":
