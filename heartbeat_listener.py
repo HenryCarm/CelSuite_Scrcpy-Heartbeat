@@ -109,13 +109,15 @@ def is_phone_connected(phone_ip, adb_port=ADB_PORT):
     return False
 
 def get_connected_phone_ip():
-    """Get the actual phone IP from adb devices (the one ADB can reach)."""
+    """Get the actual phone IP and port from adb devices (the one ADB can reach)."""
     devices = get_adb_devices()
     for d in devices:
         if d["status"] == "device" and ":" in d["serial"]:
-            ip = d["serial"].split(":")[0]
-            return ip
-    return None
+            parts = d["serial"].split(":")
+            ip = parts[0]
+            port = int(parts[1])
+            return ip, port
+    return None, None
 
 def start_scrcpy(phone_ip=None, adb_port=ADB_PORT):
     """Connects to the device, saves IP to desktop, and launches scrcpy."""
@@ -127,11 +129,12 @@ def start_scrcpy(phone_ip=None, adb_port=ADB_PORT):
             log("ERROR: No phone IP provided")
             return False
         
-        # Check if phone is already connected via ADB — use THAT IP instead
-        connected_ip = get_connected_phone_ip()
+        # Check if phone is already connected via ADB — use THAT IP and port instead
+        connected_ip, connected_port = get_connected_phone_ip()
         if connected_ip:
-            log(f"Phone already connected via ADB at {connected_ip} (ignoring heartbeat IP {target_ip})")
+            log(f"Phone already connected via ADB at {connected_ip}:{connected_port} (ignoring heartbeat IP {target_ip}:{adb_port})")
             target_ip = connected_ip
+            adb_port = connected_port
         
         current_phone_ip = target_ip
         

@@ -19,6 +19,8 @@ android.ndk = 25b
 
 # App icon - use local icon in repo
 icon.filename = icon.png
+presplash.filename = icon.png
+android.presplash_color = #1a1a2e
 
 # Size optimizations - exclude unused directories and patterns
 android.exclude_dirs = tests,__pycache__,.git,.github,docs,examples

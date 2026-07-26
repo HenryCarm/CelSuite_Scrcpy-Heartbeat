@@ -524,7 +524,7 @@ class ScrcpyUltimateLink(QMainWindow):
     def get_current_phone_ip(self):
         """Return the actual ADB-connected phone IP, not the stale saved one"""
         from heartbeat_listener import get_connected_phone_ip
-        ip = get_connected_phone_ip()
+        ip, port = get_connected_phone_ip()
         if ip:
             return ip
         return self.read_saved_ip()
