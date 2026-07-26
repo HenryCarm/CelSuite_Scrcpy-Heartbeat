@@ -12,3 +12,6 @@ verification.png
 tmp/
 .buildozer/
 bin/*.apk
+last_ip.txt
+phone_simulator.py
+how to pakage.txt

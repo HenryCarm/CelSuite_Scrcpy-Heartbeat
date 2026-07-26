@@ -120,7 +120,6 @@ def start_scrcpy(phone_ip=None, adb_port=ADB_PORT):
         
         # Check if scrcpy is already running
         if scrcpy_process and scrcpy_process.poll() is None:
-            log(f"scrcpy already running on {target_ip}, skipping launch")
             return True
         
         # Check if phone is already connected via ADB
@@ -145,9 +144,12 @@ def monitor_scrcpy():
     global scrcpy_process, current_phone_ip
     
     while True:
-        time.sleep(3)
         with scrcpy_lock:
-            if scrcpy_process and scrcpy_process.poll() is not None:
+            if scrcpy_process and scrcpy_process.poll() is None:
+                # scrcpy is running fine — check less frequently to save battery
+                time.sleep(30)
+                continue
+            elif scrcpy_process and scrcpy_process.poll() is not None:
                 exit_code = scrcpy_process.poll()
                 log(f"scrcpy exited with code {exit_code}, attempting reconnect...")
                 scrcpy_process = None
@@ -157,6 +159,10 @@ def monitor_scrcpy():
                     start_scrcpy(current_phone_ip)
                 else:
                     log("No phone IP to reconnect to, waiting for heartbeat...")
+            else:
+                # No scrcpy process — check occasionally in case we need to launch
+                time.sleep(10)
+        time.sleep(2)
 
 def listen_for_heartbeat():
     """Listens for UDP packets from the Android app."""
