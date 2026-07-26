@@ -68,15 +68,23 @@ LOG_FILE = config["log_file"]
 LOGGING_ENABLED = config.get("logging_enabled", False)
 CONNECTION_MODE = config.get("connection_mode", "heartbeat")
 
+# Global reference for log panel display
+_log_panel = None
+
 def gui_log(msg):
-    if not LOGGING_ENABLED:
-        return ""
+    global _log_panel
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    line = f"[{timestamp}] [GUI] {msg}"
-    with open(LOG_FILE, "a") as f:
-        f.write(line + "\n")
+    line = f"[{timestamp}] {msg}"
+    # Always display in panel
+    if _log_panel:
+        _log_panel.append(line)
+        scrollbar = _log_panel.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+    # Only write to file when enabled
+    if LOGGING_ENABLED:
+        with open(LOG_FILE, "a") as f:
+            f.write(line + "\n")
     print(line, flush=True)
-    return line
 
 class DiscoveryBroadcaster:
     def __init__(self, local_ip, port=DISCOVERY_PORT):
@@ -155,70 +163,6 @@ class HeartbeatWorker(QObject):
     def gui_log(self, msg):
         self.log_signal.emit(msg)
 
-class StartupScreen(QWidget):
-    """Welcome screen with two main action buttons"""
-    def __init__(self, parent_window):
-        super().__init__()
-        self.parent_window = parent_window
-        layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.setSpacing(30)
-        layout.setContentsMargins(40, 40, 40, 40)
-
-        title = QLabel("Scrcpy Ultimate Link")
-        title.setStyleSheet("font-size: 36px; font-weight: bold; color: #00d9a5;")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        subtitle = QLabel("Wireless Screen Mirroring & Control")
-        subtitle.setStyleSheet("font-size: 16px; color: #888;")
-        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Button 1: Mirror Phone
-        self.mirror_btn = QPushButton("📱 Mirror Phone")
-        self.mirror_btn.setMinimumSize(300, 80)
-        self.mirror_btn.setStyleSheet("""
-            QPushButton { 
-                background-color: #0f3460; 
-                color: #00d9a5; 
-                border: 3px solid #00d9a5; 
-                border-radius: 12px; 
-                padding: 20px; 
-                font-size: 18px; 
-                font-weight: bold; 
-            }
-            QPushButton:hover { 
-                background-color: #00d9a5; 
-                color: #1a1a2e; 
-            }
-        """)
-        self.mirror_btn.clicked.connect(lambda: parent_window.show_main_tab(0))
-
-        # Button 2: File Transfer
-        self.transfer_btn = QPushButton("File Transfer (PC -> Phone)")
-        self.transfer_btn.setMinimumSize(300, 80)
-        self.transfer_btn.setStyleSheet("""
-            QPushButton { 
-                background-color: #1a1a2e; 
-                color: #00d9a5; 
-                border: 3px solid #00d9a5; 
-                border-radius: 12px; 
-                padding: 20px; 
-                font-size: 18px; 
-                font-weight: bold; 
-            }
-            QPushButton:hover { 
-                background-color: #00d9a5; 
-                color: #1a1a2e; 
-            }
-        """)
-        self.transfer_btn.clicked.connect(lambda: parent_window.show_file_transfer())
-
-        layout.addWidget(title)
-        layout.addWidget(subtitle)
-        layout.addSpacing(20)
-        layout.addWidget(self.mirror_btn, alignment=Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.transfer_btn, alignment=Qt.AlignmentFlag.AlignCenter)
-        layout.addStretch()
 
 class ScrcpyUltimateLink(QMainWindow):
     def __init__(self):
@@ -246,24 +190,11 @@ class ScrcpyUltimateLink(QMainWindow):
             QTabBar::tab:selected { background: #0f3460; font-weight: bold; }
         """)
 
-        # Main stacked widget: Index 0 = Startup, Index 1 = Main Tabs
-        self.stacked = QStackedWidget()
-        self.setCentralWidget(self.stacked)
-
-        # --- STARTUP SCREEN (Index 0) ---
-        self.startup_screen = StartupScreen(self)
-        self.stacked.addWidget(self.startup_screen)
-
-        # --- MAIN TABS (Index 1) ---
-        self.main_tabs = QWidget()
-        tabs_layout = QVBoxLayout(self.main_tabs)
-        tabs_layout.setContentsMargins(0, 0, 0, 0)
-        tabs_layout.setSpacing(0)
-
+        # Main tabs directly as central widget
         self.tabs = QTabWidget()
-        tabs_layout.addWidget(self.tabs)
+        self.setCentralWidget(self.tabs)
 
-        # --- MAIN TAB (Mirror Phone) ---
+        # --- MIRROR PHONE TAB ---
         self.main_tab = QWidget()
         main_layout = QVBoxLayout(self.main_tab)
         main_layout.setSpacing(15)
@@ -277,11 +208,11 @@ class ScrcpyUltimateLink(QMainWindow):
         header_layout.addStretch()
 
         # Connection mode buttons
-        self.connect_saved_btn = QPushButton("🔗 Connect Using Saved IP")
+        self.connect_saved_btn = QPushButton("Connect Using Saved IP")
         self.connect_saved_btn.setMinimumHeight(45)
         self.connect_saved_btn.clicked.connect(self.connect_using_saved_ip)
 
-        self.connect_heartbeat_btn = QPushButton("🔍 Auto-Discover (Heartbeat)")
+        self.connect_heartbeat_btn = QPushButton("Auto-Discover (Heartbeat)")
         self.connect_heartbeat_btn.setMinimumHeight(45)
         self.connect_heartbeat_btn.clicked.connect(self.start_heartbeat_mode)
 
@@ -304,7 +235,34 @@ class ScrcpyUltimateLink(QMainWindow):
         log_layout.addWidget(self.log_area)
         main_layout.addWidget(log_group)
 
-        self.tabs.addTab(self.main_tab, "📱 Mirror Phone")
+        self.tabs.addTab(self.main_tab, "Mirror Phone")
+        # --- FILE TRANSFER TAB ---
+        self.file_transfer_tab = QWidget()
+        file_transfer_layout = QVBoxLayout(self.file_transfer_tab)
+        file_transfer_layout.setContentsMargins(0, 0, 0, 0)
+        
+        file_tabs = QTabWidget()
+        file_tabs.setStyleSheet("""
+            QTabWidget::pane { border: 1px solid #0f3460; border-radius: 8px; background-color: #1a1a2e; }
+            QTabBar::tab { background-color: #16213e; color: #888; padding: 10px 20px; margin-right: 2px; border-top-left-radius: 6px; border-top-right-radius: 6px; }
+            QTabBar::tab:selected { background-color: #0f3460; color: #00d9a5; font-weight: bold; }
+            QTabBar::tab:hover { background-color: #1a1a2e; color: #00d9a5; }
+        """)
+        
+        self.file_transfer_screen = FileTransferScreen(
+            get_device_ip_func=lambda: self.get_current_phone_ip()
+        )
+        self.pull_screen = PullScreen(
+            get_device_ip_func=lambda: self.get_current_phone_ip()
+        )
+        
+        file_tabs.addTab(self.file_transfer_screen, "Push to Phone")
+        file_tabs.addTab(self.pull_screen, "Pull from Phone")
+        
+        file_transfer_layout.addWidget(file_tabs)
+        self.tabs.addTab(self.file_transfer_tab, "File Transfer")
+
+
 
         # --- SETTINGS TAB ---
         self.settings_tab = QWidget()
@@ -472,55 +430,11 @@ class ScrcpyUltimateLink(QMainWindow):
         help_layout.addWidget(self.help_text)
         self.tabs.addTab(self.help_tab, "📖 Help")
 
-        # Add tabs widget to main_tabs
-        self.stacked.addWidget(self.main_tabs)
-
-        # --- FILE TRANSFER SCREEN (Index 2) with Push/Pull tabs ---
-        from PyQt6.QtWidgets import QTabWidget
-        
-        file_transfer_container = QWidget()
-        file_transfer_layout = QVBoxLayout(file_transfer_container)
-        file_transfer_layout.setContentsMargins(0, 0, 0, 0)
-        
-        file_tabs = QTabWidget()
-        file_tabs.setStyleSheet("""
-            QTabWidget::pane { border: 1px solid #0f3460; border-radius: 8px; background-color: #1a1a2e; }
-            QTabBar::tab { background-color: #16213e; color: #888; padding: 10px 20px; margin-right: 2px; border-top-left-radius: 6px; border-top-right-radius: 6px; }
-            QTabBar::tab:selected { background-color: #0f3460; color: #00d9a5; font-weight: bold; }
-            QTabBar::tab:hover { background-color: #1a1a2e; color: #00d9a5; }
-        """)
-        
-        self.file_transfer_screen = FileTransferScreen(
-            get_device_ip_func=lambda: self.get_current_phone_ip()
-        )
-        self.pull_screen = PullScreen(
-            get_device_ip_func=lambda: self.get_current_phone_ip()
-        )
-        
-        file_tabs.addTab(self.file_transfer_screen, "Push to Phone")
-        file_tabs.addTab(self.pull_screen, "Pull from Phone")
-        
-        file_transfer_layout.addWidget(file_tabs)
-        self.stacked.addWidget(file_transfer_container)
 
         # Initialize threads
         self.discovery = None
         self.worker = None
         self.thread = None
-
-    def show_main_tab(self, tab_index):
-        """Switch from startup screen to main tabs"""
-        self.stacked.setCurrentIndex(1)
-        self.tabs.setCurrentIndex(tab_index)
-
-    def show_file_transfer(self):
-        """Switch to file transfer screen"""
-        self.stacked.setCurrentIndex(2)
-
-    def get_current_phone_ip(self):
-        """Return the last known phone IP"""
-        ip = self.read_saved_ip()
-        return ip
 
     def start_heartbeat_mode(self):
         """Start discovery broadcast and heartbeat listener (singleton — won't duplicate)"""
@@ -587,6 +501,10 @@ class ScrcpyUltimateLink(QMainWindow):
         except:
             pass
         return None
+
+    def get_current_phone_ip(self):
+        """Return the last known phone IP"""
+        return self.read_saved_ip()
 
     def on_port_changed(self):
         global HEARTBEAT_PORT, DISCOVERY_PORT, ADB_PORT
@@ -655,10 +573,9 @@ class ScrcpyUltimateLink(QMainWindow):
         self.add_log(f"Default connection mode set to: {CONNECTION_MODE}")
 
     def add_log(self, message):
-        if LOGGING_ENABLED:
-            self.log_area.append(message)
-            scrollbar = self.log_area.verticalScrollBar()
-            scrollbar.setValue(scrollbar.maximum())
+        self.log_area.append(message)
+        scrollbar = self.log_area.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
 
     def handle_heartbeat(self, ip):
         self.status_label.setText(f"Found {ip}! Connecting...")
@@ -666,14 +583,24 @@ class ScrcpyUltimateLink(QMainWindow):
         threading.Thread(target=self.connect_and_launch, args=(ip,), daemon=True).start()
 
     def connect_and_launch(self, ip):
-        if start_scrcpy(ip):
-            self.status_label.setText("Launched! Enjoy!")
-            self.status_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #00d9a5;")
-            self.add_log(f"Successfully connected to {ip}")
-        else:
-            self.status_label.setText("Connection failed...")
-            self.status_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #ff6b6b;")
-            self.add_log(f"Failed to connect to {ip}")
+        def _do_connect():
+            success = start_scrcpy(ip)
+            from PyQt6.QtCore import QTimer
+            if success:
+                QTimer.singleShot(0, lambda: self._on_connect_success(ip))
+            else:
+                QTimer.singleShot(0, lambda: self._on_connect_failed(ip))
+        threading.Thread(target=_do_connect, daemon=True).start()
+
+    def _on_connect_success(self, ip):
+        self.status_label.setText("Launched! Enjoy!")
+        self.status_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #00d9a5;")
+        self.add_log(f"Successfully connected to {ip}")
+
+    def _on_connect_failed(self, ip):
+        self.status_label.setText("Connection failed...")
+        self.status_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #ff6b6b;")
+        self.add_log(f"Failed to connect to {ip}")
 
     def closeEvent(self, event):
         if hasattr(self, 'discovery') and self.discovery:

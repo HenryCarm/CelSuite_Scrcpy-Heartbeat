@@ -203,6 +203,8 @@ import subprocess
 
 class FileTransferScreen(QWidget):
     """Complete File Transfer screen with DropZone, progress, and transfer controls"""
+    back_requested = pyqtSignal()
+    
     def __init__(self, get_device_ip_func):
         super().__init__()
         self.get_device_ip = get_device_ip_func
@@ -485,6 +487,8 @@ class PullFileWorker(QObject):
 
 class PullScreen(QWidget):
     """Phone -> PC Pull screen with remote file browser and pull controls"""
+    back_requested = pyqtSignal()
+    
     def __init__(self, get_device_ip_func):
         super().__init__()
         self.get_device_ip = get_device_ip_func
