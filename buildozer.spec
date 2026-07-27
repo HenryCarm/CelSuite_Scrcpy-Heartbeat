@@ -4,7 +4,7 @@ package.name = scrcpyheartbeat
 package.domain = org.henry.scrcpy
 source.dir = android
 source.include_exts = py,png,jpg,kv,atlas
-version = 4.27.6
+version = 4.27.8
 requirements = python3,kivy==2.2.1,requests,pyjnius
 orientation = portrait
 osx.python_version = 3
@@ -16,7 +16,7 @@ android.meta_data = moe.shizuku.client.V3_SUPPORT=true,com.thedjchi.shizuku.clie
 android.api = 33
 android.minapi = 21
 android.ndk = 25b
-p4a.branch = v2023.05.21
+p4a.branch = v2024.01.21
 
 # App icon - use local icon in repo
 icon.filename = icon.png
