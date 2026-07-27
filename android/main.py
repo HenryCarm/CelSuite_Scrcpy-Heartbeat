@@ -1,4 +1,10 @@
 import os, sys, time, socket, threading, json, subprocess, traceback
+
+# Samsung A035F returns garbage bytes in sensor names (0x91 illegal start byte).
+# SDL2's JNI GetStringUTFChars crashes on invalid Modified UTF-8.
+# Force dummy sensor driver to bypass Samsung's broken sensor firmware.
+os.environ['SDL_SENSOR_DRIVER'] = 'dummy'
+
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
