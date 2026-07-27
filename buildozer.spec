@@ -16,7 +16,7 @@ android.meta_data = moe.shizuku.client.V3_SUPPORT=true,com.thedjchi.shizuku.clie
 android.api = 33
 android.minapi = 21
 android.ndk = 25b
-p4a.branch = v2024.01.21
+p4a.branch = v2023.05.21
 
 # App icon - use local icon in repo
 icon.filename = icon.png
