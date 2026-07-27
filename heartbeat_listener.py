@@ -123,6 +123,10 @@ def start_scrcpy(phone_ip=None, adb_port=ADB_PORT):
     """Connects to the device, saves IP to desktop, and launches scrcpy."""
     global scrcpy_process, current_phone_ip
     
+    # Fast exit: if scrcpy is already running, do nothing
+    if scrcpy_process and scrcpy_process.poll() is None:
+        return True
+    
     with scrcpy_lock:
         target_ip = phone_ip
         if not target_ip:
@@ -142,11 +146,10 @@ def start_scrcpy(phone_ip=None, adb_port=ADB_PORT):
         try:
             with open(LAST_IP_FILE, "w") as f:
                 f.write(str(target_ip))
-            log(f"Saved active phone IP {target_ip} straight to {LAST_IP_FILE}!")
         except Exception as e:
             log(f"Could not save IP to {LAST_IP_FILE}: {e}")
         
-        # Check if scrcpy is already running
+        # Check if scrcpy is already running (double-check inside lock)
         if scrcpy_process and scrcpy_process.poll() is None:
             return True
         
