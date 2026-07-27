@@ -4,7 +4,7 @@ package.name = scrcpyheartbeat
 package.domain = org.henry.scrcpy
 source.dir = android
 source.include_exts = py,png,jpg,kv,atlas
-version = 4.27.1
+version = 4.27.5
 requirements = python3,kivy,requests,pyjnius
 orientation = portrait
 osx.python_version = 3
@@ -19,8 +19,6 @@ android.ndk = 25b
 
 # App icon - use local icon in repo
 icon.filename = icon.png
-presplash.filename = icon.png
-android.presplash_color = #1a1a2e
 
 # Size optimizations - exclude unused directories and patterns
 android.exclude_dirs = tests,__pycache__,.git,.github,docs,examples
