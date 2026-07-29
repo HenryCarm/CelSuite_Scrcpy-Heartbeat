@@ -17,7 +17,7 @@ from PyQt6.QtGui import QIcon
 from heartbeat_listener import start_scrcpy, get_local_ip, LOG_FILE, set_gui_log_callback
 from file_transfer import FileTransferScreen, PullScreen
 
-APP_VERSION = "4.27.0"
+APP_VERSION = "267.29.1"
 APP_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 CONFIG_FILE = os.path.join(APP_DIR, "config.json")
 
@@ -357,6 +357,24 @@ class ScrcpyUltimateLink(QMainWindow):
         self.log_path_label.setStyleSheet("color: #888; font-size: 12px; font-family: monospace;")
         log_layout.addWidget(self.log_path_label)
         
+        # Storage Permissions
+        storage_btn = QPushButton("Request Storage Permissions on Phone")
+        storage_btn.setMinimumHeight(40)
+        storage_btn.setStyleSheet("""
+            QPushButton { 
+                background-color: #0f3460; 
+                color: #00d9a5; 
+                border: 2px solid #00d9a5; 
+                border-radius: 8px; 
+                padding: 10px; 
+                font-size: 14px; 
+                font-weight: bold; 
+            }
+            QPushButton:hover { background-color: #00d9a5; color: #1a1a2e; }
+        """)
+        storage_btn.clicked.connect(self.request_phone_storage_permission)
+        log_layout.addWidget(storage_btn)
+        
         settings_layout.addWidget(log_group)
 
         # Connection Mode
@@ -589,6 +607,40 @@ class ScrcpyUltimateLink(QMainWindow):
         save_config(config)
         gui_log(f"Default connection mode set to: {CONNECTION_MODE}")
         self.add_log(f"Default connection mode set to: {CONNECTION_MODE}")
+
+    def request_phone_storage_permission(self):
+        """Send command to phone to request storage permissions via heartbeat listener"""
+        device_ip = self.get_current_phone_ip()
+        if not device_ip:
+            QMessageBox.warning(self, "No Device", "No phone connected!\n\nUse Mirror Phone first to discover your device.")
+            return
+        
+        # Try to open the Android settings page for storage permissions
+        try:
+            import subprocess
+            cmd = [
+                "adb", "-s", f"{device_ip}:{ADB_PORT}", "shell",
+                "am", "start", "-a", "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION",
+                "-d", f"package:org.henry.scrcpy.scrcpyheartbeat"
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                QMessageBox.information(self, "Permission Request Sent", 
+                    "Android Settings opened on your phone.\n\n"
+                    "Please:\n"
+                    "1. Find 'Scrcpy Heartbeat' in the list\n"
+                    "2. Toggle 'Allow access to manage all files' ON\n"
+                    "3. Return to the app and tap 'Received Files' to refresh")
+                self.add_log(f"Storage permission request sent to {device_ip}")
+            else:
+                raise Exception(f"ADB error: {result.stderr}")
+        except Exception as e:
+            QMessageBox.warning(self, "Failed", 
+                f"Could not open permission settings:\n{e}\n\n"
+                "Manual method:\n"
+                "1. On phone: Settings → Apps → Scrcpy Heartbeat → Permissions\n"
+                "2. Enable 'Files and media' / 'All files access'")
+            self.add_log(f"Permission request failed: {e}")
 
     def add_log(self, message):
         self.log_area.append(message)

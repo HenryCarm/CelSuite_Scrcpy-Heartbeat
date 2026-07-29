@@ -6,5 +6,6 @@
   "last_ip_file": "/home/henry/Desktop/last_ip.txt",
   "log_file": "/home/henry/Documents/Projects/Python/ScrcpyUltimateLink/ScrcpyUltimateLink_debug.log",
   "logging_enabled": false,
-  "connection_mode": "heartbeat"
+  "connection_mode": "heartbeat",
+  "app_version": "267.29.1"
 }
