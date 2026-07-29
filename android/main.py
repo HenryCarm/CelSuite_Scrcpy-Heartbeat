@@ -290,10 +290,14 @@ class MainScreen(Screen):
         vault_btn = SlopButton(text="[*] Received Files", background_color=(0.3, 0.15, 0.05, 1), color=ACCENT, font_size=sp(18))
         vault_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'vault'))
         
+        perm_btn = SlopButton(text="[P] Request Storage Permission", background_color=(0.4, 0.2, 0.05, 1), color=ACCENT, font_size=sp(18))
+        perm_btn.bind(on_press=self.request_storage_permission)
+        
         btn_layout.add_widget(restart_btn)
         btn_layout.add_widget(settings_btn)
         btn_layout.add_widget(help_btn)
         btn_layout.add_widget(vault_btn)
+        btn_layout.add_widget(perm_btn)
         
         layout.add_widget(self.label)
         layout.add_widget(self.pc_ip_input)
@@ -379,6 +383,20 @@ class MainScreen(Screen):
                 app_log(f"Heartbeat error: {e}")
             time.sleep(5)
         sock.close()
+
+    def request_storage_permission(self, instance):
+        """Open Android Settings to grant MANAGE_EXTERNAL_STORAGE permission"""
+        try:
+            Intent = autoclass('android.content.Intent')
+            Settings = autoclass('android.provider.Settings')
+            Uri = autoclass('android.net.Uri')
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+            intent.setData(Uri.parse("package:" + PythonActivity.mActivity.getPackageName()))
+            PythonActivity.mActivity.startActivity(intent)
+            app_log("Opened storage permission settings")
+        except Exception as e:
+            app_log(f"Failed to open permission settings: {e}")
 
 class SettingsScreen(Screen):
     def __init__(self, **kwargs):
