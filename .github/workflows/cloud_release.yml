@@ -15,6 +15,8 @@ jobs:
   build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
+    env:
+      ACLOCAL_PATH: /usr/share/aclocal
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -28,7 +30,9 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev zip unzip ccache lld
+          sudo apt-get install -y openjdk-17-jdk autoconf libtool autotools-dev pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev zip unzip ccache lld
+          ls -la /usr/share/aclocal/libtool.m4
+          cat /usr/share/aclocal/libtool.m4 | grep -c "LT_SYS_SYMBOL_USCORE" || echo "MACRO NOT FOUND!"
 
       - name: Install Buildozer & Cython
         run: |
@@ -36,8 +40,6 @@ jobs:
           pip install buildozer cython==0.29.37
 
       - name: Build APK with Buildozer
-        env:
-          ACLOCAL_PATH: /usr/share/aclocal
         run: yes | buildozer android debug
 
       - name: Upload APK Artifact
