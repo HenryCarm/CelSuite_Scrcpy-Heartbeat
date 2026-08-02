@@ -65,8 +65,11 @@ def log(msg, also_print=True):
     """Write to log file, print to stdout, and update GUI panel."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     line = f"[{timestamp}] {msg}"
-    with open(LOG_FILE, "a") as f:
-        f.write(line + "\n")
+    try:
+        with open(LOG_FILE, "a") as f:
+            f.write(line + "\n")
+    except:
+        pass
     if also_print:
         print(line, flush=True)
     if _gui_log_callback:
@@ -86,7 +89,7 @@ def get_local_ip():
 def get_adb_devices():
     """Get list of connected ADB devices."""
     try:
-        result = subprocess.run(["adb", "devices"], capture_output=True, text=True)
+        result = subprocess.run(["adb", "devices"], capture_output=True, text=True, timeout=3)
         lines = result.stdout.strip().split('\n')
         devices = []
         for line in lines[1:]:
@@ -115,11 +118,131 @@ def get_connected_phone_ip():
         if d["status"] == "device" and ":" in d["serial"]:
             parts = d["serial"].split(":")
             ip = parts[0]
-            port = int(parts[1])
+            try:
+                port = int(parts[1])
+            except:
+                port = ADB_PORT
             return ip, port
     return None, None
 
-def start_scrcpy(phone_ip=None, adb_port=ADB_PORT):
+
+# --- REMOTE CONTROL HELPERS (FEATURE 2, 4, 5) ---
+
+def send_adb_keyevent(key_code, phone_ip=None, adb_port=ADB_PORT):
+    """Send Android keyevent."""
+    target_ip = phone_ip or current_phone_ip
+    if not target_ip:
+        return False, "No phone IP available"
+    try:
+        cmd = ["adb", "-s", f"{target_ip}:{adb_port}", "shell", "input", "keyevent", str(key_code)]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=3)
+        return res.returncode == 0, res.stdout or res.stderr
+    except Exception as e:
+        return False, str(e)
+
+def send_adb_text(text, phone_ip=None, adb_port=ADB_PORT):
+    """Send text to phone clipboard or text input."""
+    target_ip = phone_ip or current_phone_ip
+    if not target_ip:
+        return False, "No phone IP available"
+    try:
+        # Broadcast standard intent with text parameter for Kivy app to receive
+        # (This bypasses issues with spaces and non-ASCII in standard 'input text'!)
+        cmd = ["adb", "-s", f"{target_ip}:{adb_port}", "shell", "am", "broadcast", 
+               "-a", "org.henry.scrcpy.SET_CLIPBOARD", "--es", "text", text]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=4)
+        return res.returncode == 0, "Clipboard pushed successfully"
+    except Exception as e:
+        return False, str(e)
+
+def open_url_on_phone(url, phone_ip=None, adb_port=ADB_PORT):
+    """Open URL on phone browser."""
+    target_ip = phone_ip or current_phone_ip
+    if not target_ip:
+        return False, "No phone IP available"
+    try:
+        if not url.startswith("http://") and not url.startswith("https://"):
+            url = "https://" + url
+        cmd = ["adb", "-s", f"{target_ip}:{adb_port}", "shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", url]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=4)
+        return res.returncode == 0, f"Opened URL: {url}"
+    except Exception as e:
+        return False, str(e)
+
+def get_device_hardware_info(phone_ip=None, adb_port=ADB_PORT):
+    """Query live device specs: Battery, Charging, Temperature, Resolution, Model, Android version."""
+    target_ip = phone_ip or current_phone_ip
+    if not target_ip:
+        return {"error": "No device connected"}
+    
+    target = f"{target_ip}:{adb_port}"
+    info = {"ip": target_ip, "port": adb_port}
+    try:
+        # Battery stats
+        batt_cmd = subprocess.run(["adb", "-s", target, "shell", "dumpsys", "battery"], capture_output=True, text=True, timeout=3)
+        if batt_cmd.returncode == 0:
+            for line in batt_cmd.stdout.splitlines():
+                line = line.strip()
+                if line.startswith("level:"):
+                    info["battery_level"] = f"{line.split(':')[1].strip()}%"
+                elif line.startswith("status:"):
+                    code = line.split(':')[1].strip()
+                    info["charging"] = "Charging ⚡" if code in ["2", "5"] else "Discharging 🔋"
+                elif line.startswith("temperature:"):
+                    try:
+                        raw_t = int(line.split(':')[1].strip())
+                        info["temperature"] = f"{raw_t / 10.0:.1f}°C"
+                    except:
+                        pass
+        
+        # Model & Android version
+        props_cmd = subprocess.run(["adb", "-s", target, "shell", "getprop", "ro.product.model"], capture_output=True, text=True, timeout=3)
+        if props_cmd.returncode == 0:
+            info["model"] = props_cmd.stdout.strip()
+            
+        ver_cmd = subprocess.run(["adb", "-s", target, "shell", "getprop", "ro.build.version.release"], capture_output=True, text=True, timeout=3)
+        if ver_cmd.returncode == 0:
+            info["android_version"] = f"Android {ver_cmd.stdout.strip()}"
+
+        # Display size
+        wm_cmd = subprocess.run(["adb", "-s", target, "shell", "wm", "size"], capture_output=True, text=True, timeout=3)
+        if wm_cmd.returncode == 0:
+            info["resolution"] = wm_cmd.stdout.strip().replace("Physical size: ", "")
+            
+    except Exception as e:
+        info["error"] = str(e)
+        
+    return info
+
+def test_network_latency(phone_ip=None, adb_port=ADB_PORT):
+    """Test ping latency to the phone in ms."""
+    target_ip = phone_ip or current_phone_ip
+    if not target_ip:
+        return None, "No phone IP available"
+    
+    times = []
+    for _ in range(3):
+        try:
+            start = time.time()
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1.5)
+            s.connect((target_ip, adb_port))
+            s.close()
+            latency = (time.time() - start) * 1000.0
+            times.append(latency)
+        except:
+            pass
+        time.sleep(0.05)
+    
+    if times:
+        avg_latency = sum(times) / len(times)
+        return avg_latency, f"Average Ping: {avg_latency:.1f} ms"
+    return None, "Timeout"
+
+
+# --- MONITOR & PROCESS HANDLERS ---
+
+def start_scrcpy(phone_ip=None, adb_port=ADB_PORT, extra_args=None):
     """Connects to the device, saves IP to desktop, and launches scrcpy."""
     global scrcpy_process, current_phone_ip
     
@@ -133,10 +256,10 @@ def start_scrcpy(phone_ip=None, adb_port=ADB_PORT):
             log("ERROR: No phone IP provided")
             return False
         
-        # Check if phone is already connected via ADB — use THAT IP and port instead
+        # Check if phone is already connected via ADB
         connected_ip, connected_port = get_connected_phone_ip()
         if connected_ip:
-            log(f"Phone already connected via ADB at {connected_ip}:{connected_port} (ignoring heartbeat IP {target_ip}:{adb_port})")
+            log(f"Phone already connected via ADB at {connected_ip}:{connected_port}")
             target_ip = connected_ip
             adb_port = connected_port
         
@@ -156,44 +279,42 @@ def start_scrcpy(phone_ip=None, adb_port=ADB_PORT):
         # Check if phone is already connected via ADB
         if not is_phone_connected(target_ip, adb_port):
             log(f"Connecting to phone at {target_ip}:{adb_port}...")
-            result = subprocess.run(["adb", "connect", f"{target_ip}:{adb_port}"], capture_output=True, text=True)
+            result = subprocess.run(["adb", "connect", f"{target_ip}:{adb_port}"], capture_output=True, text=True, timeout=5)
             log(f"ADB connect stdout: {result.stdout.strip()}")
-            log(f"ADB connect stderr: {result.stderr.strip()}")
             
             if "connected to" not in result.stdout.lower() and "already connected" not in result.stdout.lower():
-                log(f"Failed to connect to {target_ip}:{adb_port}. Is ADB over TCP enabled?")
+                log(f"Failed to connect to {target_ip}:{adb_port}")
                 return False
         else:
             log(f"Phone already connected at {target_ip}:{adb_port}")
         
         log(f"Connected! Launching scrcpy on port {adb_port}...")
-        scrcpy_process = subprocess.Popen([SCRCPY_BIN, "--audio-source=playback", "-s", f"{target_ip}:{adb_port}"])
+        cmd = [SCRCPY_BIN, "--audio-source=playback", "-s", f"{target_ip}:{adb_port}"]
+        if extra_args:
+            if isinstance(extra_args, list):
+                cmd.extend(extra_args)
+            elif isinstance(extra_args, str):
+                cmd.extend(extra_args.split())
+        scrcpy_process = subprocess.Popen(cmd)
         return True
 
 def monitor_scrcpy():
-    """Monitor scrcpy process and restart if it dies."""
+    """Monitor scrcpy process and restart if it dies, safely without holding locks during sleep."""
     global scrcpy_process, current_phone_ip
     
     while True:
+        time.sleep(2)
+        run_reconnect = False
         with scrcpy_lock:
-            if scrcpy_process and scrcpy_process.poll() is None:
-                # scrcpy is running fine — check less frequently to save battery
-                time.sleep(30)
-                continue
-            elif scrcpy_process and scrcpy_process.poll() is not None:
+            if scrcpy_process and scrcpy_process.poll() is not None:
                 exit_code = scrcpy_process.poll()
                 log(f"scrcpy exited with code {exit_code}, attempting reconnect...")
                 scrcpy_process = None
-                
-                if current_phone_ip:
-                    log(f"Reconnecting to {current_phone_ip}...")
-                    start_scrcpy(current_phone_ip)
-                else:
-                    log("No phone IP to reconnect to, waiting for heartbeat...")
-            else:
-                # No scrcpy process — check occasionally in case we need to launch
-                time.sleep(10)
-        time.sleep(2)
+                run_reconnect = True
+        
+        if run_reconnect and current_phone_ip:
+            log(f"Reconnecting to {current_phone_ip}...")
+            start_scrcpy(current_phone_ip)
 
 def listen_for_heartbeat():
     """Listens for UDP packets from the Android app."""
@@ -202,29 +323,17 @@ def listen_for_heartbeat():
     log("Scrcpy Ultimate Link - Heartbeat Listener Starting...")
     log(f"Local PC IP: {local_ip}")
     log(f"Heartbeat port: {HEARTBEAT_PORT}")
-    log(f"Discovery port: {DISCOVERY_PORT}")
-    log(f"ADB port: {ADB_PORT}")
-    log(f"SCRCPY_BIN: {SCRCPY_BIN}")
-    
-    # Check ADB availability cleanly on Windows, Mac, and Linux:
-    adb_path = shutil.which('adb') or "Not found in PATH"
-    log(f"ADB available at: {adb_path}")
-    
     log("=" * 60)
     
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
         sock.bind(("0.0.0.0", HEARTBEAT_PORT))
-        log(f"Bound to 0.0.0.0:{HEARTBEAT_PORT}")
     except Exception as e:
         log(f"FAILED to bind port {HEARTBEAT_PORT}: {e}")
-        log(f"   Check if another process is using it: lsof -i :{HEARTBEAT_PORT}")
         return
     
     sock.settimeout(5.0)
-    log(f"Heartbeat listener ACTIVE on port {HEARTBEAT_PORT}...")
-    log("Waiting for phone to say hello...")
     
     beat_count = 0
     while True:
@@ -234,13 +343,9 @@ def listen_for_heartbeat():
             message = data.decode('utf-8').strip()
             ip = addr[0]
             
-            log(f"[Beat #{beat_count}] From {addr[0]}:{addr[1]} -> Message: '{message}'")
-            
-            if "HELLO_" in message or "SCRCPY_LINK" in message:
-                log(f"VALID heartbeat from {ip}!")
-                # Parse phone IP and ADB port from message: "HELLO_<HOSTNAME>|PHONE_IP|ADB_PORT"
+            if "HELLO_" in message:
                 phone_ip = None
-                adb_port = ADB_PORT  # default
+                adb_port = ADB_PORT
                 parts = message.split('|')
                 if len(parts) >= 3:
                     phone_ip = parts[1].strip()
@@ -248,35 +353,14 @@ def listen_for_heartbeat():
                         adb_port = int(parts[2].strip())
                     except:
                         adb_port = ADB_PORT
-                    log(f"Phone ADB IP from heartbeat: '{phone_ip}' (sender: {ip}), ADB port: {adb_port}")
-                elif '|' in message:
-                    phone_ip = message.split('|')[-1].strip()
-                    log(f"WARNING: Old format heartbeat, using default ADB port: {adb_port}")
                 else:
-                    log(f"WARNING: No phone IP in heartbeat, using sender IP: {ip}")
                     phone_ip = ip
                 
-                # Automatically save connected IP to Desktop for Win/Mac/Linux scripts:
-                try:
-                    desktop_file = os.path.join(os.path.expanduser("~"), "Desktop", "phone_ip.txt")
-                    with open(desktop_file, "w") as f:
-                        f.write(f"{phone_ip}:{adb_port}")
-                    log(f"Saved phone IP to {desktop_file}")
-                except Exception as e:
-                    log(f"Could not save phone IP to desktop: {e}")
-                
                 log(f"Attempting connection to PHONE IP: {phone_ip}:{adb_port}")
-                if start_scrcpy(phone_ip, adb_port):
-                    log("Success! Everything is mirrored!")
-                else:
-                    log("Heartbeat was heard, but ADB connection failed.")
-            else:
-                log(f"Ignoring non-HELLO packet: '{message}' from {ip}")
-                
+                start_scrcpy(phone_ip, adb_port)
         except socket.timeout:
-            log(f"Still listening... (received {beat_count} total packets so far)")
+            pass
         except Exception as e:
-            log(f"Socket error: {e}")
             time.sleep(1)
 
 def broadcast_discovery():
@@ -286,12 +370,9 @@ def broadcast_discovery():
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     message = f"SCRCPC_HERE {local_ip} {HEARTBEAT_PORT}".encode()
     
-    log(f"Starting discovery broadcast on port {DISCOVERY_PORT} (PC IP: {local_ip})")
-    
     while True:
         try:
             sock.sendto(message, ('255.255.255.255', DISCOVERY_PORT))
-            # Also send to each interface's broadcast
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("8.8.8.8", 80))
             local_iface_ip = s.getsockname()[0]
@@ -300,14 +381,17 @@ def broadcast_discovery():
             if len(parts) == 4:
                 bcast = f"{parts[0]}.{parts[1]}.{parts[2]}.255"
                 sock.sendto(message, (bcast, DISCOVERY_PORT))
-        except Exception as e:
-            log(f"Broadcast error: {e}")
+        except:
+            pass
         time.sleep(3)
 
 if __name__ == "__main__":
     # Clear old log
-    with open(LOG_FILE, "w") as f:
-        f.write("")
+    try:
+        with open(LOG_FILE, "w") as f:
+            f.write("")
+    except:
+        pass
     log("Logger initialized.")
     
     # Start monitor thread

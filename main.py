@@ -9,19 +9,23 @@ from datetime import datetime
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit, QMainWindow, 
     QSpinBox, QHBoxLayout, QTabWidget, QPushButton, QFileDialog, QCheckBox,
-    QGroupBox, QFormLayout, QLineEdit, QMessageBox, QStackedWidget,
-    QRadioButton, QButtonGroup
+    QGroupBox, QFormLayout, QLineEdit, QMessageBox, QComboBox, QGridLayout
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QObject
+from PyQt6.QtCore import Qt, pyqtSignal, QObject, QTimer
 from PyQt6.QtGui import QIcon
-from heartbeat_listener import start_scrcpy, get_local_ip, LOG_FILE, set_gui_log_callback
-from file_transfer import FileTransferScreen, PullScreen
 
-APP_VERSION = "267.29.1"
+# Import from modules
+from heartbeat_listener import (
+    start_scrcpy, get_local_ip, LOG_FILE, set_gui_log_callback,
+    send_adb_keyevent, send_adb_text, open_url_on_phone, 
+    get_device_hardware_info, test_network_latency
+)
+from file_transfer import FileTransferScreen, PullScreen, TCPFileServer
+
+APP_VERSION = "268.02.1"
 APP_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 CONFIG_FILE = os.path.join(APP_DIR, "config.json")
 
-# Default desktop path for last_ip.txt
 def get_desktop_ip_path():
     desktop = os.path.join(os.path.expanduser("~"), "Desktop")
     if not os.path.exists(desktop):
@@ -37,7 +41,9 @@ def load_config():
         "last_ip_file": get_desktop_ip_path(),
         "log_file": os.path.join(APP_DIR, "ScrcpyUltimateLink_debug.log"),
         "logging_enabled": False,
-        "connection_mode": "heartbeat"  # "heartbeat" or "saved_ip"
+        "connection_mode": "heartbeat",
+        "scrcpy_preset": "Balanced (Default)",
+        "auto_clip_sync": False
     }
     try:
         if os.path.exists(CONFIG_FILE):
@@ -68,23 +74,25 @@ LAST_IP_FILE = config["last_ip_file"]
 LOG_FILE = config["log_file"]
 LOGGING_ENABLED = config.get("logging_enabled", False)
 CONNECTION_MODE = config.get("connection_mode", "heartbeat")
+SCRCPY_PRESET = config.get("scrcpy_preset", "Balanced (Default)")
+AUTO_CLIP_SYNC = config.get("auto_clip_sync", False)
 
-# Global reference for log panel display
 _log_panel = None
 
 def gui_log(msg):
     global _log_panel
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     line = f"[{timestamp}] {msg}"
-    # Display in panel (called from main thread, safe)
     if _log_panel:
         _log_panel.append(line)
         scrollbar = _log_panel.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
-    # Only write to file when enabled
     if LOGGING_ENABLED:
-        with open(LOG_FILE, "a") as f:
-            f.write(line + "\n")
+        try:
+            with open(LOG_FILE, "a") as f:
+                f.write(line + "\n")
+        except:
+            pass
 
 class DiscoveryBroadcaster:
     def __init__(self, local_ip, port=DISCOVERY_PORT):
@@ -104,7 +112,7 @@ class DiscoveryBroadcaster:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         message = f"SCRCPC_HERE {self.local_ip} {HEARTBEAT_PORT}".encode()
 
-        gui_log(f"Starting discovery broadcast on port {self.port} (PC IP: {self.local_ip})")
+        gui_log(f"Broadcaster starting on port {self.port} (PC IP: {self.local_ip})")
 
         while self.running:
             try:
@@ -136,33 +144,25 @@ class HeartbeatWorker(QObject):
     log_signal = pyqtSignal(str)
 
     def run(self):
-        gui_log("HeartbeatWorker thread starting...")
+        gui_log("HeartbeatWorker starting...")
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.bind(("0.0.0.0", HEARTBEAT_PORT))
             gui_log(f"GUI listener bound to 0.0.0.0:{HEARTBEAT_PORT}")
-            sock.settimeout(60.0)
+            sock.settimeout(2.0)
             while True:
                 try:
                     data, addr = sock.recvfrom(1024)
                     ip = addr[0]
                     message = data.decode('utf-8').strip()
-                    gui_log(f"GUI got packet from {ip}:{addr[1]} -> '{message}'")
                     if "HELLO_" in message:
-                        gui_log(f"VALID heartbeat from {ip}")
                         self.heartbeat_received.emit(ip)
-                    else:
-                        gui_log(f"Ignoring non-HELLO: '{message}'")
                 except socket.timeout:
                     pass
         except Exception as e:
             gui_log(f"GUI Listener Error: {e}")
             self.log_signal.emit(f"Listener Error: {e}")
-
-    def gui_log(self, msg):
-        self.log_signal.emit(msg)
-
 
 class ScrcpyUltimateLink(QMainWindow):
     log_signal = pyqtSignal(str)
@@ -171,81 +171,177 @@ class ScrcpyUltimateLink(QMainWindow):
         super().__init__()
         self.log_signal.connect(self.add_log)
         self.setWindowTitle(f"Scrcpy Ultimate Link v{APP_VERSION}")
-        self.setMinimumSize(700, 550)
-        icon_path = os.path.join(APP_DIR, "android", "icon.png")
-        self.setWindowIcon(QIcon(icon_path))
+        self.setMinimumSize(850, 680)
+        
+        self.scrcpy_presets = {
+            "Balanced (Default)": [],
+            "High Quality (1080p, 16M)": ["-m", "1920", "-b", "16M"],
+            "Fluid Performance (720p, 60fps, 8M)": ["-m", "1280", "--max-fps", "60", "-b", "8M"],
+            "Battery Saver (480p, 30fps, 2M)": ["-m", "854", "--max-fps", "30", "-b", "2M", "--tunnel-forward"]
+        }
 
         self.setStyleSheet("""
-            QMainWindow, QTabWidget::pane { background-color: #1a1a2e; border: none; }
+            QMainWindow, QTabWidget::pane { background-color: #121224; border: none; }
             QLabel { color: #e0e0e0; }
-            QTextEdit { background-color: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 10px; color: #e0e0e0; font-family: monospace; font-size: 12px; }
-            QSpinBox { background-color: #16213e; border: 1px solid #0f3460; border-radius: 4px; padding: 5px; color: #e0e0e0; font-size: 14px; }
-            QLineEdit { background-color: #16213e; border: 1px solid #0f3460; border-radius: 4px; padding: 5px; color: #e0e0e0; font-size: 14px; }
-            QPushButton { background-color: #0f3460; color: #00d9a5; border: 2px solid #00d9a5; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: bold; }
-            QPushButton:hover { background-color: #00d9a5; color: #1a1a2e; }
-            QPushButton:disabled { background-color: #1a1a2e; color: #666; border-color: #444; }
+            QTextEdit { background-color: #1a1a3a; border: 1px solid #1f1f4e; border-radius: 8px; padding: 10px; color: #e0e0e0; font-family: monospace; font-size: 12px; }
+            QSpinBox, QComboBox, QLineEdit { background-color: #1a1a3a; border: 1px solid #1f1f4e; border-radius: 4px; padding: 6px; color: #00d9a5; font-size: 14px; }
+            QPushButton { background-color: #1f1f4e; color: #00d9a5; border: 2px solid #00d9a5; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: bold; }
+            QPushButton:hover { background-color: #00d9a5; color: #121224; }
+            QPushButton:disabled { background-color: #121224; color: #666; border-color: #444; }
             QCheckBox { color: #e0e0e0; font-size: 14px; spacing: 8px; }
-            QCheckBox::indicator { width: 18px; height: 18px; border: 2px solid #00d9a5; border-radius: 4px; background: #16213e; }
+            QCheckBox::indicator { width: 18px; height: 18px; border: 2px solid #00d9a5; border-radius: 4px; background: #1a1a3a; }
             QCheckBox::indicator:checked { background: #00d9a5; }
-            QGroupBox { color: #00d9a5; font-weight: bold; font-size: 14px; border: 2px solid #0f3460; border-radius: 8px; margin-top: 12px; padding-top: 10px; }
+            QGroupBox { color: #00d9a5; font-weight: bold; font-size: 14px; border: 2px solid #1f1f4e; border-radius: 8px; margin-top: 12px; padding-top: 10px; background-color: #161632; }
             QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }
-            QTabBar::tab { background: #16213e; color: #00d9a5; padding: 10px 20px; border-top-left-radius: 8px; border-top-right-radius: 8px; margin-right: 2px; }
-            QTabBar::tab:selected { background: #0f3460; font-weight: bold; }
+            QTabBar::tab { background: #1a1a3a; color: #888; padding: 10px 20px; border-top-left-radius: 8px; border-top-right-radius: 8px; margin-right: 2px; }
+            QTabBar::tab:selected { background: #1f1f4e; color: #00d9a5; font-weight: bold; }
         """)
 
-        # Main tabs directly as central widget
+        # Start PC TCP File server to handle direct Mobile transfers!
+        self.file_server = TCPFileServer()
+        self.file_server.start()
+
+        # UI Setup
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)
 
         # --- MIRROR PHONE TAB ---
         self.main_tab = QWidget()
         main_layout = QVBoxLayout(self.main_tab)
-        main_layout.setSpacing(15)
-        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(10)
+        main_layout.setContentsMargins(15, 15, 15, 15)
 
         # Header
         header_layout = QHBoxLayout()
         self.title = QLabel("Scrcpy Ultimate Link")
-        self.title.setStyleSheet("font-size: 28px; font-weight: bold; color: #00d9a5;")
+        self.title.setStyleSheet("font-size: 26px; font-weight: bold; color: #00d9a5;")
         header_layout.addWidget(self.title)
+        
+        # Fast Subnet scan fallback button
+        self.scan_subnet_btn = QPushButton("🔍 Fallback Subnet Scan")
+        self.scan_subnet_btn.clicked.connect(self.scan_subnet_for_phone)
+        header_layout.addWidget(self.scan_subnet_btn)
+        
         header_layout.addStretch()
 
-        # Connection mode buttons
-        self.connect_saved_btn = QPushButton("Connect Using Saved IP")
-        self.connect_saved_btn.setMinimumHeight(45)
+        self.connect_saved_btn = QPushButton("Connect Saved IP")
         self.connect_saved_btn.clicked.connect(self.connect_using_saved_ip)
-
         self.connect_heartbeat_btn = QPushButton("Auto-Discover (Heartbeat)")
-        self.connect_heartbeat_btn.setMinimumHeight(45)
         self.connect_heartbeat_btn.clicked.connect(self.start_heartbeat_mode)
 
         header_layout.addWidget(self.connect_saved_btn)
         header_layout.addWidget(self.connect_heartbeat_btn)
         main_layout.addLayout(header_layout)
 
-        # Status
+        # Status Label
         self.status_label = QLabel("Status: Ready")
-        self.status_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #00d9a5;")
+        self.status_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #00d9a5;")
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(self.status_label)
 
-        # Log area (bottom)
-        log_group = QGroupBox("Live Logs")
+        # GRID FOR UTILITIES
+        grid_layout = QGridLayout()
+        grid_layout.setSpacing(10)
+
+        # 1. Preset Profile Groupbox
+        preset_group = QGroupBox("Preset Video Quality Profiles")
+        preset_form = QFormLayout(preset_group)
+        self.preset_combo = QComboBox()
+        self.preset_combo.addItems(list(self.scrcpy_presets.keys()))
+        self.preset_combo.setCurrentText(SCRCPY_PRESET)
+        self.preset_combo.currentTextChanged.connect(self.on_preset_changed)
+        preset_form.addRow("Preset:", self.preset_combo)
+        grid_layout.addWidget(preset_group, 0, 0)
+
+        # 2. Bidirectional Clipboard Groupbox
+        clip_group = QGroupBox("📋 Clipboard Sync Tools")
+        clip_layout = QVBoxLayout(clip_group)
+        
+        self.clip_chk = QCheckBox("Auto-sync PC clipboard ➔ Phone")
+        self.clip_chk.setChecked(AUTO_CLIP_SYNC)
+        self.clip_chk.toggled.connect(self.on_clip_chk_toggled)
+        clip_layout.addWidget(self.clip_chk)
+
+        clip_btn_layout = QHBoxLayout()
+        push_clip_btn = QPushButton("📤 Push Clipboard")
+        push_clip_btn.clicked.connect(self.push_clipboard_to_phone)
+        fetch_clip_btn = QPushButton("📥 Fetch Clipboard")
+        fetch_clip_btn.clicked.connect(self.fetch_clipboard_from_phone)
+        clip_btn_layout.addWidget(push_clip_btn)
+        clip_btn_layout.addWidget(fetch_clip_btn)
+        clip_layout.addLayout(clip_btn_layout)
+        grid_layout.addWidget(clip_group, 0, 1)
+
+        # 3. Live Hardware Diagnostics Dashboard
+        self.dash_group = QGroupBox("📊 Live Hardware Dashboard")
+        dash_form = QFormLayout(self.dash_group)
+        self.dash_model = QLabel("Model: --")
+        self.dash_android = QLabel("Android: --")
+        self.dash_batt = QLabel("Battery: --")
+        self.dash_temp = QLabel("Temp: --")
+        self.dash_latency = QLabel("WiFi Latency: --")
+        self.dash_res = QLabel("Resolution: --")
+        
+        dash_form.addRow(self.dash_model, self.dash_android)
+        dash_form.addRow(self.dash_batt, self.dash_temp)
+        dash_form.addRow(self.dash_res, self.dash_latency)
+        
+        self.refresh_dash_btn = QPushButton("🔄 Refresh Dashboard")
+        self.refresh_dash_btn.clicked.connect(self.update_dashboard)
+        dash_form.addRow(self.refresh_dash_btn)
+        grid_layout.addWidget(self.dash_group, 1, 0)
+
+        # 4. Quick Screen Actions (Screenshot & Record)
+        actions_group = QGroupBox("📸 Screen capture / Recording")
+        actions_layout = QVBoxLayout(actions_group)
+        
+        screenshot_btn = QPushButton("📷 Take Quick Screenshot")
+        screenshot_btn.clicked.connect(self.take_screenshot)
+        
+        record_btn = QPushButton("🎥 Start Video Recording")
+        record_btn.clicked.connect(self.start_video_recording)
+        
+        actions_layout.addWidget(screenshot_btn)
+        actions_layout.addWidget(record_btn)
+        grid_layout.addWidget(actions_group, 1, 1)
+
+        main_layout.addLayout(grid_layout)
+
+        # 5. Quick Remote Control Key Bar
+        control_group = QGroupBox("📱 Fast Remote Control Bar")
+        control_layout = QHBoxLayout(control_group)
+        control_layout.setSpacing(6)
+        
+        btns = [
+            ("⚡ Power", 26), ("🏠 Home", 3), ("↩️ Back", 4),
+            ("⬜ Recents", 187), ("🔊 Vol +", 24), ("🔉 Vol -", 25)
+        ]
+        for label, code in btns:
+            btn = QPushButton(label)
+            btn.clicked.connect(lambda ch, c=code: send_adb_keyevent(c))
+            control_layout.addWidget(btn)
+            
+        sleep_btn = QPushButton("🔒 Turn Screen Off")
+        sleep_btn.clicked.connect(lambda: send_adb_keyevent(223))
+        control_layout.addWidget(sleep_btn)
+        
+        main_layout.addWidget(control_group)
+
+        # Live logs (bottom)
+        log_group = QGroupBox("System Logs")
         log_layout = QVBoxLayout(log_group)
         self.log_area = QTextEdit()
         self.log_area.setReadOnly(True)
-        self.log_area.setMaximumHeight(200)
+        self.log_area.setMaximumHeight(150)
         log_layout.addWidget(self.log_area)
         main_layout.addWidget(log_group)
 
-        # Wire up log panel so gui_log() actually writes to it
         global _log_panel
         _log_panel = self.log_area
-
-        # Set callback so heartbeat_listener logs appear in GUI panel (thread-safe via signal)
         set_gui_log_callback(lambda msg: self.log_signal.emit(msg))
 
         self.tabs.addTab(self.main_tab, "Mirror Phone")
+
         # --- FILE TRANSFER TAB ---
         self.file_transfer_tab = QWidget()
         file_transfer_layout = QVBoxLayout(self.file_transfer_tab)
@@ -253,10 +349,9 @@ class ScrcpyUltimateLink(QMainWindow):
         
         file_tabs = QTabWidget()
         file_tabs.setStyleSheet("""
-            QTabWidget::pane { border: 1px solid #0f3460; border-radius: 8px; background-color: #1a1a2e; }
-            QTabBar::tab { background-color: #16213e; color: #888; padding: 10px 20px; margin-right: 2px; border-top-left-radius: 6px; border-top-right-radius: 6px; }
-            QTabBar::tab:selected { background-color: #0f3460; color: #00d9a5; font-weight: bold; }
-            QTabBar::tab:hover { background-color: #1a1a2e; color: #00d9a5; }
+            QTabWidget::pane { border: 1px solid #1f1f4e; border-radius: 8px; background-color: #121224; }
+            QTabBar::tab { background-color: #1a1a3a; color: #888; padding: 10px 20px; margin-right: 2px; }
+            QTabBar::tab:selected { background-color: #1f1f4e; color: #00d9a5; font-weight: bold; }
         """)
         
         self.file_transfer_screen = FileTransferScreen(
@@ -268,19 +363,14 @@ class ScrcpyUltimateLink(QMainWindow):
             log_callback=gui_log
         )
         
-        file_tabs.addTab(self.file_transfer_screen, "Push to Phone")
+        file_tabs.addTab(self.file_transfer_screen, "Push to Phone (TCP over WiFi)")
         file_tabs.addTab(self.pull_screen, "Pull from Phone")
-        
         file_transfer_layout.addWidget(file_tabs)
         self.tabs.addTab(self.file_transfer_tab, "File Transfer")
-
-
 
         # --- SETTINGS TAB ---
         self.settings_tab = QWidget()
         settings_outer = QVBoxLayout(self.settings_tab)
-        settings_outer.setContentsMargins(0, 0, 0, 0)
-        settings_outer.setSpacing(0)
         
         from PyQt6.QtWidgets import QScrollArea
         settings_scroll = QScrollArea()
@@ -290,14 +380,11 @@ class ScrcpyUltimateLink(QMainWindow):
         settings_widget = QWidget()
         settings_layout = QVBoxLayout(settings_widget)
         settings_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        settings_layout.setSpacing(20)
-        settings_layout.setContentsMargins(20, 20, 20, 20)
+        settings_layout.setSpacing(15)
 
-        # Ports Group
         ports_group = QGroupBox("Network Ports")
         ports_form = QFormLayout(ports_group)
-        ports_form.setSpacing(15)
-
+        
         self.heartbeat_port_spin = QSpinBox()
         self.heartbeat_port_spin.setRange(1024, 65535)
         self.heartbeat_port_spin.setValue(HEARTBEAT_PORT)
@@ -318,7 +405,6 @@ class ScrcpyUltimateLink(QMainWindow):
         ports_form.addRow("ADB Port (scrcpy):", self.adb_port_spin)
         settings_layout.addWidget(ports_group)
 
-        # scrcpy Binary Path
         scrcpy_group = QGroupBox("scrcpy Binary")
         scrcpy_form = QFormLayout(scrcpy_group)
         scrcpy_layout = QHBoxLayout()
@@ -331,153 +417,24 @@ class ScrcpyUltimateLink(QMainWindow):
         scrcpy_form.addRow("Binary Path:", scrcpy_layout)
         settings_layout.addWidget(scrcpy_group)
 
-        # IP File Location
-        ip_file_group = QGroupBox("Saved IP File Location")
-        ip_file_form = QFormLayout(ip_file_group)
-        ip_file_layout = QHBoxLayout()
-        self.ip_file_edit = QLineEdit(LAST_IP_FILE)
-        self.ip_file_edit.setReadOnly(True)
-        self.ip_file_browse_btn = QPushButton("Browse...")
-        self.ip_file_browse_btn.clicked.connect(self.browse_ip_file)
-        ip_file_layout.addWidget(self.ip_file_edit)
-        ip_file_layout.addWidget(self.ip_file_browse_btn)
-        ip_file_form.addRow("File Path:", ip_file_layout)
-        settings_layout.addWidget(ip_file_group)
+        # Settings for clipboard monitor
+        self.pc_clip = QApplication.clipboard()
+        self.pc_clip.dataChanged.connect(self.on_pc_clipboard_changed)
 
-        # Logging Group
-        log_group = QGroupBox("Logging")
-        log_layout = QVBoxLayout(log_group)
-        
-        self.log_checkbox = QCheckBox("Enable Logging (persists across restarts)")
-        self.log_checkbox.setChecked(LOGGING_ENABLED)
-        self.log_checkbox.toggled.connect(self.on_log_toggled)
-        log_layout.addWidget(self.log_checkbox)
-        
-        self.log_path_label = QLabel(f"Log file: {LOG_FILE}")
-        self.log_path_label.setStyleSheet("color: #888; font-size: 12px; font-family: monospace;")
-        log_layout.addWidget(self.log_path_label)
-        
-        # Storage Permissions
-        storage_btn = QPushButton("Request Storage Permissions on Phone")
-        storage_btn.setMinimumHeight(40)
-        storage_btn.setStyleSheet("""
-            QPushButton { 
-                background-color: #0f3460; 
-                color: #00d9a5; 
-                border: 2px solid #00d9a5; 
-                border-radius: 8px; 
-                padding: 10px; 
-                font-size: 14px; 
-                font-weight: bold; 
-            }
-            QPushButton:hover { background-color: #00d9a5; color: #1a1a2e; }
-        """)
-        storage_btn.clicked.connect(self.request_phone_storage_permission)
-        log_layout.addWidget(storage_btn)
-        
-        settings_layout.addWidget(log_group)
-
-        # Connection Mode
-        conn_mode_group = QGroupBox("Default Connection Mode")
-        conn_mode_layout = QVBoxLayout(conn_mode_group)
-        
-        self.conn_mode_heartbeat = QRadioButton("Auto-Discover via Heartbeat (recommended)")
-        self.conn_mode_saved = QRadioButton("Connect Using Saved IP File")
-        
-        self.conn_mode_btn_group = QButtonGroup(self)
-        self.conn_mode_btn_group.addButton(self.conn_mode_heartbeat, 0)
-        self.conn_mode_btn_group.addButton(self.conn_mode_saved, 1)
-        
-        if CONNECTION_MODE == "saved_ip":
-            self.conn_mode_saved.setChecked(True)
-        else:
-            self.conn_mode_heartbeat.setChecked(True)
-        
-        self.conn_mode_btn_group.idClicked.connect(self.on_conn_mode_changed)
-        
-        conn_mode_layout.addWidget(self.conn_mode_heartbeat)
-        conn_mode_layout.addWidget(self.conn_mode_saved)
-        
-        settings_layout.addWidget(conn_mode_group)
-        settings_layout.addStretch()
-        
         settings_scroll.setWidget(settings_widget)
         settings_outer.addWidget(settings_scroll)
-        
         self.tabs.addTab(self.settings_tab, "⚙️ Settings")
 
-        # --- HELP TAB ---
-        self.help_tab = QWidget()
-        help_layout = QVBoxLayout(self.help_tab)
-        help_layout.setContentsMargins(20, 20, 20, 20)
+        # Timer to query Dashboard and Clipboard every 5 seconds
+        self.dash_timer = QTimer()
+        self.dash_timer.timeout.connect(self.update_dashboard)
+        self.dash_timer.start(5000)
 
-        help_title = QLabel("📖 Complete Setup Guide")
-        help_title.setStyleSheet("font-size: 20px; font-weight: bold; color: #00d9a5;")
-        help_layout.addWidget(help_title)
-
-        self.help_text = QTextEdit()
-        self.help_text.setReadOnly(True)
-        self.help_text.setStyleSheet("background-color: #16213e; border: none; color: #e0e0e0; font-size: 14px;")
-        self.help_text.setHtml(
-            "<b>🚀 Quick Start:</b><br/>"
-            "1. Make sure your phone and PC are on the same network (or phone hotspot)<br/>"
-            "2. Open this app on PC, then open 'Scrcpy Heartbeat' on your phone<br/>"
-            "3. Tap 'Restart Connection' on phone if needed<br/>"
-            "4. scrcpy will launch automatically!<br/><br/>"
-
-            "<b>📱 Android App Install:</b><br/>"
-            "• Download APK from GitHub Actions artifacts<br/>"
-            "• Install on phone (allow unknown sources)<br/>"
-            "• Grant all permissions when prompted<br/><br/>"
-
-            "<b>⚡ Shizuku Setup (Persistent ADB over WiFi):</b><br/>"
-            "1. Install <b>Magisk</b> → Install <b>Shizuku</b> module in Magisk app → Reboot<br/>"
-            "2. Open <b>Shizuku</b> app → Start service (grant root when prompted)<br/>"
-            "3. Install <b>Termux</b> + <b>Termux:Boot</b> from F-Droid/Play Store<br/>"
-            "4. In Termux, run:<br/>"
-            "<code style='color:#00d9a5;'>su -c \"setprop service.adb.tcp.port 5555; setprop persist.adb.tcp.port 5555; "
-            "setprop service.adb.tcp.bind 0.0.0.0; stop adbd && start adbd\"</code><br/>"
-            "5. Create Termux:Boot script: <code style='color:#00d9a5;'>~/.termux/boot/99-adb-wifi.sh</code><br/>"
-            "6. Whitelist from battery optimization:<br/>"
-            "<code style='color:#00d9a5;'>su -c \"cmd appops set com.termux RUN_IN_BACKGROUND allow\"</code><br/>"
-            "<code style='color:#00d9a5;'>su -c \"dumpsys deviceidle whitelist +com.termux\"</code><br/><br/>"
-
-            "<b>🔧 Port Configuration:</b><br/>"
-            "• Heartbeat Port (default 5556): Phone→PC discovery<br/>"
-            "• Discovery Port (default 5557): PC broadcast<br/>"
-            "• ADB Port (default 5555): scrcpy connection<br/>"
-            "Change ports in the Settings tab, then click 'Restart Server'<br/><br/>"
-
-            "<b>🔗 Connection Modes:</b><br/>"
-            "• <b>Auto-Discover (Heartbeat)</b>: Phone broadcasts, PC listens, auto-connects<br/>"
-            "• <b>Connect Using Saved IP</b>: Reads IP from file, connects directly (faster for known IPs)<br/><br/>"
-
-            "<b>🔍 Troubleshooting:</b><br/>"
-            "• Phone not found? Check both devices on same network<br/>"
-            "• ADB connection refused? Run Shizuku ADB command on phone<br/>"
-            "• IP cycling? Restart both apps using restart buttons<br/>"
-            "• Black screen on phone? Tap 'Restart Connection' on phone app<br/>"
-            "• 'unrecognized option' error? Ensure scrcpy v4.0+ is configured<br/><br/>"
-
-            "<b>🔗 Links:</b><br/>"
-            "• GitHub: <a href='https://github.com/HenryCarm/ScrcpyUltimateLink' style='color:#00d9a5;'>github.com/HenryCarm/ScrcpyUltimateLink</a><br/>"
-            "• Shizuku: <a href='https://shizuku.rikka.app/' style='color:#00d9a5;'>shizuku.rikka.app</a><br/>"
-            "• Termux:Boot: <a href='https://f-droid.org/packages/com.termux.boot/' style='color:#00d9a5;'>F-Droid</a>"
-        )
-        help_layout.addWidget(self.help_text)
-        self.tabs.addTab(self.help_tab, "📖 Help")
-
-
-        # Initialize threads
         self.discovery = None
         self.worker = None
         self.thread = None
 
     def start_heartbeat_mode(self):
-        """Start discovery broadcast and heartbeat listener (singleton — won't duplicate)"""
-        global HEARTBEAT_PORT, DISCOVERY_PORT, ADB_PORT
-        
-        # Prevent duplicate threads
         if self.thread and self.thread.is_alive():
             return
         
@@ -494,43 +451,24 @@ class ScrcpyUltimateLink(QMainWindow):
         self.worker.log_signal.connect(self.add_log)
         self.thread.start()
 
-        self.connect_heartbeat_btn.setStyleSheet("""
-            QPushButton { background-color: #00d9a5; color: #1a1a2e; border: 2px solid #00d9a5; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: bold; }
-        """)
-        self.connect_saved_btn.setStyleSheet("""
-            QPushButton { background-color: #0f3460; color: #00d9a5; border: 2px solid #00d9a5; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: bold; }
-            QPushButton:hover { background-color: #00d9a5; color: #1a1a2e; }
-        """)
         self.status_label.setText("Status: Listening for phone heartbeat...")
-        self.status_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #00d9a5;")
-        self.add_log("Heartbeat mode started - waiting for phone...")
+        self.add_log("Heartbeat mode active.")
 
     def connect_using_saved_ip(self):
-        """Read IP from saved file and connect"""
         ip = self.get_current_phone_ip()
         if not ip:
-            self.status_label.setText("No saved IP found!")
-            self.status_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #ff6b6b;")
-            self.add_log("No saved IP file found")
-            QMessageBox.warning(self, "No Saved IP", f"No IP found in:\n{LAST_IP_FILE}\n\nRun heartbeat mode first to discover and save the IP.")
+            QMessageBox.warning(self, "No Saved IP", "No saved IP found. Broadcast discovery first.")
             return
-
-        self.status_label.setText(f"Connecting to saved IP: {ip}...")
-        self.status_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #ffcc00;")
-        self.add_log(f"Connecting using saved IP: {ip}")
-        
-        self.connect_saved_btn.setStyleSheet("""
-            QPushButton { background-color: #00d9a5; color: #1a1a2e; border: 2px solid #00d9a5; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: bold; }
-        """)
-        self.connect_heartbeat_btn.setStyleSheet("""
-            QPushButton { background-color: #0f3460; color: #00d9a5; border: 2px solid #00d9a5; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: bold; }
-            QPushButton:hover { background-color: #00d9a5; color: #1a1a2e; }
-        """)
-        
+        self.status_label.setText(f"Connecting to Saved IP: {ip}...")
         threading.Thread(target=self.connect_and_launch, args=(ip,), daemon=True).start()
 
-    def read_saved_ip(self):
-        """Read IP from the saved file"""
+    def get_current_phone_ip(self):
+        from heartbeat_listener import get_connected_phone_ip, current_phone_ip
+        ip, port = get_connected_phone_ip()
+        if ip:
+            return ip
+        if current_phone_ip:
+            return current_phone_ip
         try:
             if os.path.exists(LAST_IP_FILE):
                 with open(LAST_IP_FILE, "r") as f:
@@ -539,26 +477,167 @@ class ScrcpyUltimateLink(QMainWindow):
             pass
         return None
 
-    def get_current_phone_ip(self):
-        """Return the actual ADB-connected phone IP, not the stale saved one"""
-        from heartbeat_listener import get_connected_phone_ip
-        ip, port = get_connected_phone_ip()
-        if ip:
-            return ip
-        return self.read_saved_ip()
+    def on_preset_changed(self, val):
+        global SCRCPY_PRESET
+        SCRCPY_PRESET = val
+        config["scrcpy_preset"] = val
+        save_config(config)
+
+    def on_clip_chk_toggled(self, checked):
+        global AUTO_CLIP_SYNC
+        AUTO_CLIP_SYNC = checked
+        config["auto_clip_sync"] = checked
+        save_config(config)
+
+    def on_pc_clipboard_changed(self):
+        if AUTO_CLIP_SYNC:
+            text = self.pc_clip.text()
+            if text:
+                threading.Thread(target=send_adb_text, args=(text,), daemon=True).start()
+
+    def push_clipboard_to_phone(self):
+        text = self.pc_clip.text()
+        if text:
+            success, msg = send_adb_text(text)
+            if success:
+                gui_log("Clipboard synced to Phone successfully.")
+            else:
+                gui_log(f"Clipboard push error: {msg}")
+
+    def fetch_clipboard_from_phone(self):
+        ip = self.get_current_phone_ip()
+        if not ip:
+            return
+        try:
+            cmd = ["adb", "-s", f"{ip}:{ADB_PORT}", "shell", "am", "broadcast", "-a", "org.henry.scrcpy.GET_CLIPBOARD"]
+            subprocess.run(cmd, capture_output=True, text=True, timeout=3)
+            gui_log("Triggered Phone clipboard fetch via ADB intent.")
+        except Exception as e:
+            gui_log(f"Fetch clipboard failed: {e}")
+
+    def update_dashboard(self):
+        ip = self.get_current_phone_ip()
+        if not ip:
+            return
+            
+        def _task():
+            info = get_device_hardware_info(ip, ADB_PORT)
+            latency, lat_str = test_network_latency(ip, ADB_PORT)
+            
+            def _update():
+                if "error" not in info:
+                    self.dash_model.setText(f"Model: {info.get('model', '--')}")
+                    self.dash_android.setText(f"Android: {info.get('android_version', '--')}")
+                    self.dash_batt.setText(f"Battery: {info.get('battery_level', '--')} ({info.get('charging', '--')})")
+                    self.dash_temp.setText(f"Temp: {info.get('temperature', '--')}")
+                    self.dash_res.setText(f"Resolution: {info.get('resolution', '--')}")
+                if latency:
+                    self.dash_latency.setText(f"Ping: {latency:.1f} ms")
+                else:
+                    self.dash_latency.setText("Ping: Timeout")
+            QTimer.singleShot(0, _update)
+
+        threading.Thread(target=_task, daemon=True).start()
+
+    def take_screenshot(self):
+        ip = self.get_current_phone_ip()
+        if not ip:
+            return
+        def _task():
+            desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+            filename = f"scrcpy_screenshot_{int(time.time())}.png"
+            local_path = os.path.join(desktop, filename)
+            try:
+                subprocess.run(["adb", "-s", f"{ip}:{ADB_PORT}", "shell", "screencap", "-p", "/sdcard/screen.png"], timeout=4)
+                subprocess.run(["adb", "-s", f"{ip}:{ADB_PORT}", "pull", "/sdcard/screen.png", local_path], timeout=4)
+                gui_log(f"Screenshot saved to Desktop: {filename}")
+            except Exception as e:
+                gui_log(f"Screenshot error: {e}")
+        threading.Thread(target=_task, daemon=True).start()
+
+    def start_video_recording(self):
+        ip = self.get_current_phone_ip()
+        if not ip:
+            return
+        desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+        filename = f"scrcpy_recording_{int(time.time())}.mp4"
+        local_path = os.path.join(desktop, filename)
+        
+        args = ["--record", local_path] + self.scrcpy_presets.get(SCRCPY_PRESET, [])
+        gui_log(f"Launching scrcpy recording: {filename}")
+        threading.Thread(target=start_scrcpy, args=(ip, ADB_PORT, args), daemon=True).start()
+
+    def scan_subnet_for_phone(self):
+        self.scan_subnet_btn.setEnabled(False)
+        self.status_label.setText("Scanning local subnet...")
+        gui_log("Starting fast fallback concurrent subnet scanner...")
+
+        def _scan():
+            local_ip = get_local_ip()
+            if "unknown" in local_ip:
+                QTimer.singleShot(0, lambda: self.status_label.setText("No connection (IP unknown)"))
+                QTimer.singleShot(0, lambda: self.scan_subnet_btn.setEnabled(True))
+                return
+            
+            parts = local_ip.split('.')
+            base = f"{parts[0]}.{parts[1]}.{parts[2]}."
+            
+            threads = []
+            found_ip = []
+
+            def _ping_port(ip):
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.settimeout(0.5)
+                    s.connect((ip, ADB_PORT))
+                    s.close()
+                    found_ip.append(ip)
+                except:
+                    pass
+
+            for i in range(1, 255):
+                t = threading.Thread(target=_ping_port, args=(base + str(i),), daemon=True)
+                threads.append(t)
+                t.start()
+                if i % 50 == 0:
+                    time.sleep(0.05) # mitigate socket overload
+
+            for t in threads:
+                t.join()
+
+            def _done():
+                self.scan_subnet_btn.setEnabled(True)
+                if found_ip:
+                    gui_log(f"Subnet scanner discovered ADB: {found_ip[0]}")
+                    self.handle_heartbeat(found_ip[0])
+                else:
+                    self.status_label.setText("No phones found on subnet.")
+                    gui_log("No ADB ports open on local subnet.")
+            QTimer.singleShot(0, _done)
+
+        threading.Thread(target=_scan, daemon=True).start()
+
+    def handle_heartbeat(self, ip):
+        self.status_label.setText(f"Found phone at {ip}! Launching...")
+        threading.Thread(target=self.connect_and_launch, args=(ip,), daemon=True).start()
+
+    def connect_and_launch(self, ip):
+        preset_args = self.scrcpy_presets.get(SCRCPY_PRESET, [])
+        success = start_scrcpy(ip, ADB_PORT, preset_args)
+        if success:
+            QTimer.singleShot(0, lambda: self.status_label.setText(f"Mirrored successfully! Preset: {SCRCPY_PRESET}"))
+        else:
+            QTimer.singleShot(0, lambda: self.status_label.setText("Mirror connection failed."))
 
     def on_port_changed(self):
         global HEARTBEAT_PORT, DISCOVERY_PORT, ADB_PORT
         HEARTBEAT_PORT = self.heartbeat_port_spin.value()
         DISCOVERY_PORT = self.discovery_port_spin.value()
         ADB_PORT = self.adb_port_spin.value()
-        config = load_config()
         config["heartbeat_port"] = HEARTBEAT_PORT
         config["discovery_port"] = DISCOVERY_PORT
         config["adb_port"] = ADB_PORT
         save_config(config)
-        gui_log(f"Ports updated: Heartbeat={HEARTBEAT_PORT}, Discovery={DISCOVERY_PORT}, ADB={ADB_PORT}")
-        self.add_log(f"Ports updated: Heartbeat={HEARTBEAT_PORT}, Discovery={DISCOVERY_PORT}, ADB={ADB_PORT}")
         if self.worker:
             self.start_heartbeat_mode()
 
@@ -568,119 +647,22 @@ class ScrcpyUltimateLink(QMainWindow):
             self.scrcpy_path_edit.setText(file_path)
             global SCRCPY_BIN
             SCRCPY_BIN = file_path
-            config = load_config()
             config["scrcpy_bin"] = file_path
             save_config(config)
-            gui_log(f"scrcpy binary set to: {file_path}")
-            self.add_log(f"scrcpy binary set to: {file_path}")
-
-    def browse_ip_file(self):
-        global LAST_IP_FILE
-        file_path, _ = QFileDialog.getSaveFileName(self, "Select IP File Location", LAST_IP_FILE, "Text Files (*.txt);;All Files (*)")
-        if file_path:
-            self.ip_file_edit.setText(file_path)
-            LAST_IP_FILE = file_path
-            config = load_config()
-            config["last_ip_file"] = file_path
-            save_config(config)
-            gui_log(f"IP file location set to: {file_path}")
-            self.add_log(f"IP file location set to: {file_path}")
-
-    def on_log_toggled(self, checked):
-        global LOGGING_ENABLED, LOG_FILE
-        LOGGING_ENABLED = checked
-        config = load_config()
-        config["logging_enabled"] = checked
-        save_config(config)
-        gui_log(f"Logging {'enabled' if checked else 'disabled'}")
-        self.add_log(f"Logging {'enabled' if checked else 'disabled'}")
-
-    def on_conn_mode_changed(self, btn_id):
-        global CONNECTION_MODE
-        if btn_id == 0:
-            CONNECTION_MODE = "heartbeat"
-        else:
-            CONNECTION_MODE = "saved_ip"
-        
-        config = load_config()
-        config["connection_mode"] = CONNECTION_MODE
-        save_config(config)
-        gui_log(f"Default connection mode set to: {CONNECTION_MODE}")
-        self.add_log(f"Default connection mode set to: {CONNECTION_MODE}")
-
-    def request_phone_storage_permission(self):
-        """Send command to phone to request storage permissions via heartbeat listener"""
-        device_ip = self.get_current_phone_ip()
-        if not device_ip:
-            QMessageBox.warning(self, "No Device", "No phone connected!\n\nUse Mirror Phone first to discover your device.")
-            return
-        
-        # Try to open the Android settings page for storage permissions
-        try:
-            import subprocess
-            cmd = [
-                "adb", "-s", f"{device_ip}:{ADB_PORT}", "shell",
-                "am", "start", "-a", "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION",
-                "-d", f"package:org.henry.scrcpy.scrcpyheartbeat"
-            ]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-            if result.returncode == 0:
-                QMessageBox.information(self, "Permission Request Sent", 
-                    "Android Settings opened on your phone.\n\n"
-                    "Please:\n"
-                    "1. Find 'Scrcpy Heartbeat' in the list\n"
-                    "2. Toggle 'Allow access to manage all files' ON\n"
-                    "3. Return to the app and tap 'Received Files' to refresh")
-                self.add_log(f"Storage permission request sent to {device_ip}")
-            else:
-                raise Exception(f"ADB error: {result.stderr}")
-        except Exception as e:
-            QMessageBox.warning(self, "Failed", 
-                f"Could not open permission settings:\n{e}\n\n"
-                "Manual method:\n"
-                "1. On phone: Settings → Apps → Scrcpy Heartbeat → Permissions\n"
-                "2. Enable 'Files and media' / 'All files access'")
-            self.add_log(f"Permission request failed: {e}")
 
     def add_log(self, message):
         self.log_area.append(message)
         scrollbar = self.log_area.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
-    def handle_heartbeat(self, ip):
-        self.status_label.setText(f"Found {ip}! Connecting...")
-        self.status_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #00d9a5;")
-        threading.Thread(target=self.connect_and_launch, args=(ip,), daemon=True).start()
-
-    def connect_and_launch(self, ip):
-        def _do_connect():
-            success = start_scrcpy(ip)
-            from PyQt6.QtCore import QTimer
-            if success:
-                QTimer.singleShot(0, lambda: self._on_connect_success(ip))
-            else:
-                QTimer.singleShot(0, lambda: self._on_connect_failed(ip))
-        threading.Thread(target=_do_connect, daemon=True).start()
-
-    def _on_connect_success(self, ip):
-        self.status_label.setText("Launched! Enjoy!")
-        self.status_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #00d9a5;")
-        self.add_log(f"Successfully connected to {ip}")
-
-    def _on_connect_failed(self, ip):
-        self.status_label.setText("Connection failed...")
-        self.status_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #ff6b6b;")
-        self.add_log(f"Failed to connect to {ip}")
-
     def closeEvent(self, event):
+        self.file_server.stop()
         if hasattr(self, 'discovery') and self.discovery:
             self.discovery.stop()
         super().closeEvent(event)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    icon_path = os.path.join(APP_DIR, "android", "icon.png")
-    app.setWindowIcon(QIcon(icon_path))
     window = ScrcpyUltimateLink()
     window.show()
     sys.exit(app.exec())

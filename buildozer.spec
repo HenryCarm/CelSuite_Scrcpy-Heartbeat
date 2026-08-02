@@ -4,7 +4,7 @@ package.name = scrcpyheartbeat
 package.domain = org.henry.scrcpy
 source.dir = android
 source.include_exts = py,png,jpg,kv,atlas
-version = 267.29.1
+version = 268.02.1
 requirements = python3,kivy==2.2.1,requests,pyjnius
 orientation = portrait
 osx.python_version = 3
