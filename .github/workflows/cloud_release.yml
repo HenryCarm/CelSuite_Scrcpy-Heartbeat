@@ -20,6 +20,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Pin Cython for jnius compatibility
+        run: pip install cython==0.29.34
+
       - name: Build APK with Buildozer
         run: yes | buildozer android debug
 
@@ -43,7 +46,7 @@ jobs:
           cache: 'pip'
 
       - name: Install Dependencies
-        run: pip install nuitka PyQt6 requests pyjnius
+        run: pip install nuitka PyQt6 requests pyjnius cython==0.29.34
 
       - name: Compile PC Binary with Nuitka
         run: python3 -m nuitka --standalone --onefile --enable-plugin=pyqt6 --linux-icon=icon.png --output-filename=ScrcpyUltimateLink-Linux-x86_64 main.py
