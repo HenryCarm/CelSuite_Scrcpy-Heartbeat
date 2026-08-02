@@ -22,7 +22,7 @@ from heartbeat_listener import (
 )
 from file_transfer import FileTransferScreen, PullScreen, TCPFileServer
 
-APP_VERSION = "268.02.1"
+APP_VERSION = "268.02.5"
 APP_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 CONFIG_FILE = os.path.join(APP_DIR, "config.json")
 

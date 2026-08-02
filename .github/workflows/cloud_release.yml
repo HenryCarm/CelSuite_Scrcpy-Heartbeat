@@ -28,7 +28,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y openjdk-17-jdk autoconf libtool libtool-bin pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev zip unzip ccache lld
+          sudo apt-get install -y openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev zip unzip ccache lld
 
       - name: Install Buildozer & Cython
         run: |
@@ -36,6 +36,8 @@ jobs:
           pip install buildozer cython==0.29.37
 
       - name: Build APK with Buildozer
+        env:
+          ACLOCAL_PATH: /usr/share/aclocal
         run: yes | buildozer android debug
 
       - name: Upload APK Artifact
