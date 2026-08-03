@@ -293,11 +293,15 @@ class MainScreen(Screen):
         perm_btn = SlopButton(text="[P] Request Storage Permission", background_color=(0.4, 0.2, 0.05, 1), color=ACCENT, font_size=sp(18))
         perm_btn.bind(on_press=self.request_storage_permission)
         
+        adb_btn = SlopButton(text="[W] Re-enable Wireless ADB", background_color=(0.05, 0.3, 0.15, 1), color=ACCENT, font_size=sp(18))
+        adb_btn.bind(on_press=self.enable_wireless_adb)
+        
         btn_layout.add_widget(restart_btn)
         btn_layout.add_widget(settings_btn)
         btn_layout.add_widget(help_btn)
         btn_layout.add_widget(vault_btn)
         btn_layout.add_widget(perm_btn)
+        btn_layout.add_widget(adb_btn)
         
         layout.add_widget(self.label)
         layout.add_widget(self.pc_ip_input)
@@ -397,6 +401,13 @@ class MainScreen(Screen):
             app_log("Opened storage permission settings")
         except Exception as e:
             app_log(f"Failed to open permission settings: {e}")
+
+    def enable_wireless_adb(self, instance):
+        """Manually trigger Shizuku wireless ADB enable sequence"""
+        app_log("Manual wireless ADB enable triggered...")
+        threading.Thread(target=enable_shizuku_wireless_adb, daemon=True).start()
+        self.status_label.text = "Enabling Wireless ADB via Shizuku..."
+        Clock.schedule_once(lambda dt: setattr(self.status_label, 'text', 'Check Shizuku app for permission prompt'), 2)
 
 class SettingsScreen(Screen):
     def __init__(self, **kwargs):
