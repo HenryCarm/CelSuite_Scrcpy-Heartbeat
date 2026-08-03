@@ -4,13 +4,13 @@ package.name = scrcpyheartbeat
 package.domain = org.henry.scrcpy
 source.dir = android
 source.include_exts = py,png,jpg,kv,atlas
-version = 268.03.8
+version = 268.03.9
 requirements = python3,kivy==2.2.1,pyjnius
 orientation = portrait
 osx.python_version = 3
 osx.kivy_version = 1.11.1
 android.archs = arm64-v8a
-android.add_src = src/java
+android.add_src = android/src/java
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,ACCESS_WIFI_STATE,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERNAL_STORAGE,moe.shizuku.manager.permission.API_V23
 android.meta_data = moe.shizuku.client.V3_SUPPORT=true,com.thedjchi.shizuku.client.V3_SUPPORT=true
 android.api = 33
