@@ -30,12 +30,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev zip unzip ccache lld
 
-      - name: Accept Android SDK Licenses for Buildozer
+      - name: Setup Android Licenses & Environment
         run: |
-          # Create buildozer sdk directory and copy pre-accepted runner licenses
-          mkdir -p ~/.android ~/.buildozer/android/platform/android-sdk/licenses
+          mkdir -p ~/.android
           touch ~/.android/repositories.cfg
-          cp -r $ANDROID_HOME/licenses/* ~/.buildozer/android/platform/android-sdk/licenses/ 2>/dev/null || true
 
       - name: Install Buildozer & Cython
         run: |
