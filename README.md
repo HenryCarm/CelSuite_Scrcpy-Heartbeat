@@ -84,8 +84,8 @@ buildozer android debug
 ### Cloud Builds (Recommended)
 
 ```bash
-git tag v268.03.5
-git push origin v268.03.5
+git tag v268.03.6
+git push origin v268.03.6
 ```
 
 GitHub Actions will automatically compile and publish both binaries to the Releases page.
