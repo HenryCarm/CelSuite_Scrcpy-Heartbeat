@@ -1,0 +1,35 @@
+﻿2026-08-03T20:03:39.2678658Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T20:03:39.2680196Z ##[group]Run actions/upload-artifact@v4
+2026-08-03T20:03:39.2680477Z with:
+2026-08-03T20:03:39.2680674Z   name: pc-binary
+2026-08-03T20:03:39.2680907Z   path: ScrcpyUltimateLink-Linux-x86_64
+2026-08-03T20:03:39.2681193Z   if-no-files-found: warn
+2026-08-03T20:03:39.2681637Z   compression-level: 6
+2026-08-03T20:03:39.2681859Z   overwrite: false
+2026-08-03T20:03:39.2682075Z   include-hidden-files: false
+2026-08-03T20:03:39.2682313Z env:
+2026-08-03T20:03:39.2682567Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T20:03:39.2683023Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig
+2026-08-03T20:03:39.2683476Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T20:03:39.2683894Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T20:03:39.2684285Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T20:03:39.2684689Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib
+2026-08-03T20:03:39.2685013Z ##[endgroup]
+2026-08-03T20:03:39.4357990Z (node:18798) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T20:03:39.4358910Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T20:03:39.4416287Z With the provided path, there will be 1 file uploaded
+2026-08-03T20:03:39.4418251Z Artifact name is valid!
+2026-08-03T20:03:39.4418536Z Root directory input is valid!
+2026-08-03T20:03:39.7976314Z Beginning upload of artifact content to blob storage
+2026-08-03T20:03:40.0747638Z (node:18798) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-08-03T20:03:41.0211877Z Uploaded bytes 8388608
+2026-08-03T20:03:41.3854417Z Uploaded bytes 16777216
+2026-08-03T20:03:41.6415183Z Uploaded bytes 25165824
+2026-08-03T20:03:41.8455950Z Uploaded bytes 33554432
+2026-08-03T20:03:42.1186538Z Uploaded bytes 38714077
+2026-08-03T20:03:42.2015371Z Finished uploading artifact content to blob storage!
+2026-08-03T20:03:42.2017500Z SHA256 digest of uploaded artifact zip is d410f68ce21668cab91997de43cef5b9253696005ad7c94fba922ace5dd05659
+2026-08-03T20:03:42.2020438Z Finalizing artifact upload
+2026-08-03T20:03:42.4704759Z Artifact pc-binary.zip successfully finalized. Artifact ID 8869637816
+2026-08-03T20:03:42.4706507Z Artifact pc-binary has been successfully uploaded! Final size is 38714077 bytes. Artifact ID is 8869637816
+2026-08-03T20:03:42.4714481Z Artifact download URL: https://github.com/HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/actions/runs/30848228681/artifacts/8869637816

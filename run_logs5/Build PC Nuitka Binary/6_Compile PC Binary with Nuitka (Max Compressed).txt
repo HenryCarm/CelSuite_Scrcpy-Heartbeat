@@ -1,0 +1,49 @@
+﻿2026-08-03T20:00:38.4889031Z ##[group]Run python3 -m nuitka \
+2026-08-03T20:00:38.4889642Z [36;1mpython3 -m nuitka \[0m
+2026-08-03T20:00:38.4890401Z [36;1m  --standalone \[0m
+2026-08-03T20:00:38.4890840Z [36;1m  --onefile \[0m
+2026-08-03T20:00:38.4891273Z [36;1m  --enable-plugin=pyqt6 \[0m
+2026-08-03T20:00:38.4891784Z [36;1m  --enable-plugin=upx \[0m
+2026-08-03T20:00:38.4892303Z [36;1m  --upx-binary=$(which upx) \[0m
+2026-08-03T20:00:38.4892857Z [36;1m  --noinclude-qt-translations \[0m
+2026-08-03T20:00:38.4896029Z [36;1m  --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PyQt6.QtQml,PyQt6.QtQuick,PyQt6.QtWebEngineCore,PyQt6.QtWebEngineWidgets,PyQt6.Qt3DCore,PyQt6.QtPdf,PyQt6.QtSql,PyQt6.QtMultimedia,PyQt6.QtTest,PyQt6.QtSensors,PyQt6.QtPositioning,PyQt6.QtBluetooth,PyQt6.QtDesigner \[0m
+2026-08-03T20:00:38.4898420Z [36;1m  --linux-icon=icon.png \[0m
+2026-08-03T20:00:38.4898778Z [36;1m  --output-filename=ScrcpyUltimateLink-Linux-x86_64 \[0m
+2026-08-03T20:00:38.4899170Z [36;1m  main.py[0m
+2026-08-03T20:00:38.4943516Z shell: /usr/bin/bash -e {0}
+2026-08-03T20:00:38.4943772Z env:
+2026-08-03T20:00:38.4944049Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T20:00:38.4944519Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig
+2026-08-03T20:00:38.4944972Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T20:00:38.4945362Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T20:00:38.4945751Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T20:00:38.4946137Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib
+2026-08-03T20:00:38.4946460Z ##[endgroup]
+2026-08-03T20:00:39.0513123Z Nuitka-Options: Used command line options:
+2026-08-03T20:00:39.0518167Z Nuitka-Options:   --standalone --onefile --enable-plugin=pyqt6 --enable-plugin=upx --upx-binary=/usr/bin/upx --noinclude-qt-translations --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PyQt6.QtQml,PyQt6.QtQuick,PyQt6.QtWebEngineCore,PyQt6.QtWebEngineWidgets,PyQt6.Qt3DCore,PyQt6.QtPdf,PyQt6.QtSql,PyQt6.QtMultimedia,PyQt6.QtTest,PyQt6.QtSensors,PyQt6.QtPositioning,PyQt6.QtBluetooth,PyQt6.QtDesigner --linux-icon=icon.png --output-filename=ScrcpyUltimateLink-Linux-x86_64 main.py
+2026-08-03T20:00:49.1696904Z Nuitka-Options: Detected static libpython to exist, consider '--static-libpython=yes' for better performance, but errors may happen.
+2026-08-03T20:00:49.1834784Z Nuitka-Plugins:pyqt6: Support for PyQt6 is not perfect, e.g. Qt threading does not work, so prefer PySide6 if you can.
+2026-08-03T20:00:49.2938820Z Nuitka: Starting Python compilation with:
+2026-08-03T20:00:49.2939603Z Nuitka:   Version '4.1.3' on Python 3.12 (flavor 'GitHub Actions Python') commercial grade 'not installed'.
+2026-08-03T20:00:52.2825142Z Nuitka-Onefile:WARNING: Onefile mode cannot compress without 'zstandard' package installed You probably should depend on 'Nuitka[onefile]' rather than 'Nuitka' which among other things depends on it.
+2026-08-03T20:01:34.2067795Z Nuitka-Plugins:anti-bloat: Not including '_json' automatically in order to avoid bloat, but this may cause: may slow down by using fallback implementation.
+2026-08-03T20:01:34.2070243Z Nuitka-Plugins:anti-bloat: Not including '_bisect' automatically in order to avoid bloat, but this may cause: may slow down by using fallback implementation.
+2026-08-03T20:01:34.2101235Z Nuitka-Plugins:pyqt6: Including Qt plugins 'egldeviceintegrations,iconengines,imageformats,platforms,platformthemes,printsupport,tls,wayland-decoration-client,wayland-graphics-integration-client,wayland-shell-integration,xcbglintegrations' below 'PyQt6/Qt6/plugins'.
+2026-08-03T20:01:49.0144137Z Nuitka: Completed Python level compilation and optimization.
+2026-08-03T20:01:49.0145082Z Nuitka: Generating source code for C backend compiler.
+2026-08-03T20:01:49.6565653Z Nuitka: Running data composer tool for optimal constant value handling.
+2026-08-03T20:01:49.7744303Z Nuitka: Running C compilation via Scons.
+2026-08-03T20:01:49.9148470Z Nuitka-Scons: Backend C compiler: gcc (gcc 13).
+2026-08-03T20:02:19.4767791Z Nuitka-Scons: Backend C linking with 38 files (no progress information available for this stage).
+2026-08-03T20:02:20.8738464Z Nuitka-Scons:WARNING: You are not using ccache, re-compilation of identical code will be slower than necessary. Use your OS package manager to install it.
+2026-08-03T20:02:21.8857802Z Nuitka-Onefile: Creating single file from dist folder, this may take a while.
+2026-08-03T20:02:21.8858652Z Nuitka-Onefile: Running bootstrap binary compilation via Scons.
+2026-08-03T20:02:21.9100593Z Nuitka-Onefile:WARNING: Onefile mode cannot compress without 'zstandard' package installed You probably should depend on 'Nuitka[onefile]' rather than 'Nuitka' which among other things depends on it.
+2026-08-03T20:02:22.1083709Z Nuitka-Scons: Onefile C compiler: gcc (gcc 13).
+2026-08-03T20:02:22.5480678Z Nuitka-Scons: Onefile C linking with 2 files (no progress information available for this stage).
+2026-08-03T20:02:23.0586310Z Nuitka-Scons:WARNING: You are not using ccache, re-compilation of identical code will be slower than necessary. Use your OS package manager to install it.
+2026-08-03T20:02:23.0587542Z Nuitka-Plugins:upx: Compressing 'ScrcpyUltimateLink-Linux-x86_64'.
+2026-08-03T20:03:36.8918156Z Nuitka-Onefile: Keeping onefile build directory 'main.onefile-build'.
+2026-08-03T20:03:36.8920708Z Nuitka: Keeping dist folder 'main.dist' for inspection, no need to use it.
+2026-08-03T20:03:36.8921899Z Nuitka: Keeping build directory 'main.build'.
+2026-08-03T20:03:36.8922901Z Nuitka: Successfully created 'ScrcpyUltimateLink-Linux-x86_64'.
