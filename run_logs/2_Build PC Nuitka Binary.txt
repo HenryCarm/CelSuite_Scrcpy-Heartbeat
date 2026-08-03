@@ -1,0 +1,363 @@
+﻿2026-08-03T15:12:51.8523005Z Current runner version: '2.336.0'
+2026-08-03T15:12:51.8546510Z ##[group]Runner Image Provisioner
+2026-08-03T15:12:51.8547470Z Hosted Compute Agent
+2026-08-03T15:12:51.8548067Z Version: 20260707.563
+2026-08-03T15:12:51.8548685Z Commit: 02667638d2b423fbc733a8e32a88b44996a3ba6e
+2026-08-03T15:12:51.8550028Z Build Date: 2026-07-07T19:33:50Z
+2026-08-03T15:12:51.8550739Z Worker ID: {7db72947-92c7-4861-8498-6f808a05cc55}
+2026-08-03T15:12:51.8551518Z Azure Region: westus
+2026-08-03T15:12:51.8552148Z ##[endgroup]
+2026-08-03T15:12:51.8553676Z ##[group]Operating System
+2026-08-03T15:12:51.8554390Z Ubuntu
+2026-08-03T15:12:51.8554947Z 24.04.4
+2026-08-03T15:12:51.8555433Z LTS
+2026-08-03T15:12:51.8556001Z ##[endgroup]
+2026-08-03T15:12:51.8556542Z ##[group]Runner Image
+2026-08-03T15:12:51.8557176Z Image: ubuntu-24.04
+2026-08-03T15:12:51.8557792Z Version: 20260720.247.2
+2026-08-03T15:12:51.8559567Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260720.247/images/ubuntu/Ubuntu2404-Readme.md
+2026-08-03T15:12:51.8561507Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260720.247
+2026-08-03T15:12:51.8562608Z ##[endgroup]
+2026-08-03T15:12:51.8563838Z ##[group]GITHUB_TOKEN Permissions
+2026-08-03T15:12:51.8565939Z Contents: read
+2026-08-03T15:12:51.8566635Z Metadata: read
+2026-08-03T15:12:51.8567187Z Packages: read
+2026-08-03T15:12:51.8567769Z ##[endgroup]
+2026-08-03T15:12:51.8570107Z Secret source: Actions
+2026-08-03T15:12:51.8571234Z Prepare workflow directory
+2026-08-03T15:12:51.8903641Z Prepare all required actions
+2026-08-03T15:12:51.8952674Z Getting action download info
+2026-08-03T15:12:52.2791590Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-08-03T15:12:52.7259946Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-08-03T15:12:52.8056614Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-08-03T15:12:53.0202649Z Complete job name: Build PC Nuitka Binary
+2026-08-03T15:12:53.0952072Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T15:12:53.0961098Z ##[group]Run actions/checkout@v4
+2026-08-03T15:12:53.0961891Z with:
+2026-08-03T15:12:53.0962506Z   repository: HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T15:12:53.0966593Z   token: ***
+2026-08-03T15:12:53.0967026Z   ssh-strict: true
+2026-08-03T15:12:53.0967463Z   ssh-user: git
+2026-08-03T15:12:53.0967916Z   persist-credentials: true
+2026-08-03T15:12:53.0968453Z   clean: true
+2026-08-03T15:12:53.0968929Z   sparse-checkout-cone-mode: true
+2026-08-03T15:12:53.0969657Z   fetch-depth: 1
+2026-08-03T15:12:53.0970094Z   fetch-tags: false
+2026-08-03T15:12:53.0970540Z   show-progress: true
+2026-08-03T15:12:53.0971006Z   lfs: false
+2026-08-03T15:12:53.0971446Z   submodules: false
+2026-08-03T15:12:53.0971886Z   set-safe-directory: true
+2026-08-03T15:12:53.0972383Z   allow-unsafe-pr-checkout: false
+2026-08-03T15:12:53.0973148Z ##[endgroup]
+2026-08-03T15:12:53.1993941Z Syncing repository: HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T15:12:53.1996402Z ##[group]Getting Git version info
+2026-08-03T15:12:53.1997563Z Working directory is '/home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher'
+2026-08-03T15:12:53.1999287Z [command]/usr/bin/git version
+2026-08-03T15:12:53.2108824Z git version 2.54.0
+2026-08-03T15:12:53.2165668Z ##[endgroup]
+2026-08-03T15:12:53.2182468Z Temporarily overriding HOME='/home/runner/work/_temp/accea7ff-9726-4fe9-a3f5-7350bb21be35' before making global git config changes
+2026-08-03T15:12:53.2184932Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-03T15:12:53.2189539Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T15:12:53.2247574Z Deleting the contents of '/home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher'
+2026-08-03T15:12:53.2252115Z ##[group]Initializing the repository
+2026-08-03T15:12:53.2257772Z [command]/usr/bin/git init /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T15:12:53.2373385Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-08-03T15:12:53.2375503Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-08-03T15:12:53.2376895Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-08-03T15:12:53.2377779Z hint: call:
+2026-08-03T15:12:53.2378277Z hint:
+2026-08-03T15:12:53.2378875Z hint: 	git config --global init.defaultBranch <name>
+2026-08-03T15:12:53.2380250Z hint:
+2026-08-03T15:12:53.2381494Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-08-03T15:12:53.2383294Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-08-03T15:12:53.2384820Z hint:
+2026-08-03T15:12:53.2387403Z hint: 	git branch -m <name>
+2026-08-03T15:12:53.2388405Z hint:
+2026-08-03T15:12:53.2390553Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-08-03T15:12:53.2393709Z Initialized empty Git repository in /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/.git/
+2026-08-03T15:12:53.2398494Z [command]/usr/bin/git remote add origin https://github.com/HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T15:12:53.2452167Z ##[endgroup]
+2026-08-03T15:12:53.2454104Z ##[group]Disabling automatic garbage collection
+2026-08-03T15:12:53.2458502Z [command]/usr/bin/git config --local gc.auto 0
+2026-08-03T15:12:53.2490180Z ##[endgroup]
+2026-08-03T15:12:53.2490979Z ##[group]Setting up auth
+2026-08-03T15:12:53.2499971Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-03T15:12:53.2541705Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-03T15:12:53.2936341Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-03T15:12:53.2977214Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-03T15:12:53.3205362Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-03T15:12:53.3242397Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-03T15:12:53.3468470Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-08-03T15:12:53.3507216Z ##[endgroup]
+2026-08-03T15:12:53.3508129Z ##[group]Fetching the repository
+2026-08-03T15:12:53.3517722Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +42538b4f02a95bde9f7d553f95a48f401042264d:refs/tags/v268.03.10
+2026-08-03T15:12:56.4161510Z From https://github.com/HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T15:12:56.4163596Z  * [new ref]         42538b4f02a95bde9f7d553f95a48f401042264d -> v268.03.10
+2026-08-03T15:12:56.4210242Z ##[endgroup]
+2026-08-03T15:12:56.4211122Z ##[group]Determining the checkout info
+2026-08-03T15:12:56.4213133Z ##[endgroup]
+2026-08-03T15:12:56.4221296Z [command]/usr/bin/git sparse-checkout disable
+2026-08-03T15:12:56.4273384Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-08-03T15:12:56.4306126Z ##[group]Checking out the ref
+2026-08-03T15:12:56.4310899Z [command]/usr/bin/git checkout --progress --force refs/tags/v268.03.10
+2026-08-03T15:12:56.4846983Z Note: switching to 'refs/tags/v268.03.10'.
+2026-08-03T15:12:56.4847720Z 
+2026-08-03T15:12:56.4848750Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-08-03T15:12:56.4850360Z changes and commit them, and you can discard any commits you make in this
+2026-08-03T15:12:56.4851870Z state without impacting any branches by switching back to a branch.
+2026-08-03T15:12:56.4852754Z 
+2026-08-03T15:12:56.4853331Z If you want to create a new branch to retain commits you create, you may
+2026-08-03T15:12:56.4854639Z do so (now or later) by using -c with the switch command. Example:
+2026-08-03T15:12:56.4855133Z 
+2026-08-03T15:12:56.4855328Z   git switch -c <new-branch-name>
+2026-08-03T15:12:56.4855647Z 
+2026-08-03T15:12:56.4855853Z Or undo this operation with:
+2026-08-03T15:12:56.4856143Z 
+2026-08-03T15:12:56.4856359Z   git switch -
+2026-08-03T15:12:56.4856606Z 
+2026-08-03T15:12:56.4857026Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-08-03T15:12:56.4857592Z 
+2026-08-03T15:12:56.4858112Z HEAD is now at 42538b4 fix(ci): fix buildozer manifest config causing Value is null error, bump v268.03.10
+2026-08-03T15:12:56.4868835Z ##[endgroup]
+2026-08-03T15:12:56.4911447Z [command]/usr/bin/git log -1 --format=%H
+2026-08-03T15:12:56.4937803Z 42538b4f02a95bde9f7d553f95a48f401042264d
+2026-08-03T15:12:56.5203127Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T15:12:56.5205152Z ##[group]Run actions/setup-python@v5
+2026-08-03T15:12:56.5205487Z with:
+2026-08-03T15:12:56.5205733Z   python-version: 3.12
+2026-08-03T15:12:56.5206006Z   cache: pip
+2026-08-03T15:12:56.5206248Z   check-latest: false
+2026-08-03T15:12:56.5209453Z   token: ***
+2026-08-03T15:12:56.5209754Z   update-environment: true
+2026-08-03T15:12:56.5210047Z   allow-prereleases: false
+2026-08-03T15:12:56.5210323Z   freethreaded: false
+2026-08-03T15:12:56.5210587Z ##[endgroup]
+2026-08-03T15:12:56.6565934Z ##[group]Installed versions
+2026-08-03T15:12:56.6729984Z (node:2253) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T15:12:56.6731709Z Successfully set up CPython (3.12.13)
+2026-08-03T15:12:56.6732461Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T15:12:56.6733397Z ##[endgroup]
+2026-08-03T15:12:56.7378240Z [command]/opt/hostedtoolcache/Python/3.12.13/x64/bin/pip cache dir
+2026-08-03T15:12:57.0944120Z /home/runner/.cache/pip
+2026-08-03T15:12:57.3880149Z Cache hit for: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.13-pip-66c4c383d144545affb44dfeafac74d80589ea4d24b5405984dac7ea8a79ac4e
+2026-08-03T15:12:57.3991277Z (node:2253) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-08-03T15:12:58.7064323Z Received 0 of 105588173 (0.0%), 0.0 MBs/sec
+2026-08-03T15:12:59.7066797Z Received 75497472 of 105588173 (71.5%), 36.0 MBs/sec
+2026-08-03T15:12:59.8887230Z Received 105588173 of 105588173 (100.0%), 46.1 MBs/sec
+2026-08-03T15:12:59.8888905Z Cache Size: ~101 MB (105588173 B)
+2026-08-03T15:12:59.8930861Z [command]/usr/bin/tar -xf /home/runner/work/_temp/119e1d01-1859-4b79-957d-6a87e2dfa9cc/cache.tzst -P -C /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher --use-compress-program unzstd
+2026-08-03T15:13:00.0656971Z Cache restored successfully
+2026-08-03T15:13:00.0713288Z Cache restored from key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.13-pip-86472dba7a60f77cb8fdbd660c64a2a7dd6ca46295fa2d5eca1f7a0f2e1aa6ea
+2026-08-03T15:13:00.0892992Z ##[group]Run sudo apt-get update
+2026-08-03T15:13:00.0893371Z [36;1msudo apt-get update[0m
+2026-08-03T15:13:00.0893692Z [36;1msudo apt-get install -y upx patchelf[0m
+2026-08-03T15:13:00.0945040Z shell: /usr/bin/bash -e {0}
+2026-08-03T15:13:00.0945369Z env:
+2026-08-03T15:13:00.0945704Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:13:00.0946259Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig
+2026-08-03T15:13:00.0946805Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:13:00.0947288Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:13:00.0947767Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:13:00.0948257Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib
+2026-08-03T15:13:00.0948666Z ##[endgroup]
+2026-08-03T15:13:00.1980525Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-08-03T15:13:00.2263133Z Hit:6 https://packages.microsoft.com/repos/azure-cli noble InRelease
+2026-08-03T15:13:00.2277776Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-08-03T15:13:00.2280281Z Get:7 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+2026-08-03T15:13:00.2294445Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+2026-08-03T15:13:00.2326496Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+2026-08-03T15:13:00.2348111Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+2026-08-03T15:13:00.2661291Z Get:8 https://dl.google.com/linux/chrome-stable/deb stable InRelease [2548 B]
+2026-08-03T15:13:00.4012427Z Get:9 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [261 kB]
+2026-08-03T15:13:00.4140981Z Get:10 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [227 kB]
+2026-08-03T15:13:00.4180626Z Get:11 https://packages.microsoft.com/ubuntu/24.04/prod noble/main armhf Packages [11.7 kB]
+2026-08-03T15:13:00.4578862Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1154 kB]
+2026-08-03T15:13:00.4675275Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [278 kB]
+2026-08-03T15:13:00.4683160Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Components [180 kB]
+2026-08-03T15:13:00.4702193Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1680 kB]
+2026-08-03T15:13:00.4806055Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [334 kB]
+2026-08-03T15:13:00.4827163Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [388 kB]
+2026-08-03T15:13:00.4847349Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1367 kB]
+2026-08-03T15:13:00.4929963Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [308 kB]
+2026-08-03T15:13:00.4942838Z Get:20 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [45.4 kB]
+2026-08-03T15:13:00.4955915Z Get:21 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse Translation-en [12.3 kB]
+2026-08-03T15:13:00.5407636Z Get:22 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [940 B]
+2026-08-03T15:13:00.5422899Z Get:23 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [5764 B]
+2026-08-03T15:13:00.5430531Z Get:24 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [31.0 kB]
+2026-08-03T15:13:00.5431996Z Get:25 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [12.6 kB]
+2026-08-03T15:13:00.5993238Z Get:26 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [897 kB]
+2026-08-03T15:13:00.6071966Z Get:27 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [198 kB]
+2026-08-03T15:13:00.6098526Z Get:28 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Components [46.3 kB]
+2026-08-03T15:13:00.6130303Z Get:29 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1199 kB]
+2026-08-03T15:13:00.6230524Z Get:30 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [239 kB]
+2026-08-03T15:13:00.6279952Z Get:31 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Components [76.3 kB]
+2026-08-03T15:13:00.6297482Z Get:32 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [1273 kB]
+2026-08-03T15:13:00.6372346Z Get:33 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [290 kB]
+2026-08-03T15:13:00.6430567Z Get:34 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse amd64 Packages [40.3 kB]
+2026-08-03T15:13:00.6438939Z Get:35 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse Translation-en [10.6 kB]
+2026-08-03T15:13:00.7117165Z Get:36 https://dl.google.com/linux/chrome-stable/deb stable/main amd64 Packages [1411 B]
+2026-08-03T15:13:05.2388743Z Fetched 11.0 MB in 1s (8072 kB/s)
+2026-08-03T15:13:05.9186044Z Reading package lists...
+2026-08-03T15:13:05.9505260Z Reading package lists...
+2026-08-03T15:13:06.1148376Z Building dependency tree...
+2026-08-03T15:13:06.1156033Z Reading state information...
+2026-08-03T15:13:06.2613168Z upx-ucl is already the newest version (4.2.2-3).
+2026-08-03T15:13:06.2614233Z patchelf is already the newest version (0.18.0-1.1build1).
+2026-08-03T15:13:06.2614956Z 0 upgraded, 0 newly installed, 0 to remove and 79 not upgraded.
+2026-08-03T15:13:06.2667993Z ##[group]Run pip install nuitka PyQt6 requests pyjnius
+2026-08-03T15:13:06.2668415Z [36;1mpip install nuitka PyQt6 requests pyjnius[0m
+2026-08-03T15:13:06.2715603Z shell: /usr/bin/bash -e {0}
+2026-08-03T15:13:06.2715860Z env:
+2026-08-03T15:13:06.2716147Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:13:06.2716643Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig
+2026-08-03T15:13:06.2717137Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:13:06.2717565Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:13:06.2718010Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:13:06.2718451Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib
+2026-08-03T15:13:06.2718816Z ##[endgroup]
+2026-08-03T15:13:06.9225515Z Collecting nuitka
+2026-08-03T15:13:06.9227851Z   Using cached nuitka-4.1.3-cp312-cp312-linux_x86_64.whl
+2026-08-03T15:13:06.9548663Z Collecting PyQt6
+2026-08-03T15:13:06.9561317Z   Using cached pyqt6-6.11.0-cp310-abi3-manylinux_2_34_x86_64.whl.metadata (2.1 kB)
+2026-08-03T15:13:06.9761499Z Collecting requests
+2026-08-03T15:13:06.9773654Z   Using cached requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+2026-08-03T15:13:07.0003799Z Collecting pyjnius
+2026-08-03T15:13:07.0016077Z   Using cached pyjnius-1.7.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (13 kB)
+2026-08-03T15:13:07.0354358Z Collecting PyQt6-sip<14,>=13.8 (from PyQt6)
+2026-08-03T15:13:07.0366235Z   Using cached pyqt6_sip-13.12.0-cp312-cp312-manylinux1_x86_64.manylinux_2_5_x86_64.whl.metadata (495 bytes)
+2026-08-03T15:13:07.0542683Z Collecting PyQt6-Qt6<6.12.0,>=6.11.0 (from PyQt6)
+2026-08-03T15:13:07.0555042Z   Using cached pyqt6_qt6-6.11.1-py3-none-manylinux_2_34_x86_64.whl.metadata (535 bytes)
+2026-08-03T15:13:07.1605972Z Collecting charset_normalizer<4,>=2 (from requests)
+2026-08-03T15:13:07.1620346Z   Using cached charset_normalizer-3.4.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (41 kB)
+2026-08-03T15:13:07.1749251Z Collecting idna<4,>=2.5 (from requests)
+2026-08-03T15:13:07.1761624Z   Using cached idna-3.18-py3-none-any.whl.metadata (6.1 kB)
+2026-08-03T15:13:07.1934930Z Collecting urllib3<3,>=1.26 (from requests)
+2026-08-03T15:13:07.1946704Z   Using cached urllib3-2.7.0-py3-none-any.whl.metadata (6.9 kB)
+2026-08-03T15:13:07.2083958Z Collecting certifi>=2023.5.7 (from requests)
+2026-08-03T15:13:07.2095554Z   Using cached certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+2026-08-03T15:13:07.2134245Z Using cached pyqt6-6.11.0-cp310-abi3-manylinux_2_34_x86_64.whl (8.3 MB)
+2026-08-03T15:13:07.2176494Z Using cached pyqt6_qt6-6.11.1-py3-none-manylinux_2_34_x86_64.whl (85.9 MB)
+2026-08-03T15:13:07.2511167Z Using cached pyqt6_sip-13.12.0-cp312-cp312-manylinux1_x86_64.manylinux_2_5_x86_64.whl (299 kB)
+2026-08-03T15:13:07.2522871Z Using cached requests-2.34.2-py3-none-any.whl (73 kB)
+2026-08-03T15:13:07.2534988Z Using cached charset_normalizer-3.4.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (224 kB)
+2026-08-03T15:13:07.2546406Z Using cached idna-3.18-py3-none-any.whl (65 kB)
+2026-08-03T15:13:07.2557838Z Using cached urllib3-2.7.0-py3-none-any.whl (131 kB)
+2026-08-03T15:13:07.2569743Z Using cached pyjnius-1.7.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (1.6 MB)
+2026-08-03T15:13:07.2586619Z Using cached certifi-2026.7.22-py3-none-any.whl (136 kB)
+2026-08-03T15:13:07.3974601Z Installing collected packages: PyQt6-Qt6, pyjnius, nuitka, urllib3, PyQt6-sip, idna, charset_normalizer, certifi, requests, PyQt6
+2026-08-03T15:13:10.8710604Z 
+2026-08-03T15:13:10.8731172Z Successfully installed PyQt6-6.11.0 PyQt6-Qt6-6.11.1 PyQt6-sip-13.12.0 certifi-2026.7.22 charset_normalizer-3.4.9 idna-3.18 nuitka-4.1.3 pyjnius-1.7.0 requests-2.34.2 urllib3-2.7.0
+2026-08-03T15:13:10.8738473Z 
+2026-08-03T15:13:10.8739574Z [notice] A new release of pip is available: 26.1.2 -> 26.2
+2026-08-03T15:13:10.8740592Z [notice] To update, run: pip install --upgrade pip
+2026-08-03T15:13:10.9332484Z ##[group]Run python3 -m nuitka \
+2026-08-03T15:13:10.9332862Z [36;1mpython3 -m nuitka \[0m
+2026-08-03T15:13:10.9333156Z [36;1m  --standalone \[0m
+2026-08-03T15:13:10.9333417Z [36;1m  --onefile \[0m
+2026-08-03T15:13:10.9333679Z [36;1m  --enable-plugin=pyqt6 \[0m
+2026-08-03T15:13:10.9333981Z [36;1m  --enable-plugin=upx \[0m
+2026-08-03T15:13:10.9334300Z [36;1m  --upx-binary=$(which upx) \[0m
+2026-08-03T15:13:10.9334652Z [36;1m  --noinclude-qt-translations \[0m
+2026-08-03T15:13:10.9337407Z [36;1m  --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PyQt6.QtQml,PyQt6.QtQuick,PyQt6.QtWebEngineCore,PyQt6.QtWebEngineWidgets,PyQt6.Qt3DCore,PyQt6.QtPdf,PyQt6.QtSql,PyQt6.QtMultimedia,PyQt6.QtTest,PyQt6.QtSensors,PyQt6.QtPositioning,PyQt6.QtBluetooth,PyQt6.QtDesigner \[0m
+2026-08-03T15:13:10.9340500Z [36;1m  --linux-icon=icon.png \[0m
+2026-08-03T15:13:10.9340925Z [36;1m  --output-filename=ScrcpyUltimateLink-Linux-x86_64 \[0m
+2026-08-03T15:13:10.9341311Z [36;1m  main.py[0m
+2026-08-03T15:13:10.9386682Z shell: /usr/bin/bash -e {0}
+2026-08-03T15:13:10.9386941Z env:
+2026-08-03T15:13:10.9387216Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:13:10.9387697Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig
+2026-08-03T15:13:10.9388168Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:13:10.9388579Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:13:10.9389218Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:13:10.9389641Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib
+2026-08-03T15:13:10.9389983Z ##[endgroup]
+2026-08-03T15:13:11.6305847Z Nuitka-Options: Used command line options:
+2026-08-03T15:13:11.6312574Z Nuitka-Options:   --standalone --onefile --enable-plugin=pyqt6 --enable-plugin=upx --upx-binary=/usr/bin/upx --noinclude-qt-translations --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PyQt6.QtQml,PyQt6.QtQuick,PyQt6.QtWebEngineCore,PyQt6.QtWebEngineWidgets,PyQt6.Qt3DCore,PyQt6.QtPdf,PyQt6.QtSql,PyQt6.QtMultimedia,PyQt6.QtTest,PyQt6.QtSensors,PyQt6.QtPositioning,PyQt6.QtBluetooth,PyQt6.QtDesigner --linux-icon=icon.png --output-filename=ScrcpyUltimateLink-Linux-x86_64 main.py
+2026-08-03T15:13:15.0240225Z Nuitka-Options: Detected static libpython to exist, consider '--static-libpython=yes' for better performance, but errors may happen.
+2026-08-03T15:13:15.0376640Z Nuitka-Plugins:pyqt6: Support for PyQt6 is not perfect, e.g. Qt threading does not work, so prefer PySide6 if you can.
+2026-08-03T15:13:15.1456055Z Nuitka: Starting Python compilation with:
+2026-08-03T15:13:15.1457032Z Nuitka:   Version '4.1.3' on Python 3.12 (flavor 'GitHub Actions Python') commercial grade 'not installed'.
+2026-08-03T15:13:18.1201182Z Nuitka-Onefile:WARNING: Onefile mode cannot compress without 'zstandard' package installed You probably should depend on 'Nuitka[onefile]' rather than 'Nuitka' which among other things depends on it.
+2026-08-03T15:13:59.1841670Z Nuitka-Plugins:anti-bloat: Not including '_json' automatically in order to avoid bloat, but this may cause: may slow down by using fallback implementation.
+2026-08-03T15:13:59.1844183Z Nuitka-Plugins:anti-bloat: Not including '_bisect' automatically in order to avoid bloat, but this may cause: may slow down by using fallback implementation.
+2026-08-03T15:13:59.1880568Z Nuitka-Plugins:pyqt6: Including Qt plugins 'egldeviceintegrations,iconengines,imageformats,platforms,platformthemes,printsupport,tls,wayland-decoration-client,wayland-graphics-integration-client,wayland-shell-integration,xcbglintegrations' below 'PyQt6/Qt6/plugins'.
+2026-08-03T15:14:13.5405055Z Nuitka: Completed Python level compilation and optimization.
+2026-08-03T15:14:13.5405703Z Nuitka: Generating source code for C backend compiler.
+2026-08-03T15:14:14.1616760Z Nuitka: Running data composer tool for optimal constant value handling.
+2026-08-03T15:14:14.2786507Z Nuitka: Running C compilation via Scons.
+2026-08-03T15:14:14.4158385Z Nuitka-Scons: Backend C compiler: gcc (gcc 13).
+2026-08-03T15:14:43.4606368Z Nuitka-Scons: Backend C linking with 38 files (no progress information available for this stage).
+2026-08-03T15:14:44.2638538Z Nuitka-Scons:WARNING: You are not using ccache, re-compilation of identical code will be slower than necessary. Use your OS package manager to install it.
+2026-08-03T15:14:45.2152435Z Nuitka-Onefile: Creating single file from dist folder, this may take a while.
+2026-08-03T15:14:45.2153425Z Nuitka-Onefile: Running bootstrap binary compilation via Scons.
+2026-08-03T15:14:45.2392256Z Nuitka-Onefile:WARNING: Onefile mode cannot compress without 'zstandard' package installed You probably should depend on 'Nuitka[onefile]' rather than 'Nuitka' which among other things depends on it.
+2026-08-03T15:14:45.4317835Z Nuitka-Scons: Onefile C compiler: gcc (gcc 13).
+2026-08-03T15:14:45.8570490Z Nuitka-Scons: Onefile C linking with 2 files (no progress information available for this stage).
+2026-08-03T15:14:46.3724366Z Nuitka-Scons:WARNING: You are not using ccache, re-compilation of identical code will be slower than necessary. Use your OS package manager to install it.
+2026-08-03T15:14:46.3725813Z Nuitka-Plugins:upx: Compressing 'ScrcpyUltimateLink-Linux-x86_64'.
+2026-08-03T15:15:53.9734078Z Nuitka-Onefile: Keeping onefile build directory 'main.onefile-build'.
+2026-08-03T15:15:53.9734929Z Nuitka: Keeping dist folder 'main.dist' for inspection, no need to use it.
+2026-08-03T15:15:53.9735690Z Nuitka: Keeping build directory 'main.build'.
+2026-08-03T15:15:53.9737877Z Nuitka: Successfully created 'ScrcpyUltimateLink-Linux-x86_64'.
+2026-08-03T15:15:56.1505296Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T15:15:56.1506583Z ##[group]Run actions/upload-artifact@v4
+2026-08-03T15:15:56.1506859Z with:
+2026-08-03T15:15:56.1507049Z   name: pc-binary
+2026-08-03T15:15:56.1507283Z   path: ScrcpyUltimateLink-Linux-x86_64
+2026-08-03T15:15:56.1507564Z   if-no-files-found: warn
+2026-08-03T15:15:56.1507973Z   compression-level: 6
+2026-08-03T15:15:56.1508186Z   overwrite: false
+2026-08-03T15:15:56.1508396Z   include-hidden-files: false
+2026-08-03T15:15:56.1508623Z env:
+2026-08-03T15:15:56.1508873Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:15:56.1509498Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig
+2026-08-03T15:15:56.1509947Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:15:56.1510321Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:15:56.1510697Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T15:15:56.1511079Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib
+2026-08-03T15:15:56.1511407Z ##[endgroup]
+2026-08-03T15:15:56.3224247Z (node:18815) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T15:15:56.3225965Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T15:15:56.3328308Z With the provided path, there will be 1 file uploaded
+2026-08-03T15:15:56.3351280Z Artifact name is valid!
+2026-08-03T15:15:56.3386713Z Root directory input is valid!
+2026-08-03T15:15:56.6698179Z Beginning upload of artifact content to blob storage
+2026-08-03T15:15:56.9474718Z (node:18815) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-08-03T15:15:57.9871513Z Uploaded bytes 8388608
+2026-08-03T15:15:58.2958569Z Uploaded bytes 16777216
+2026-08-03T15:15:58.4869545Z Uploaded bytes 25165824
+2026-08-03T15:15:58.6497259Z Uploaded bytes 33554432
+2026-08-03T15:15:58.9410529Z Uploaded bytes 38716245
+2026-08-03T15:15:59.0233768Z Finished uploading artifact content to blob storage!
+2026-08-03T15:15:59.0235534Z SHA256 digest of uploaded artifact zip is dced3096f41eef60ec4e4c0b491c1e2a1c66fe25591032b18c419af3e772f8c1
+2026-08-03T15:15:59.0237648Z Finalizing artifact upload
+2026-08-03T15:15:59.2577391Z Artifact pc-binary.zip successfully finalized. Artifact ID 8861118207
+2026-08-03T15:15:59.2578980Z Artifact pc-binary has been successfully uploaded! Final size is 38716245 bytes. Artifact ID is 8861118207
+2026-08-03T15:15:59.2586333Z Artifact download URL: https://github.com/HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/actions/runs/30826416166/artifacts/8861118207
+2026-08-03T15:15:59.2797520Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T15:15:59.2798783Z Post job cleanup.
+2026-08-03T15:15:59.4016540Z (node:18827) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T15:15:59.4017541Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T15:15:59.4248362Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher --files-from manifest.txt --use-compress-program zstdmt
+2026-08-03T15:15:59.9147914Z (node:18827) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-08-03T15:16:00.9061662Z Sent 18939904 of 105588217 (17.9%), 18.1 MBs/sec
+2026-08-03T15:16:01.9071950Z Sent 75366400 of 105588217 (71.4%), 35.9 MBs/sec
+2026-08-03T15:16:02.7416397Z Sent 105588217 of 105588217 (100.0%), 35.5 MBs/sec
+2026-08-03T15:16:03.0633526Z Cache saved with the key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.13-pip-66c4c383d144545affb44dfeafac74d80589ea4d24b5405984dac7ea8a79ac4e
+2026-08-03T15:16:03.0794705Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T15:16:03.0796137Z Post job cleanup.
+2026-08-03T15:16:03.1679530Z [command]/usr/bin/git version
+2026-08-03T15:16:03.1724947Z git version 2.54.0
+2026-08-03T15:16:03.1764254Z Temporarily overriding HOME='/home/runner/work/_temp/239e3efd-c65f-40f2-93e8-78b6abefb5ac' before making global git config changes
+2026-08-03T15:16:03.1765737Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-03T15:16:03.1778547Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T15:16:03.1809890Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-03T15:16:03.1845181Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-03T15:16:03.2101653Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-03T15:16:03.2131464Z http.https://github.com/.extraheader
+2026-08-03T15:16:03.2144420Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-08-03T15:16:03.2178712Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-03T15:16:03.2474969Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-03T15:16:03.2519894Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-03T15:16:03.2912877Z Cleaning up orphan processes
+2026-08-03T15:16:03.3336978Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -4,7 +4,7 @@ package.name = scrcpyheartbeat
 package.domain = org.henry.scrcpy
 source.dir = android
 source.include_exts = py,png,jpg,kv,atlas
-version = 268.03.10
+version = 268.03.11
 requirements = python3,kivy==2.2.1,pyjnius
 orientation = portrait
 osx.python_version = 3
@@ -31,5 +31,5 @@ android.exclude_patterns = *.pyc,*.pyo,*.pyd,*.so,*.dylib,*.dll,*.a,*.lib
 android.exclude_modules = tkinter,test,unittest,doctest,pdb,profile,cProfile,lib2to3,distutils,venv,ensurepip
 
 # Quick Settings Tile service
-android.extra_manifest_application_arguments = <service android:name="org.henry.scrcpy.ScrcpyTileService" android:label="Scrcpy Heartbeat" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE" android:exported="true"><intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter></service>
+android.extra_manifest_application_arguments = extra_manifest.xml
 android.manifest_placeholders = dummy=1

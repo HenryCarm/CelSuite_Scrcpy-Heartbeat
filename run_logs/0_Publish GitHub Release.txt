@@ -1,0 +1,98 @@
+﻿2026-08-03T15:23:10.0617554Z Current runner version: '2.336.0'
+2026-08-03T15:23:10.0650557Z ##[group]Runner Image Provisioner
+2026-08-03T15:23:10.0651847Z Hosted Compute Agent
+2026-08-03T15:23:10.0652996Z Version: 20260707.563
+2026-08-03T15:23:10.0654014Z Commit: 02667638d2b423fbc733a8e32a88b44996a3ba6e
+2026-08-03T15:23:10.0655189Z Build Date: 2026-07-07T19:33:50Z
+2026-08-03T15:23:10.0656273Z Worker ID: {79ce7da7-a44c-4393-b98a-7f794bf71eb6}
+2026-08-03T15:23:10.0657434Z Azure Region: eastus
+2026-08-03T15:23:10.0658284Z ##[endgroup]
+2026-08-03T15:23:10.0660907Z ##[group]Operating System
+2026-08-03T15:23:10.0661840Z Ubuntu
+2026-08-03T15:23:10.0662866Z 24.04.4
+2026-08-03T15:23:10.0663702Z LTS
+2026-08-03T15:23:10.0664449Z ##[endgroup]
+2026-08-03T15:23:10.0665357Z ##[group]Runner Image
+2026-08-03T15:23:10.0666247Z Image: ubuntu-24.04
+2026-08-03T15:23:10.0667050Z Version: 20260720.247.2
+2026-08-03T15:23:10.0669134Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260720.247/images/ubuntu/Ubuntu2404-Readme.md
+2026-08-03T15:23:10.0672244Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260720.247
+2026-08-03T15:23:10.0674058Z ##[endgroup]
+2026-08-03T15:23:10.0675739Z ##[group]GITHUB_TOKEN Permissions
+2026-08-03T15:23:10.0678830Z Contents: write
+2026-08-03T15:23:10.0679706Z Metadata: read
+2026-08-03T15:23:10.0680492Z ##[endgroup]
+2026-08-03T15:23:10.0683708Z Secret source: Actions
+2026-08-03T15:23:10.0685724Z Prepare workflow directory
+2026-08-03T15:23:10.1144450Z Prepare all required actions
+2026-08-03T15:23:10.1210948Z Getting action download info
+2026-08-03T15:23:10.3002314Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+2026-08-03T15:23:10.5753306Z Download action repository 'softprops/action-gh-release@v2' (SHA:3bb12739c298aeb8a4eeaf626c5b8d85266b0e65)
+2026-08-03T15:23:10.7693111Z Complete job name: Publish GitHub Release
+2026-08-03T15:23:10.8378409Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T15:23:10.8387629Z ##[group]Run actions/download-artifact@v4
+2026-08-03T15:23:10.8388590Z with:
+2026-08-03T15:23:10.8389024Z   path: ./release-assets
+2026-08-03T15:23:10.8389528Z   merge-multiple: false
+2026-08-03T15:23:10.8390198Z   repository: HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T15:23:10.8390880Z   run-id: 30826416166
+2026-08-03T15:23:10.8391468Z ##[endgroup]
+2026-08-03T15:23:11.0075769Z (node:2118) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T15:23:11.0077376Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T15:23:11.0826166Z Found 1 artifact(s)
+2026-08-03T15:23:11.0828447Z No input name, artifact-ids or pattern filtered specified, downloading all artifacts
+2026-08-03T15:23:11.0830352Z An extra directory with the artifact name will be created for each download
+2026-08-03T15:23:11.0831846Z Preparing to download the following artifacts:
+2026-08-03T15:23:11.0834647Z - pc-binary (ID: 8861118207, Size: 38716245, Expected Digest: sha256:dced3096f41eef60ec4e4c0b491c1e2a1c66fe25591032b18c419af3e772f8c1)
+2026-08-03T15:23:11.1637699Z Redirecting to blob download url: https://productionresultssa11.blob.core.windows.net/actions-results/663937bf-f1c5-4eb8-ba3e-4f2542cebc47/workflow-job-run-7820e6ae-6695-5c44-b9d0-84186492eaee/artifacts/9b16785a7aa440a7d61ca27435f8e0f204e7c416f70b8d85c661a7c69d714c74.zip
+2026-08-03T15:23:11.1640513Z Starting download of artifact to: /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/release-assets/pc-binary
+2026-08-03T15:23:11.2450252Z (node:2118) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-08-03T15:23:11.7133741Z SHA256 digest of downloaded artifact is dced3096f41eef60ec4e4c0b491c1e2a1c66fe25591032b18c419af3e772f8c1
+2026-08-03T15:23:11.7136089Z Artifact download completed successfully.
+2026-08-03T15:23:11.7137327Z Total of 1 artifact(s) downloaded
+2026-08-03T15:23:11.7138673Z Download artifact has finished successfully
+2026-08-03T15:23:11.7371303Z ##[group]Run ls -la -R ./release-assets || true
+2026-08-03T15:23:11.7372162Z [36;1mls -la -R ./release-assets || true[0m
+2026-08-03T15:23:11.7426072Z shell: /usr/bin/bash -e {0}
+2026-08-03T15:23:11.7426693Z ##[endgroup]
+2026-08-03T15:23:11.7536837Z ./release-assets:
+2026-08-03T15:23:11.7537643Z total 12
+2026-08-03T15:23:11.7538183Z drwxr-xr-x 3 runner runner 4096 Aug  3 15:23 .
+2026-08-03T15:23:11.7538930Z drwxr-xr-x 3 runner runner 4096 Aug  3 15:23 ..
+2026-08-03T15:23:11.7540213Z drwxr-xr-x 2 runner runner 4096 Aug  3 15:23 pc-binary
+2026-08-03T15:23:11.7541037Z 
+2026-08-03T15:23:11.7541465Z ./release-assets/pc-binary:
+2026-08-03T15:23:11.7542609Z total 37808
+2026-08-03T15:23:11.7543541Z drwxr-xr-x 2 runner runner     4096 Aug  3 15:23 .
+2026-08-03T15:23:11.7544785Z drwxr-xr-x 3 runner runner     4096 Aug  3 15:23 ..
+2026-08-03T15:23:11.7546023Z -rw-r--r-- 1 runner runner 38705544 Aug  3 15:23 ScrcpyUltimateLink-Linux-x86_64
+2026-08-03T15:23:11.7713265Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T15:23:11.7716590Z ##[group]Run softprops/action-gh-release@v2
+2026-08-03T15:23:11.7717240Z with:
+2026-08-03T15:23:11.7717685Z   tag_name: v268.03.10
+2026-08-03T15:23:11.7718221Z   name: Scrcpy Ultimate Link v268.03.10
+2026-08-03T15:23:11.7720681Z   body: ## Automated Cloud Release
+Both the PC binary and Android APK were automatically compiled in the cloud by GitHub Actions!
+
+### Download Instructions:
+- **PC (Linux):** Download `ScrcpyUltimateLink-Linux-x86_64`, give it execute permissions (`chmod +x`), and run it!
+- **Android:** Download the `.apk` file and install it on your phone!
+
+2026-08-03T15:23:11.7723593Z   files: ./release-assets/android-apk/*.apk
+./release-assets/pc-binary/*
+
+2026-08-03T15:23:11.7724407Z   overwrite_files: true
+2026-08-03T15:23:11.7728814Z   token: ***
+2026-08-03T15:23:11.7729273Z env:
+2026-08-03T15:23:11.7733482Z   GITHUB_TOKEN: ***
+2026-08-03T15:23:11.7733999Z ##[endgroup]
+2026-08-03T15:23:11.8837254Z 🤔 Pattern './release-assets/android-apk/*.apk' does not match any files.
+2026-08-03T15:23:12.0594296Z Found release Scrcpy Ultimate Link v268.03.10 (with id=364313551)
+2026-08-03T15:23:12.3754797Z ♻️ Deleting previously uploaded asset ScrcpyUltimateLink-Linux-x86_64...
+2026-08-03T15:23:12.5918911Z ⬆️ Uploading ScrcpyUltimateLink-Linux-x86_64...
+2026-08-03T15:23:14.3245397Z ✅ Uploaded ScrcpyUltimateLink-Linux-x86_64
+2026-08-03T15:23:14.3246596Z Finalizing release...
+2026-08-03T15:23:14.3247143Z Getting assets list...
+2026-08-03T15:23:14.4530133Z 🎉 Release ready at https://github.com/HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/releases/tag/v268.03.10
+2026-08-03T15:23:14.4715666Z Cleaning up orphan processes
+2026-08-03T15:23:14.5090324Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/download-artifact@v4, softprops/action-gh-release@v2. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
