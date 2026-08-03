@@ -72,17 +72,19 @@ jobs:
   publish-release:
     name: Publish GitHub Release
     needs: [build-android, build-pc]
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           path: ./release-assets
 
       - name: Display downloaded assets
-        run: ls -la -R ./release-assets
+        run: ls -la -R ./release-assets || true
 
       - name: Create GitHub Release & Attach Binaries
         uses: softprops/action-gh-release@v2

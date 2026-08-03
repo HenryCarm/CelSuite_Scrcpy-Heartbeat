@@ -2,5 +2,5 @@
 ScrcpyUltimateLink — Wireless Screen Mirroring & Control Suite
 """
 
-__version__ = "268.03.1"
+__version__ = "268.03.3"
 __app_name__ = "Scrcpy Ultimate Link"
