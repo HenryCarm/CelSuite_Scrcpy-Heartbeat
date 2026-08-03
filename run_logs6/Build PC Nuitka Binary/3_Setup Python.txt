@@ -1,0 +1,27 @@
+﻿2026-08-03T20:22:14.6165407Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T20:22:14.6167254Z ##[group]Run actions/setup-python@v5
+2026-08-03T20:22:14.6167573Z with:
+2026-08-03T20:22:14.6167838Z   python-version: 3.12
+2026-08-03T20:22:14.6168098Z   cache: pip
+2026-08-03T20:22:14.6168357Z   check-latest: false
+2026-08-03T20:22:14.6170729Z   token: ***
+2026-08-03T20:22:14.6170991Z   update-environment: true
+2026-08-03T20:22:14.6171293Z   allow-prereleases: false
+2026-08-03T20:22:14.6171572Z   freethreaded: false
+2026-08-03T20:22:14.6171822Z ##[endgroup]
+2026-08-03T20:22:14.7458174Z ##[group]Installed versions
+2026-08-03T20:22:14.7568911Z (node:2261) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T20:22:14.7570057Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T20:22:14.7570881Z Successfully set up CPython (3.12.13)
+2026-08-03T20:22:14.7571458Z ##[endgroup]
+2026-08-03T20:22:14.8244147Z [command]/opt/hostedtoolcache/Python/3.12.13/x64/bin/pip cache dir
+2026-08-03T20:22:15.1880816Z /home/runner/.cache/pip
+2026-08-03T20:22:15.4666303Z Cache hit for: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.13-pip-66c4c383d144545affb44dfeafac74d80589ea4d24b5405984dac7ea8a79ac4e
+2026-08-03T20:22:15.4778229Z (node:2261) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-08-03T20:22:16.7843354Z Received 0 of 105588173 (0.0%), 0.0 MBs/sec
+2026-08-03T20:22:17.7903541Z Received 97199565 of 105588173 (92.1%), 46.3 MBs/sec
+2026-08-03T20:22:17.8615215Z Received 105588173 of 105588173 (100.0%), 48.5 MBs/sec
+2026-08-03T20:22:17.8616305Z Cache Size: ~101 MB (105588173 B)
+2026-08-03T20:22:17.8660073Z [command]/usr/bin/tar -xf /home/runner/work/_temp/065ab532-e73a-4055-9875-d056483ef8a9/cache.tzst -P -C /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher --use-compress-program unzstd
+2026-08-03T20:22:18.0297186Z Cache restored successfully
+2026-08-03T20:22:18.0350793Z Cache restored from key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.13-pip-86472dba7a60f77cb8fdbd660c64a2a7dd6ca46295fa2d5eca1f7a0f2e1aa6ea

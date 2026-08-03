@@ -1,0 +1,46 @@
+﻿2026-08-03T20:22:23.5368694Z ##[group]Run pip install nuitka PyQt6 requests pyjnius
+2026-08-03T20:22:23.5369129Z [36;1mpip install nuitka PyQt6 requests pyjnius[0m
+2026-08-03T20:22:23.5415716Z shell: /usr/bin/bash -e {0}
+2026-08-03T20:22:23.5415971Z env:
+2026-08-03T20:22:23.5416241Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T20:22:23.5416685Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib/pkgconfig
+2026-08-03T20:22:23.5417144Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T20:22:23.5417534Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T20:22:23.5417934Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.13/x64
+2026-08-03T20:22:23.5418335Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.13/x64/lib
+2026-08-03T20:22:23.5418659Z ##[endgroup]
+2026-08-03T20:22:24.2254991Z Collecting nuitka
+2026-08-03T20:22:24.2256659Z   Using cached nuitka-4.1.3-cp312-cp312-linux_x86_64.whl
+2026-08-03T20:22:24.2617394Z Collecting PyQt6
+2026-08-03T20:22:24.2630785Z   Using cached pyqt6-6.11.0-cp310-abi3-manylinux_2_34_x86_64.whl.metadata (2.1 kB)
+2026-08-03T20:22:24.2827875Z Collecting requests
+2026-08-03T20:22:24.2840423Z   Using cached requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+2026-08-03T20:22:24.3070875Z Collecting pyjnius
+2026-08-03T20:22:24.3083836Z   Using cached pyjnius-1.7.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (13 kB)
+2026-08-03T20:22:24.3361349Z Collecting PyQt6-sip<14,>=13.8 (from PyQt6)
+2026-08-03T20:22:24.3374252Z   Using cached pyqt6_sip-13.12.0-cp312-cp312-manylinux1_x86_64.manylinux_2_5_x86_64.whl.metadata (495 bytes)
+2026-08-03T20:22:24.3516715Z Collecting PyQt6-Qt6<6.12.0,>=6.11.0 (from PyQt6)
+2026-08-03T20:22:24.3528880Z   Using cached pyqt6_qt6-6.11.1-py3-none-manylinux_2_34_x86_64.whl.metadata (535 bytes)
+2026-08-03T20:22:24.4569018Z Collecting charset_normalizer<4,>=2 (from requests)
+2026-08-03T20:22:24.4583406Z   Using cached charset_normalizer-3.4.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (41 kB)
+2026-08-03T20:22:24.4716210Z Collecting idna<4,>=2.5 (from requests)
+2026-08-03T20:22:24.4727929Z   Using cached idna-3.18-py3-none-any.whl.metadata (6.1 kB)
+2026-08-03T20:22:24.4896064Z Collecting urllib3<3,>=1.26 (from requests)
+2026-08-03T20:22:24.4908038Z   Using cached urllib3-2.7.0-py3-none-any.whl.metadata (6.9 kB)
+2026-08-03T20:22:24.5048548Z Collecting certifi>=2023.5.7 (from requests)
+2026-08-03T20:22:24.5060834Z   Using cached certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+2026-08-03T20:22:24.5101062Z Using cached pyqt6-6.11.0-cp310-abi3-manylinux_2_34_x86_64.whl (8.3 MB)
+2026-08-03T20:22:24.5145237Z Using cached pyqt6_qt6-6.11.1-py3-none-manylinux_2_34_x86_64.whl (85.9 MB)
+2026-08-03T20:22:24.5469996Z Using cached pyqt6_sip-13.12.0-cp312-cp312-manylinux1_x86_64.manylinux_2_5_x86_64.whl (299 kB)
+2026-08-03T20:22:24.5481305Z Using cached requests-2.34.2-py3-none-any.whl (73 kB)
+2026-08-03T20:22:24.5493688Z Using cached charset_normalizer-3.4.9-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (224 kB)
+2026-08-03T20:22:24.5505210Z Using cached idna-3.18-py3-none-any.whl (65 kB)
+2026-08-03T20:22:24.5517319Z Using cached urllib3-2.7.0-py3-none-any.whl (131 kB)
+2026-08-03T20:22:24.5529934Z Using cached pyjnius-1.7.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (1.6 MB)
+2026-08-03T20:22:24.5547121Z Using cached certifi-2026.7.22-py3-none-any.whl (136 kB)
+2026-08-03T20:22:24.9800629Z Installing collected packages: PyQt6-Qt6, pyjnius, nuitka, urllib3, PyQt6-sip, idna, charset_normalizer, certifi, requests, PyQt6
+2026-08-03T20:22:28.4393803Z 
+2026-08-03T20:22:28.4410713Z Successfully installed PyQt6-6.11.0 PyQt6-Qt6-6.11.1 PyQt6-sip-13.12.0 certifi-2026.7.22 charset_normalizer-3.4.9 idna-3.18 nuitka-4.1.3 pyjnius-1.7.0 requests-2.34.2 urllib3-2.7.0
+2026-08-03T20:22:28.4420072Z 
+2026-08-03T20:22:28.4420500Z [notice] A new release of pip is available: 26.1.2 -> 26.2
+2026-08-03T20:22:28.4421593Z [notice] To update, run: pip install --upgrade pip

@@ -1,0 +1,90 @@
+﻿2026-08-03T20:22:10.4121573Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T20:22:10.4130668Z ##[group]Run actions/checkout@v4
+2026-08-03T20:22:10.4131424Z with:
+2026-08-03T20:22:10.4132054Z   repository: HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T20:22:10.4136060Z   token: ***
+2026-08-03T20:22:10.4136500Z   ssh-strict: true
+2026-08-03T20:22:10.4136945Z   ssh-user: git
+2026-08-03T20:22:10.4137398Z   persist-credentials: true
+2026-08-03T20:22:10.4137885Z   clean: true
+2026-08-03T20:22:10.4138339Z   sparse-checkout-cone-mode: true
+2026-08-03T20:22:10.4138870Z   fetch-depth: 1
+2026-08-03T20:22:10.4139303Z   fetch-tags: false
+2026-08-03T20:22:10.4139767Z   show-progress: true
+2026-08-03T20:22:10.4140247Z   lfs: false
+2026-08-03T20:22:10.4140658Z   submodules: false
+2026-08-03T20:22:10.4141140Z   set-safe-directory: true
+2026-08-03T20:22:10.4141652Z   allow-unsafe-pr-checkout: false
+2026-08-03T20:22:10.4142594Z ##[endgroup]
+2026-08-03T20:22:10.5154877Z Syncing repository: HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T20:22:10.5157775Z ##[group]Getting Git version info
+2026-08-03T20:22:10.5159581Z Working directory is '/home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher'
+2026-08-03T20:22:10.5161922Z [command]/usr/bin/git version
+2026-08-03T20:22:10.5229694Z git version 2.54.0
+2026-08-03T20:22:10.5254264Z ##[endgroup]
+2026-08-03T20:22:10.5283611Z Temporarily overriding HOME='/home/runner/work/_temp/78b8b8e0-e3dc-433b-91f9-03f1aa0edc0f' before making global git config changes
+2026-08-03T20:22:10.5286267Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-03T20:22:10.5288817Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T20:22:10.5344972Z Deleting the contents of '/home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher'
+2026-08-03T20:22:10.5348280Z ##[group]Initializing the repository
+2026-08-03T20:22:10.5353326Z [command]/usr/bin/git init /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T20:22:10.5475112Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-08-03T20:22:10.5476615Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-08-03T20:22:10.5477618Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-08-03T20:22:10.5478380Z hint: call:
+2026-08-03T20:22:10.5478786Z hint:
+2026-08-03T20:22:10.5479625Z hint: 	git config --global init.defaultBranch <name>
+2026-08-03T20:22:10.5480705Z hint:
+2026-08-03T20:22:10.5481697Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-08-03T20:22:10.5483569Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-08-03T20:22:10.5484582Z hint:
+2026-08-03T20:22:10.5485332Z hint: 	git branch -m <name>
+2026-08-03T20:22:10.5485858Z hint:
+2026-08-03T20:22:10.5486786Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-08-03T20:22:10.5489166Z Initialized empty Git repository in /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/.git/
+2026-08-03T20:22:10.5496924Z [command]/usr/bin/git remote add origin https://github.com/HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T20:22:10.5544154Z ##[endgroup]
+2026-08-03T20:22:10.5545302Z ##[group]Disabling automatic garbage collection
+2026-08-03T20:22:10.5547874Z [command]/usr/bin/git config --local gc.auto 0
+2026-08-03T20:22:10.5580394Z ##[endgroup]
+2026-08-03T20:22:10.5581446Z ##[group]Setting up auth
+2026-08-03T20:22:10.5588350Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-03T20:22:10.5629412Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-03T20:22:10.6065594Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-03T20:22:10.6101275Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-03T20:22:10.6328097Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-03T20:22:10.6364045Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-03T20:22:10.6603413Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-08-03T20:22:10.6646472Z ##[endgroup]
+2026-08-03T20:22:10.6647784Z ##[group]Fetching the repository
+2026-08-03T20:22:10.6661858Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +4896ad93f186222e1f8799f3b44c0cfc1e4127bc:refs/tags/v268.03.15
+2026-08-03T20:22:14.4068028Z From https://github.com/HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T20:22:14.4069355Z  * [new ref]         4896ad93f186222e1f8799f3b44c0cfc1e4127bc -> v268.03.15
+2026-08-03T20:22:14.4106603Z ##[endgroup]
+2026-08-03T20:22:14.4107482Z ##[group]Determining the checkout info
+2026-08-03T20:22:14.4109963Z ##[endgroup]
+2026-08-03T20:22:14.4116676Z [command]/usr/bin/git sparse-checkout disable
+2026-08-03T20:22:14.4167487Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-08-03T20:22:14.4198138Z ##[group]Checking out the ref
+2026-08-03T20:22:14.4202755Z [command]/usr/bin/git checkout --progress --force refs/tags/v268.03.15
+2026-08-03T20:22:14.5785584Z Note: switching to 'refs/tags/v268.03.15'.
+2026-08-03T20:22:14.5786220Z 
+2026-08-03T20:22:14.5786638Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-08-03T20:22:14.5787536Z changes and commit them, and you can discard any commits you make in this
+2026-08-03T20:22:14.5788438Z state without impacting any branches by switching back to a branch.
+2026-08-03T20:22:14.5788990Z 
+2026-08-03T20:22:14.5789345Z If you want to create a new branch to retain commits you create, you may
+2026-08-03T20:22:14.5790204Z do so (now or later) by using -c with the switch command. Example:
+2026-08-03T20:22:14.5790741Z 
+2026-08-03T20:22:14.5790973Z   git switch -c <new-branch-name>
+2026-08-03T20:22:14.5791316Z 
+2026-08-03T20:22:14.5791538Z Or undo this operation with:
+2026-08-03T20:22:14.5791849Z 
+2026-08-03T20:22:14.5792035Z   git switch -
+2026-08-03T20:22:14.5792600Z 
+2026-08-03T20:22:14.5793089Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-08-03T20:22:14.5793741Z 
+2026-08-03T20:22:14.5794527Z HEAD is now at 4896ad9 fix(ci): set explicit android.numeric_version=2680315 to fix 32-bit int overflow in Gradle versionCode, bump v268.03.15
+2026-08-03T20:22:14.5825267Z ##[endgroup]
+2026-08-03T20:22:14.5873073Z [command]/usr/bin/git log -1 --format=%H
+2026-08-03T20:22:14.5900792Z 4896ad93f186222e1f8799f3b44c0cfc1e4127bc

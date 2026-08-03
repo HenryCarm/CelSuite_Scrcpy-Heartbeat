@@ -1,0 +1,10 @@
+﻿2026-08-03T20:25:24.3967537Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T20:25:24.3968784Z Post job cleanup.
+2026-08-03T20:25:24.5154843Z (node:18817) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T20:25:24.5155700Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T20:25:24.5389110Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher --files-from manifest.txt --use-compress-program zstdmt
+2026-08-03T20:25:25.0299490Z (node:18817) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-08-03T20:25:26.0213551Z Sent 19726336 of 105588211 (18.7%), 18.8 MBs/sec
+2026-08-03T20:25:27.0223126Z Sent 73400320 of 105588211 (69.5%), 35.0 MBs/sec
+2026-08-03T20:25:27.7696540Z Sent 105588211 of 105588211 (100.0%), 36.6 MBs/sec
+2026-08-03T20:25:28.0711530Z Cache saved with the key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.13-pip-66c4c383d144545affb44dfeafac74d80589ea4d24b5405984dac7ea8a79ac4e
