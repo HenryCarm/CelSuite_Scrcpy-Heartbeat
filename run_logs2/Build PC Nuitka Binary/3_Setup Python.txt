@@ -1,0 +1,25 @@
+﻿2026-08-03T18:21:55.1368908Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T18:21:55.1374857Z ##[group]Run actions/setup-python@v5
+2026-08-03T18:21:55.1375963Z with:
+2026-08-03T18:21:55.1376746Z   python-version: 3.12
+2026-08-03T18:21:55.1377642Z   cache: pip
+2026-08-03T18:21:55.1378456Z   check-latest: false
+2026-08-03T18:21:55.1388260Z   token: ***
+2026-08-03T18:21:55.1389118Z   update-environment: true
+2026-08-03T18:21:55.1390309Z   allow-prereleases: false
+2026-08-03T18:21:55.1391278Z   freethreaded: false
+2026-08-03T18:21:55.1392134Z ##[endgroup]
+2026-08-03T18:21:55.2708589Z ##[group]Installed versions
+2026-08-03T18:21:55.2851013Z Successfully set up CPython (3.12.13)
+2026-08-03T18:21:55.2853909Z ##[endgroup]
+2026-08-03T18:21:55.2859730Z (node:2255) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T18:21:55.2864744Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T18:21:55.3690356Z [command]/opt/hostedtoolcache/Python/3.12.13/x64/bin/pip cache dir
+2026-08-03T18:21:55.9533975Z /home/runner/.cache/pip
+2026-08-03T18:21:56.0493060Z Cache hit for: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.13-pip-66c4c383d144545affb44dfeafac74d80589ea4d24b5405984dac7ea8a79ac4e
+2026-08-03T18:21:56.0636465Z (node:2255) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-08-03T18:21:56.5477183Z Received 105588173 of 105588173 (100.0%), 218.9 MBs/sec
+2026-08-03T18:21:56.5478276Z Cache Size: ~101 MB (105588173 B)
+2026-08-03T18:21:56.5546816Z [command]/usr/bin/tar -xf /home/runner/work/_temp/76393a32-3eb6-4b8b-bce6-8d4e25856109/cache.tzst -P -C /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher --use-compress-program unzstd
+2026-08-03T18:21:56.7135133Z Cache restored successfully
+2026-08-03T18:21:56.7202911Z Cache restored from key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.13-pip-86472dba7a60f77cb8fdbd660c64a2a7dd6ca46295fa2d5eca1f7a0f2e1aa6ea

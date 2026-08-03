@@ -1,0 +1,257 @@
+﻿2026-08-03T18:21:47.5844920Z ##[group]Run sudo apt-get update
+2026-08-03T18:21:47.5845278Z [36;1msudo apt-get update[0m
+2026-08-03T18:21:47.5845982Z [36;1msudo apt-get install -y autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev zip unzip ccache lld[0m
+2026-08-03T18:21:47.5976408Z shell: /usr/bin/bash -e {0}
+2026-08-03T18:21:47.5976688Z env:
+2026-08-03T18:21:47.5977021Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+2026-08-03T18:21:47.5977579Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+2026-08-03T18:21:47.5978083Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.15/x64
+2026-08-03T18:21:47.5978567Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.15/x64/lib/pkgconfig
+2026-08-03T18:21:47.5979039Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.15/x64
+2026-08-03T18:21:47.5979451Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.15/x64
+2026-08-03T18:21:47.5979861Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.15/x64
+2026-08-03T18:21:47.5980316Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.15/x64/lib
+2026-08-03T18:21:47.5980665Z ##[endgroup]
+2026-08-03T18:21:47.8045986Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-08-03T18:21:47.8427201Z Hit:6 https://packages.microsoft.com/repos/azure-cli jammy InRelease
+2026-08-03T18:21:47.8428437Z Hit:2 http://azure.archive.ubuntu.com/ubuntu jammy InRelease
+2026-08-03T18:21:47.8429565Z Get:7 https://packages.microsoft.com/ubuntu/22.04/prod jammy InRelease [3632 B]
+2026-08-03T18:21:47.8451933Z Get:3 http://azure.archive.ubuntu.com/ubuntu jammy-updates InRelease [128 kB]
+2026-08-03T18:21:47.8470552Z Get:8 https://dl.google.com/linux/chrome-stable/deb stable InRelease [2548 B]
+2026-08-03T18:21:47.8519537Z Get:4 http://azure.archive.ubuntu.com/ubuntu jammy-backports InRelease [127 kB]
+2026-08-03T18:21:47.8562467Z Get:5 http://azure.archive.ubuntu.com/ubuntu jammy-security InRelease [129 kB]
+2026-08-03T18:21:48.1009326Z Get:9 https://packages.microsoft.com/ubuntu/22.04/prod jammy/main arm64 Packages [289 kB]
+2026-08-03T18:21:48.1172335Z Get:10 https://packages.microsoft.com/ubuntu/22.04/prod jammy/main armhf Packages [22.0 kB]
+2026-08-03T18:21:48.1203112Z Get:11 https://packages.microsoft.com/ubuntu/22.04/prod jammy/main amd64 Packages [488 kB]
+2026-08-03T18:21:48.1687028Z Get:12 https://dl.google.com/linux/chrome-stable/deb stable/main amd64 Packages [1411 B]
+2026-08-03T18:21:48.2325931Z Get:13 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 Packages [3683 kB]
+2026-08-03T18:21:48.2506902Z Get:14 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main Translation-en [552 kB]
+2026-08-03T18:21:48.2547274Z Get:15 http://azure.archive.ubuntu.com/ubuntu jammy-updates/restricted amd64 Packages [6346 kB]
+2026-08-03T18:21:48.2973130Z Get:16 http://azure.archive.ubuntu.com/ubuntu jammy-updates/restricted Translation-en [1215 kB]
+2026-08-03T18:21:48.3016714Z Get:17 http://azure.archive.ubuntu.com/ubuntu jammy-updates/universe amd64 Packages [1279 kB]
+2026-08-03T18:21:48.3091833Z Get:18 http://azure.archive.ubuntu.com/ubuntu jammy-updates/universe Translation-en [322 kB]
+2026-08-03T18:21:48.3162014Z Get:19 http://azure.archive.ubuntu.com/ubuntu jammy-updates/multiverse amd64 Packages [76.5 kB]
+2026-08-03T18:21:48.3184050Z Get:20 http://azure.archive.ubuntu.com/ubuntu jammy-updates/multiverse Translation-en [15.9 kB]
+2026-08-03T18:21:48.4121222Z Get:21 http://azure.archive.ubuntu.com/ubuntu jammy-security/main amd64 Packages [3414 kB]
+2026-08-03T18:21:48.4308472Z Get:22 http://azure.archive.ubuntu.com/ubuntu jammy-security/main Translation-en [482 kB]
+2026-08-03T18:21:48.4835432Z Get:23 http://azure.archive.ubuntu.com/ubuntu jammy-security/restricted amd64 Packages [6110 kB]
+2026-08-03T18:21:48.5183276Z Get:24 http://azure.archive.ubuntu.com/ubuntu jammy-security/restricted Translation-en [1173 kB]
+2026-08-03T18:21:48.5282732Z Get:25 http://azure.archive.ubuntu.com/ubuntu jammy-security/universe amd64 Packages [1046 kB]
+2026-08-03T18:21:48.5326549Z Get:26 http://azure.archive.ubuntu.com/ubuntu jammy-security/universe Translation-en [234 kB]
+2026-08-03T18:21:48.5355148Z Get:27 http://azure.archive.ubuntu.com/ubuntu jammy-security/multiverse amd64 Packages [69.1 kB]
+2026-08-03T18:21:48.5372574Z Get:28 http://azure.archive.ubuntu.com/ubuntu jammy-security/multiverse Translation-en [12.9 kB]
+2026-08-03T18:21:53.9675229Z Fetched 27.2 MB in 3s (8459 kB/s)
+2026-08-03T18:21:55.0096349Z Reading package lists...
+2026-08-03T18:21:55.0735692Z Reading package lists...
+2026-08-03T18:21:55.3027510Z Building dependency tree...
+2026-08-03T18:21:55.3039435Z Reading state information...
+2026-08-03T18:21:55.5204184Z autoconf is already the newest version (2.71-2).
+2026-08-03T18:21:55.5204922Z libffi-dev is already the newest version (3.4.2-4).
+2026-08-03T18:21:55.5205402Z libffi-dev set to manually installed.
+2026-08-03T18:21:55.5205868Z libtool is already the newest version (2.4.6-15build2).
+2026-08-03T18:21:55.5206369Z zip is already the newest version (3.0-12build2).
+2026-08-03T18:21:55.5206878Z unzip is already the newest version (6.0-26ubuntu3.2).
+2026-08-03T18:21:55.5207449Z zlib1g-dev is already the newest version (1:1.2.11.dfsg-2ubuntu9.2).
+2026-08-03T18:21:55.5207968Z Suggested packages:
+2026-08-03T18:21:55.5208384Z   distcc | icecc cmake-doc ninja-build cmake-format libssl-doc
+2026-08-03T18:21:55.5557028Z The following packages will be REMOVED:
+2026-08-03T18:21:55.5559360Z   pkgconf r-base-dev
+2026-08-03T18:21:55.5559737Z The following NEW packages will be installed:
+2026-08-03T18:21:55.5564094Z   ccache cmake cmake-data dh-elpa-helper libhiredis0.14 libjsoncpp25
+2026-08-03T18:21:55.5571228Z   libncurses5-dev libncursesw5-dev librhash0 libtinfo5 lld pkg-config
+2026-08-03T18:21:55.5578621Z The following packages will be upgraded:
+2026-08-03T18:21:55.5583510Z   libssl-dev libssl3
+2026-08-03T18:21:55.5752639Z 2 upgraded, 12 newly installed, 2 to remove and 85 not upgraded.
+2026-08-03T18:21:55.5753302Z Need to get 12.1 MB of archives.
+2026-08-03T18:21:55.5753662Z After this operation, 33.9 MB of additional disk space will be used.
+2026-08-03T18:21:55.5754120Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-08-03T18:21:55.6019234Z Get:2 http://azure.archive.ubuntu.com/ubuntu jammy/main amd64 pkg-config amd64 0.29.2-1ubuntu3 [48.2 kB]
+2026-08-03T18:21:55.6122613Z Get:3 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libssl-dev amd64 3.0.2-0ubuntu1.26 [2377 kB]
+2026-08-03T18:21:55.6408929Z Get:4 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libssl3 amd64 3.0.2-0ubuntu1.26 [1906 kB]
+2026-08-03T18:21:55.6664640Z Get:5 http://azure.archive.ubuntu.com/ubuntu jammy/universe amd64 libhiredis0.14 amd64 0.14.1-2 [32.8 kB]
+2026-08-03T18:21:55.6749783Z Get:6 http://azure.archive.ubuntu.com/ubuntu jammy/universe amd64 ccache amd64 4.5.1-1 [495 kB]
+2026-08-03T18:21:55.6861879Z Get:7 http://azure.archive.ubuntu.com/ubuntu jammy/main amd64 libjsoncpp25 amd64 1.9.5-3 [80.0 kB]
+2026-08-03T18:21:55.6954717Z Get:8 http://azure.archive.ubuntu.com/ubuntu jammy/main amd64 librhash0 amd64 1.4.2-1ubuntu1 [125 kB]
+2026-08-03T18:21:55.7045964Z Get:9 http://azure.archive.ubuntu.com/ubuntu jammy/main amd64 dh-elpa-helper all 2.0.9ubuntu1 [7610 B]
+2026-08-03T18:21:55.7120380Z Get:10 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 cmake-data all 3.22.1-1ubuntu1.22.04.2 [1913 kB]
+2026-08-03T18:21:55.7341416Z Get:11 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 cmake amd64 3.22.1-1ubuntu1.22.04.2 [5010 kB]
+2026-08-03T18:21:55.7768403Z Get:12 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libncurses5-dev amd64 6.3-2ubuntu0.2 [788 B]
+2026-08-03T18:21:55.7851980Z Get:13 http://azure.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libncursesw5-dev amd64 6.3-2ubuntu0.2 [790 B]
+2026-08-03T18:21:55.7927576Z Get:14 http://azure.archive.ubuntu.com/ubuntu jammy-updates/universe amd64 libtinfo5 amd64 6.3-2ubuntu0.2 [100.0 kB]
+2026-08-03T18:21:55.8012220Z Get:15 http://azure.archive.ubuntu.com/ubuntu jammy/universe amd64 lld amd64 1:14.0-55~exp2 [3178 B]
+2026-08-03T18:21:56.1042250Z Preconfiguring packages ...
+2026-08-03T18:21:56.2047980Z Fetched 12.1 MB in 0s (50.9 MB/s)
+2026-08-03T18:21:56.2805241Z (Reading database ... 
+2026-08-03T18:21:56.2805931Z (Reading database ... 5%
+2026-08-03T18:21:56.2806522Z (Reading database ... 10%
+2026-08-03T18:21:56.2807014Z (Reading database ... 15%
+2026-08-03T18:21:56.2807380Z (Reading database ... 20%
+2026-08-03T18:21:56.2807735Z (Reading database ... 25%
+2026-08-03T18:21:56.2808081Z (Reading database ... 30%
+2026-08-03T18:21:56.2808424Z (Reading database ... 35%
+2026-08-03T18:21:56.2808766Z (Reading database ... 40%
+2026-08-03T18:21:56.2809112Z (Reading database ... 45%
+2026-08-03T18:21:56.2809484Z (Reading database ... 50%
+2026-08-03T18:21:56.5196523Z (Reading database ... 55%
+2026-08-03T18:21:56.6585833Z (Reading database ... 60%
+2026-08-03T18:21:56.8519452Z (Reading database ... 65%
+2026-08-03T18:21:57.1832799Z (Reading database ... 70%
+2026-08-03T18:21:57.9742154Z (Reading database ... 75%
+2026-08-03T18:21:58.7624364Z (Reading database ... 80%
+2026-08-03T18:21:59.5780829Z (Reading database ... 85%
+2026-08-03T18:22:00.3359092Z (Reading database ... 90%
+2026-08-03T18:22:01.0414165Z (Reading database ... 95%
+2026-08-03T18:22:01.0414778Z (Reading database ... 100%
+2026-08-03T18:22:01.0415506Z (Reading database ... 259811 files and directories currently installed.)
+2026-08-03T18:22:01.0472175Z Removing r-base-dev (4.6.1-1.2204.1) ...
+2026-08-03T18:22:01.3191777Z dpkg: pkgconf: dependency problems, but removing anyway as you requested:
+2026-08-03T18:22:01.3192756Z  php8.1-dev depends on pkg-config; however:
+2026-08-03T18:22:01.3193407Z   Package pkg-config is not installed.
+2026-08-03T18:22:01.3194163Z   Package pkgconf which provides pkg-config is to be removed.
+2026-08-03T18:22:01.3194930Z  mono-devel depends on pkg-config; however:
+2026-08-03T18:22:01.3195557Z   Package pkg-config is not installed.
+2026-08-03T18:22:01.3196105Z   Package pkgconf which provides pkg-config is to be removed.
+2026-08-03T18:22:01.3196762Z  libmagickwand-6.q16-dev:amd64 depends on pkg-config; however:
+2026-08-03T18:22:01.3197352Z   Package pkg-config is not installed.
+2026-08-03T18:22:01.3197891Z   Package pkgconf which provides pkg-config is to be removed.
+2026-08-03T18:22:01.3198529Z  libmagickcore-6.q16-dev:amd64 depends on pkg-config; however:
+2026-08-03T18:22:01.3199100Z   Package pkg-config is not installed.
+2026-08-03T18:22:01.3199665Z   Package pkgconf which provides pkg-config is to be removed.
+2026-08-03T18:22:01.3200284Z  libglib2.0-dev:amd64 depends on pkg-config; however:
+2026-08-03T18:22:01.3201039Z   Package pkg-config is not installed.
+2026-08-03T18:22:01.3201500Z   Package pkgconf which provides pkg-config is to be removed.
+2026-08-03T18:22:01.3202363Z  libfontconfig-dev:amd64 depends on pkg-config; however:
+2026-08-03T18:22:01.3202888Z   Package pkg-config is not installed.
+2026-08-03T18:22:01.3203399Z   Package pkgconf which provides pkg-config is to be removed.
+2026-08-03T18:22:01.3203745Z 
+2026-08-03T18:22:01.3253916Z Removing pkgconf (1.8.0-1) ...
+2026-08-03T18:22:01.4428863Z Removing 'diversion of /usr/bin/pkg-config to /usr/bin/pkg-config.real by pkgconf'
+2026-08-03T18:22:01.4558232Z Removing 'diversion of /usr/share/aclocal/pkg.m4 to /usr/share/aclocal/pkg.real.m4 by pkgconf'
+2026-08-03T18:22:01.4687593Z Removing 'diversion of /usr/share/man/man1/pkg-config.1.gz to /usr/share/man/man1/pkg-config.real.1.gz by pkgconf'
+2026-08-03T18:22:01.4855915Z Removing 'diversion of /usr/share/pkg-config-crosswrapper to /usr/share/pkg-config-crosswrapper.real by pkgconf'
+2026-08-03T18:22:01.5511491Z Selecting previously unselected package pkg-config.
+2026-08-03T18:22:01.5592953Z (Reading database ... 
+2026-08-03T18:22:01.5593447Z (Reading database ... 5%
+2026-08-03T18:22:01.5593848Z (Reading database ... 10%
+2026-08-03T18:22:01.5594224Z (Reading database ... 15%
+2026-08-03T18:22:01.5594591Z (Reading database ... 20%
+2026-08-03T18:22:01.5594962Z (Reading database ... 25%
+2026-08-03T18:22:01.5595331Z (Reading database ... 30%
+2026-08-03T18:22:01.5595979Z (Reading database ... 35%
+2026-08-03T18:22:01.5596346Z (Reading database ... 40%
+2026-08-03T18:22:01.5597186Z (Reading database ... 45%
+2026-08-03T18:22:01.5597581Z (Reading database ... 50%
+2026-08-03T18:22:01.5627866Z (Reading database ... 55%
+2026-08-03T18:22:01.5659909Z (Reading database ... 60%
+2026-08-03T18:22:01.5757705Z (Reading database ... 65%
+2026-08-03T18:22:01.5791842Z (Reading database ... 70%
+2026-08-03T18:22:01.5933549Z (Reading database ... 75%
+2026-08-03T18:22:01.5997383Z (Reading database ... 80%
+2026-08-03T18:22:01.6202262Z (Reading database ... 85%
+2026-08-03T18:22:01.6445428Z (Reading database ... 90%
+2026-08-03T18:22:01.6560846Z (Reading database ... 95%
+2026-08-03T18:22:01.6561743Z (Reading database ... 100%
+2026-08-03T18:22:01.6562438Z (Reading database ... 259789 files and directories currently installed.)
+2026-08-03T18:22:01.6615913Z Preparing to unpack .../pkg-config_0.29.2-1ubuntu3_amd64.deb ...
+2026-08-03T18:22:01.6626273Z Unpacking pkg-config (0.29.2-1ubuntu3) ...
+2026-08-03T18:22:01.7078727Z Preparing to unpack .../libssl-dev_3.0.2-0ubuntu1.26_amd64.deb ...
+2026-08-03T18:22:01.7101444Z Unpacking libssl-dev:amd64 (3.0.2-0ubuntu1.26) over (3.0.2-0ubuntu1.25) ...
+2026-08-03T18:22:01.8509241Z Preparing to unpack .../libssl3_3.0.2-0ubuntu1.26_amd64.deb ...
+2026-08-03T18:22:01.8679257Z Unpacking libssl3:amd64 (3.0.2-0ubuntu1.26) over (3.0.2-0ubuntu1.25) ...
+2026-08-03T18:22:01.9406393Z Setting up libssl3:amd64 (3.0.2-0ubuntu1.26) ...
+2026-08-03T18:22:02.0742193Z Selecting previously unselected package libhiredis0.14:amd64.
+2026-08-03T18:22:02.0823358Z (Reading database ... 
+2026-08-03T18:22:02.0823736Z (Reading database ... 5%
+2026-08-03T18:22:02.0824100Z (Reading database ... 10%
+2026-08-03T18:22:02.0824421Z (Reading database ... 15%
+2026-08-03T18:22:02.0824727Z (Reading database ... 20%
+2026-08-03T18:22:02.0825029Z (Reading database ... 25%
+2026-08-03T18:22:02.0825335Z (Reading database ... 30%
+2026-08-03T18:22:02.0825637Z (Reading database ... 35%
+2026-08-03T18:22:02.0825958Z (Reading database ... 40%
+2026-08-03T18:22:02.0826262Z (Reading database ... 45%
+2026-08-03T18:22:02.0826564Z (Reading database ... 50%
+2026-08-03T18:22:02.0855673Z (Reading database ... 55%
+2026-08-03T18:22:02.0891101Z (Reading database ... 60%
+2026-08-03T18:22:02.0988125Z (Reading database ... 65%
+2026-08-03T18:22:02.1023067Z (Reading database ... 70%
+2026-08-03T18:22:02.1170490Z (Reading database ... 75%
+2026-08-03T18:22:02.1239491Z (Reading database ... 80%
+2026-08-03T18:22:02.1459100Z (Reading database ... 85%
+2026-08-03T18:22:02.1717900Z (Reading database ... 90%
+2026-08-03T18:22:02.1833677Z (Reading database ... 95%
+2026-08-03T18:22:02.1834808Z (Reading database ... 100%
+2026-08-03T18:22:02.1835535Z (Reading database ... 259803 files and directories currently installed.)
+2026-08-03T18:22:02.1889969Z Preparing to unpack .../00-libhiredis0.14_0.14.1-2_amd64.deb ...
+2026-08-03T18:22:02.1903093Z Unpacking libhiredis0.14:amd64 (0.14.1-2) ...
+2026-08-03T18:22:02.2161293Z Selecting previously unselected package ccache.
+2026-08-03T18:22:02.2357276Z Preparing to unpack .../01-ccache_4.5.1-1_amd64.deb ...
+2026-08-03T18:22:02.2369782Z Unpacking ccache (4.5.1-1) ...
+2026-08-03T18:22:02.2808547Z Selecting previously unselected package libjsoncpp25:amd64.
+2026-08-03T18:22:02.3001947Z Preparing to unpack .../02-libjsoncpp25_1.9.5-3_amd64.deb ...
+2026-08-03T18:22:02.3010385Z Unpacking libjsoncpp25:amd64 (1.9.5-3) ...
+2026-08-03T18:22:02.3247726Z Selecting previously unselected package librhash0:amd64.
+2026-08-03T18:22:02.3439721Z Preparing to unpack .../03-librhash0_1.4.2-1ubuntu1_amd64.deb ...
+2026-08-03T18:22:02.3448387Z Unpacking librhash0:amd64 (1.4.2-1ubuntu1) ...
+2026-08-03T18:22:02.3679007Z Selecting previously unselected package dh-elpa-helper.
+2026-08-03T18:22:02.3870297Z Preparing to unpack .../04-dh-elpa-helper_2.0.9ubuntu1_all.deb ...
+2026-08-03T18:22:02.3878993Z Unpacking dh-elpa-helper (2.0.9ubuntu1) ...
+2026-08-03T18:22:02.4118889Z Selecting previously unselected package cmake-data.
+2026-08-03T18:22:02.4314844Z Preparing to unpack .../05-cmake-data_3.22.1-1ubuntu1.22.04.2_all.deb ...
+2026-08-03T18:22:02.4478065Z Unpacking cmake-data (3.22.1-1ubuntu1.22.04.2) ...
+2026-08-03T18:22:03.0483325Z Selecting previously unselected package cmake.
+2026-08-03T18:22:03.0701922Z Preparing to unpack .../06-cmake_3.22.1-1ubuntu1.22.04.2_amd64.deb ...
+2026-08-03T18:22:03.0717173Z Unpacking cmake (3.22.1-1ubuntu1.22.04.2) ...
+2026-08-03T18:22:03.1835788Z Selecting previously unselected package libncurses5-dev:amd64.
+2026-08-03T18:22:03.2034170Z Preparing to unpack .../07-libncurses5-dev_6.3-2ubuntu0.2_amd64.deb ...
+2026-08-03T18:22:03.2053892Z Unpacking libncurses5-dev:amd64 (6.3-2ubuntu0.2) ...
+2026-08-03T18:22:03.2256503Z Selecting previously unselected package libncursesw5-dev:amd64.
+2026-08-03T18:22:03.2451121Z Preparing to unpack .../08-libncursesw5-dev_6.3-2ubuntu0.2_amd64.deb ...
+2026-08-03T18:22:03.2459549Z Unpacking libncursesw5-dev:amd64 (6.3-2ubuntu0.2) ...
+2026-08-03T18:22:03.2671266Z Selecting previously unselected package libtinfo5:amd64.
+2026-08-03T18:22:03.2865272Z Preparing to unpack .../09-libtinfo5_6.3-2ubuntu0.2_amd64.deb ...
+2026-08-03T18:22:03.2874901Z Unpacking libtinfo5:amd64 (6.3-2ubuntu0.2) ...
+2026-08-03T18:22:03.3106335Z Selecting previously unselected package lld:amd64.
+2026-08-03T18:22:03.3299826Z Preparing to unpack .../10-lld_1%3a14.0-55~exp2_amd64.deb ...
+2026-08-03T18:22:03.3331379Z Unpacking lld:amd64 (1:14.0-55~exp2) ...
+2026-08-03T18:22:03.3792706Z Setting up libncursesw5-dev:amd64 (6.3-2ubuntu0.2) ...
+2026-08-03T18:22:03.3819338Z Setting up lld:amd64 (1:14.0-55~exp2) ...
+2026-08-03T18:22:03.3842617Z Setting up dh-elpa-helper (2.0.9ubuntu1) ...
+2026-08-03T18:22:03.3865485Z Setting up libssl-dev:amd64 (3.0.2-0ubuntu1.26) ...
+2026-08-03T18:22:03.3887454Z Setting up libjsoncpp25:amd64 (1.9.5-3) ...
+2026-08-03T18:22:03.3910692Z Setting up pkg-config (0.29.2-1ubuntu3) ...
+2026-08-03T18:22:03.4283500Z Setting up librhash0:amd64 (1.4.2-1ubuntu1) ...
+2026-08-03T18:22:03.4309705Z Setting up libncurses5-dev:amd64 (6.3-2ubuntu0.2) ...
+2026-08-03T18:22:03.4335704Z Setting up cmake-data (3.22.1-1ubuntu1.22.04.2) ...
+2026-08-03T18:22:03.5006891Z Setting up libtinfo5:amd64 (6.3-2ubuntu0.2) ...
+2026-08-03T18:22:03.5030105Z Setting up libhiredis0.14:amd64 (0.14.1-2) ...
+2026-08-03T18:22:03.5055287Z Setting up ccache (4.5.1-1) ...
+2026-08-03T18:22:03.5080275Z Updating symlinks in /usr/lib/ccache ...
+2026-08-03T18:22:03.5173126Z Setting up cmake (3.22.1-1ubuntu1.22.04.2) ...
+2026-08-03T18:22:03.5206024Z Processing triggers for man-db (2.10.2-1) ...
+2026-08-03T18:22:03.5268424Z Not building database; man-db/auto-update is not 'true'.
+2026-08-03T18:22:03.5281646Z Processing triggers for libc-bin (2.35-0ubuntu3.13) ...
+2026-08-03T18:22:04.6899787Z 
+2026-08-03T18:22:04.6901073Z Running kernel seems to be up-to-date.
+2026-08-03T18:22:04.6901368Z 
+2026-08-03T18:22:04.6901490Z Services to be restarted:
+2026-08-03T18:22:04.6998071Z  systemctl restart packagekit.service
+2026-08-03T18:22:04.7044294Z  systemctl restart php8.1-fpm.service
+2026-08-03T18:22:04.7089806Z  systemctl restart ssh.service
+2026-08-03T18:22:04.7138564Z  systemctl restart systemd-journald.service
+2026-08-03T18:22:04.7232113Z  /etc/needrestart/restart.d/systemd-manager
+2026-08-03T18:22:04.7279202Z  systemctl restart systemd-networkd.service
+2026-08-03T18:22:04.7326794Z  systemctl restart systemd-resolved.service
+2026-08-03T18:22:04.7373955Z  systemctl restart systemd-udevd.service
+2026-08-03T18:22:04.7465797Z 
+2026-08-03T18:22:04.7467789Z Service restarts being deferred:
+2026-08-03T18:22:04.7468393Z  systemctl restart hosted-compute-agent.service
+2026-08-03T18:22:04.7469025Z  systemctl restart systemd-logind.service
+2026-08-03T18:22:04.7469627Z  systemctl restart user@1001.service
+2026-08-03T18:22:04.7470136Z  systemctl restart walinuxagent.service
+2026-08-03T18:22:04.7470488Z 
+2026-08-03T18:22:04.7471139Z No containers need to be restarted.
+2026-08-03T18:22:04.7471588Z 
+2026-08-03T18:22:04.7471945Z No user sessions are running outdated binaries.
+2026-08-03T18:22:04.7472858Z 
+2026-08-03T18:22:04.7473177Z No VM guests are running outdated hypervisor (qemu) binaries on this host.

@@ -4,7 +4,7 @@ package.name = scrcpyheartbeat
 package.domain = org.henry.scrcpy
 source.dir = android
 source.include_exts = py,png,jpg,kv,atlas
-version = 268.03.11
+version = 268.03.12
 requirements = python3,kivy==2.2.1,pyjnius
 orientation = portrait
 osx.python_version = 3
@@ -32,4 +32,4 @@ android.exclude_modules = tkinter,test,unittest,doctest,pdb,profile,cProfile,lib
 
 # Quick Settings Tile service
 android.extra_manifest_application_arguments = extra_manifest.xml
-android.manifest_placeholders = dummy=1
+android.manifest_placeholders = [myCustomKey:"myCustomValue"]
