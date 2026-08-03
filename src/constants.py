@@ -12,7 +12,7 @@ import sys
 
 # ── Application Metadata ──────────────────────────────────────────────────────
 APP_NAME = "Scrcpy Ultimate Link"
-APP_VERSION = "1.0.0"
+APP_VERSION = "268.03.1"
 APP_AUTHOR = "Henry"
 APP_DOMAIN = "org.henry.scrcpy"
 
