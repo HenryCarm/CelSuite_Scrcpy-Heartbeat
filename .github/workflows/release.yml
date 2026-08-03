@@ -68,7 +68,7 @@ jobs:
 
       - name: Build APK with Buildozer
         run: |
-          buildozer android release || buildozer android debug
+          yes | buildozer android release || yes | buildozer android debug
           # Rename the output for clarity
           mv bin/*.apk bin/ScrcpyUltimateLink-Android.apk
 
