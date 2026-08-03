@@ -36,7 +36,10 @@ jobs:
           pip install buildozer cython==0.29.37
 
       - name: Build APK with Buildozer
-        run: yes | buildozer android debug
+        run: |
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          buildozer android debug || true
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -72,7 +75,7 @@ jobs:
   publish-release:
     name: Publish GitHub Release
     needs: [build-android, build-pc]
-    if: ${{ !cancelled() }}
+    if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
