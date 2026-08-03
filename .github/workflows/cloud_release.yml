@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release Tag (e.g. v268.02.4)'
+        description: 'Release Tag (e.g. v268.03.5)'
         required: true
-        default: 'v268.02.4'
+        default: 'v268.03.5'
 
 jobs:
   build-android:
@@ -30,6 +30,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev zip unzip ccache lld
 
+      - name: Accept Android SDK Licenses
+        run: |
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
       - name: Install Buildozer & Cython
         run: |
           pip install --upgrade pip setuptools
@@ -37,12 +43,11 @@ jobs:
 
       - name: Build APK with Buildozer
         run: |
-          mkdir -p ~/.android
-          touch ~/.android/repositories.cfg
           buildozer android debug || true
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: android-apk
           path: bin/*.apk
@@ -60,11 +65,27 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
+      - name: Install UPX & System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y upx patchelf
+
       - name: Install Dependencies
         run: pip install nuitka PyQt6 requests pyjnius
 
-      - name: Compile PC Binary with Nuitka
-        run: python3 -m nuitka --standalone --onefile --enable-plugin=pyqt6 --linux-icon=icon.png --output-filename=ScrcpyUltimateLink-Linux-x86_64 main.py
+      - name: Compile PC Binary with Nuitka (Max Compressed)
+        run: |
+          python3 -m nuitka \
+            --standalone \
+            --onefile \
+            --enable-plugin=pyqt6 \
+            --enable-plugin=upx \
+            --upx-binary=$(which upx) \
+            --noinclude-qt-translations \
+            --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PyQt6.QtQml,PyQt6.QtQuick,PyQt6.QtWebEngineCore,PyQt6.QtWebEngineWidgets,PyQt6.Qt3DCore,PyQt6.QtPdf,PyQt6.QtSql,PyQt6.QtMultimedia,PyQt6.QtTest,PyQt6.QtSensors,PyQt6.QtPositioning,PyQt6.QtBluetooth,PyQt6.QtDesigner \
+            --linux-icon=icon.png \
+            --output-filename=ScrcpyUltimateLink-Linux-x86_64 \
+            main.py
 
       - name: Upload PC Binary Artifact
         uses: actions/upload-artifact@v4
