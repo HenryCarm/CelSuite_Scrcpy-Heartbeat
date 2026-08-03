@@ -4,7 +4,7 @@ package.name = scrcpyheartbeat
 package.domain = org.henry.scrcpy
 source.dir = android
 source.include_exts = py,png,jpg,kv,atlas
-version = 268.03.13
+version = 268.03.14
 requirements = python3,kivy==2.2.1,pyjnius
 orientation = portrait
 osx.python_version = 3
@@ -30,6 +30,5 @@ android.exclude_patterns = *.pyc,*.pyo,*.pyd,*.so,*.dylib,*.dll,*.a,*.lib
 # Conservative exclusions - only exclude truly unused large modules
 android.exclude_modules = tkinter,test,unittest,doctest,pdb,profile,cProfile,lib2to3,distutils,venv,ensurepip
 
-# Quick Settings Tile service
+# Quick Settings Tile - service tag injected inside <application>
 android.extra_manifest_application_arguments = extra_manifest.xml
-android.manifest_placeholders = {"myCustomKey": "myCustomValue"}

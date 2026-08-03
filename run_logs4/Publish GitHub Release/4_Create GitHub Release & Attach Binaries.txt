@@ -1,0 +1,30 @@
+﻿2026-08-03T19:53:43.1817516Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T19:53:43.1823367Z ##[group]Run softprops/action-gh-release@v2
+2026-08-03T19:53:43.1824540Z with:
+2026-08-03T19:53:43.1825306Z   tag_name: v268.03.13
+2026-08-03T19:53:43.1826255Z   name: Scrcpy Ultimate Link v268.03.13
+2026-08-03T19:53:43.1831116Z   body: ## Automated Cloud Release
+Both the PC binary and Android APK were automatically compiled in the cloud by GitHub Actions!
+
+### Download Instructions:
+- **PC (Linux):** Download `ScrcpyUltimateLink-Linux-x86_64`, give it execute permissions (`chmod +x`), and run it!
+- **Android:** Download the `.apk` file and install it on your phone!
+
+2026-08-03T19:53:43.1836680Z   files: ./release-assets/android-apk/*.apk
+./release-assets/pc-binary/*
+
+2026-08-03T19:53:43.1838322Z   overwrite_files: true
+2026-08-03T19:53:43.1847224Z   token: ***
+2026-08-03T19:53:43.1848020Z env:
+2026-08-03T19:53:43.1856599Z   GITHUB_TOKEN: ***
+2026-08-03T19:53:43.1857452Z ##[endgroup]
+2026-08-03T19:53:43.3009547Z 🤔 Pattern './release-assets/android-apk/*.apk' does not match any files.
+2026-08-03T19:53:43.4618970Z 👩‍🏭 Creating new GitHub release for tag v268.03.13...
+2026-08-03T19:53:44.1663775Z Release 364460915 is not yet discoverable by tag v268.03.13, retrying... (2 retries remaining)
+2026-08-03T19:53:45.5740706Z Release 364460915 is not yet discoverable by tag v268.03.13, retrying... (1 retries remaining)
+2026-08-03T19:53:46.9677884Z ⚠️ Continuing with newly created release 364460915 because tag v268.03.13 is still not discoverable
+2026-08-03T19:53:46.9698521Z ⬆️ Uploading ScrcpyUltimateLink-Linux-x86_64...
+2026-08-03T19:53:48.6020319Z ✅ Uploaded ScrcpyUltimateLink-Linux-x86_64
+2026-08-03T19:53:48.6021474Z Finalizing release...
+2026-08-03T19:53:48.9662090Z Getting assets list...
+2026-08-03T19:53:49.0822045Z 🎉 Release ready at https://github.com/HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/releases/tag/v268.03.13

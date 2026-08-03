@@ -1,0 +1,14 @@
+﻿2026-08-03T19:43:28.5476783Z ##[group]Run mkdir -p ~/.android
+2026-08-03T19:43:28.5477145Z [36;1mmkdir -p ~/.android[0m
+2026-08-03T19:43:28.5477416Z [36;1mtouch ~/.android/repositories.cfg[0m
+2026-08-03T19:43:28.5539087Z shell: /usr/bin/bash -e {0}
+2026-08-03T19:43:28.5539349Z env:
+2026-08-03T19:43:28.5539655Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+2026-08-03T19:43:28.5540157Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.19-10/x64
+2026-08-03T19:43:28.5540598Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.15/x64
+2026-08-03T19:43:28.5541046Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.15/x64/lib/pkgconfig
+2026-08-03T19:43:28.5541457Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.15/x64
+2026-08-03T19:43:28.5542020Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.15/x64
+2026-08-03T19:43:28.5542389Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.15/x64
+2026-08-03T19:43:28.5542762Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.15/x64/lib
+2026-08-03T19:43:28.5543127Z ##[endgroup]

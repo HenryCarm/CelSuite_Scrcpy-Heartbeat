@@ -1,0 +1,31 @@
+﻿2026-08-03T19:53:41.2031412Z Current runner version: '2.336.0'
+2026-08-03T19:53:41.2067500Z ##[group]Runner Image Provisioner
+2026-08-03T19:53:41.2068793Z Hosted Compute Agent
+2026-08-03T19:53:41.2069784Z Version: 20260707.563
+2026-08-03T19:53:41.2070724Z Commit: 02667638d2b423fbc733a8e32a88b44996a3ba6e
+2026-08-03T19:53:41.2071967Z Build Date: 2026-07-07T19:33:50Z
+2026-08-03T19:53:41.2073422Z Worker ID: {6c35da34-6339-48d3-a358-48675d82e0a4}
+2026-08-03T19:53:41.2074522Z Azure Region: eastus2
+2026-08-03T19:53:41.2075511Z ##[endgroup]
+2026-08-03T19:53:41.2078135Z ##[group]Operating System
+2026-08-03T19:53:41.2079213Z Ubuntu
+2026-08-03T19:53:41.2080013Z 24.04.4
+2026-08-03T19:53:41.2080775Z LTS
+2026-08-03T19:53:41.2081603Z ##[endgroup]
+2026-08-03T19:53:41.2082667Z ##[group]Runner Image
+2026-08-03T19:53:41.2083657Z Image: ubuntu-24.04
+2026-08-03T19:53:41.2084568Z Version: 20260720.247.2
+2026-08-03T19:53:41.2086760Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260720.247/images/ubuntu/Ubuntu2404-Readme.md
+2026-08-03T19:53:41.2089540Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260720.247
+2026-08-03T19:53:41.2091118Z ##[endgroup]
+2026-08-03T19:53:41.2093081Z ##[group]GITHUB_TOKEN Permissions
+2026-08-03T19:53:41.2096010Z Contents: write
+2026-08-03T19:53:41.2096976Z Metadata: read
+2026-08-03T19:53:41.2097835Z ##[endgroup]
+2026-08-03T19:53:41.2100928Z Secret source: Actions
+2026-08-03T19:53:41.2103339Z Prepare workflow directory
+2026-08-03T19:53:41.2572574Z Prepare all required actions
+2026-08-03T19:53:41.2641702Z Getting action download info
+2026-08-03T19:53:41.4428660Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+2026-08-03T19:53:41.8750244Z Download action repository 'softprops/action-gh-release@v2' (SHA:3bb12739c298aeb8a4eeaf626c5b8d85266b0e65)
+2026-08-03T19:53:42.0947029Z Complete job name: Publish GitHub Release

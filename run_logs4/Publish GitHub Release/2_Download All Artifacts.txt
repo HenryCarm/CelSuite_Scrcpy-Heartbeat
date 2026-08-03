@@ -1,0 +1,22 @@
+﻿2026-08-03T19:53:42.1647798Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-03T19:53:42.1656753Z ##[group]Run actions/download-artifact@v4
+2026-08-03T19:53:42.1657618Z with:
+2026-08-03T19:53:42.1658063Z   path: ./release-assets
+2026-08-03T19:53:42.1658550Z   merge-multiple: false
+2026-08-03T19:53:42.1659163Z   repository: HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher
+2026-08-03T19:53:42.1659840Z   run-id: 30846974577
+2026-08-03T19:53:42.1660417Z ##[endgroup]
+2026-08-03T19:53:42.3400473Z (node:2124) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-03T19:53:42.3402875Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-03T19:53:42.4337504Z Found 1 artifact(s)
+2026-08-03T19:53:42.4339481Z No input name, artifact-ids or pattern filtered specified, downloading all artifacts
+2026-08-03T19:53:42.4341103Z An extra directory with the artifact name will be created for each download
+2026-08-03T19:53:42.4342608Z Preparing to download the following artifacts:
+2026-08-03T19:53:42.4344456Z - pc-binary (ID: 8869163455, Size: 38726821, Expected Digest: sha256:cb8a930fea29c785a924f12ed03b4b7c3f80a950b2ef3d7d70b009690fd41d94)
+2026-08-03T19:53:42.5232420Z Redirecting to blob download url: https://productionresultssa8.blob.core.windows.net/actions-results/1953f3c5-5825-4d39-bd54-84487d7beb7c/workflow-job-run-e896f2c8-adb4-57dd-b8db-d49ac67dab81/artifacts/9b16785a7aa440a7d61ca27435f8e0f204e7c416f70b8d85c661a7c69d714c74.zip
+2026-08-03T19:53:42.5235354Z Starting download of artifact to: /home/runner/work/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher/release-assets/pc-binary
+2026-08-03T19:53:42.6162433Z (node:2124) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-08-03T19:53:43.1098596Z SHA256 digest of downloaded artifact is cb8a930fea29c785a924f12ed03b4b7c3f80a950b2ef3d7d70b009690fd41d94
+2026-08-03T19:53:43.1101112Z Artifact download completed successfully.
+2026-08-03T19:53:43.1102657Z Total of 1 artifact(s) downloaded
+2026-08-03T19:53:43.1103917Z Download artifact has finished successfully
