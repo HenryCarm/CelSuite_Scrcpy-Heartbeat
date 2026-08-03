@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.0] - 2026-08-03
+## [268.02.5] - 2026-08-03
 
 ### Architecture
 - Complete restructure from flat monolith files into a proper Python package (`src/`)
