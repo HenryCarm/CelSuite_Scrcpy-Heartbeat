@@ -17,7 +17,7 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.switch import Switch
 from kivy.uix.spinner import Spinner
-from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
 from kivy.uix.widget import Widget
 from kivy.uix.scrollview import ScrollView
 from kivy.clock import Clock
@@ -27,13 +27,22 @@ from kivy.core.window import Window
 
 Window.fullscreen = 'auto'
 
-# Dynamic Config & Paths
+# Port configuration
+PORT_TCP_TRANSFER = 5558
+
+# Kivy theme configuration
+DARK_BG = (0.07, 0.07, 0.14, 1)
+PANEL_BG = (0.1, 0.1, 0.22, 1)
+ACCENT = (0.0, 0.85, 0.647, 1)
+TEXT = (0.9, 0.9, 0.9, 1)
+
 def get_storage_dirs():
+    """Determines the correct internal and external storage directories for the app."""
     try:
         from jnius import autoclass
         PythonActivity = autoclass('org.kivy.android.PythonActivity')
         internal_dir = PythonActivity.mActivity.getFilesDir().getAbsolutePath()
-    except:
+    except Exception:
         internal_dir = os.path.join(os.path.expanduser("~"), "scrcpy_link")
     
     external_config = "/sdcard/scrcpy_heartbeat_config.json"
@@ -47,7 +56,7 @@ def get_storage_dirs():
                 f.write("test")
             os.remove(test_file)
             can_write_external = True
-    except:
+    except OSError:
         pass
     
     if can_write_external:
@@ -64,12 +73,14 @@ def get_storage_dirs():
 CONFIG_FILE, LOG_DIR, CAN_WRITE_EXTERNAL = get_storage_dirs()
 LOG_FILE = os.path.join(LOG_DIR, "ScrcpyLink.log")
 VAULT_DIR = "/sdcard/ScrcpyUltimateLink" if CAN_WRITE_EXTERNAL else os.path.join(LOG_DIR, "Vault")
-os.makedirs(VAULT_DIR, exist_ok=True)
 
-# Port configuration
-PORT_TCP_TRANSFER = 5558
+try:
+    os.makedirs(VAULT_DIR, exist_ok=True)
+except OSError as e:
+    print(f"Failed to create vault dir: {e}")
 
 def load_config():
+    """Loads the application configuration from JSON."""
     defaults = {
         "heartbeat_port": 5556,
         "discovery_port": 5557,
@@ -84,41 +95,42 @@ def load_config():
             for k, v in defaults.items():
                 if k not in config: config[k] = v
             return config
-    except:
-        pass
+    except OSError as e:
+        print(f"Config load failed: {e}")
+    except json.JSONDecodeError as e:
+        print(f"Config parse failed: {e}")
     return defaults
 
 def save_config(config):
+    """Saves the application configuration to JSON."""
     try:
         with open(CONFIG_FILE, "w") as f:
             json.dump(config, f, indent=2)
-    except:
-        pass
+    except OSError as e:
+        print(f"Config save failed: {e}")
 
 config = load_config()
 
-# sliding window log file
-LOG_MAX_LINES = 100
+LOG_MAX_BYTES = 50 * 1024
 def app_log(msg):
+    """Logs messages to console and file, maintaining a size limit."""
     print(msg)
     try:
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
         log_str = f"[{timestamp}] {msg}\n"
         with open(LOG_FILE, "a") as f:
             f.write(log_str)
-        try:
+        
+        if os.path.getsize(LOG_FILE) > LOG_MAX_BYTES:
             with open(LOG_FILE, "r") as f:
-                lines = f.readlines()
-            if len(lines) > LOG_MAX_LINES:
-                with open(LOG_FILE, "w") as f:
-                    f.writelines(lines[-LOG_MAX_LINES:])
-        except:
-            pass
-    except Exception as e:
+                content = f.read()
+            with open(LOG_FILE, "w") as f:
+                f.write(content[len(content)//2:])
+    except OSError as e:
         print(f"Logging failed: {e}")
 
-# Android 11+ FileUriExposedException disable (CRITICAL FALLBACK)
 def disable_file_uri_exposure_check():
+    """Disables the FileUriExposedException checks on Android 11+."""
     try:
         from jnius import autoclass
         StrictMode = autoclass('android.os.StrictMode')
@@ -130,8 +142,8 @@ def disable_file_uri_exposure_check():
     except Exception as e:
         app_log(f"Failed to disable VmPolicy: {e}")
 
-# Shizuku Wireless ADB Re-enabler
 def enable_shizuku_wireless_adb():
+    """Attempts to enable wireless ADB via Shizuku or root."""
     app_log("Starting Shizuku/Root wireless ADB trigger...")
     adb_cmd = "setprop service.adb.tcp.port 5555; setprop persist.adb.tcp.port 5555; setprop service.adb.tcp.bind 0.0.0.0; stop adbd && start adbd"
     
@@ -163,13 +175,9 @@ def enable_shizuku_wireless_adb():
     except Exception as e:
         app_log(f"Shizuku execution failed: {e}")
 
-# Kivy theme configuration
-DARK_BG = (0.07, 0.07, 0.14, 1)
-PANEL_BG = (0.1, 0.1, 0.22, 1)
-ACCENT = (0.0, 0.85, 0.647, 1)
-TEXT = (0.9, 0.9, 0.9, 1)
 
 class ColoredBoxLayout(BoxLayout):
+    """BoxLayout with a customizable background color."""
     def __init__(self, bg_color=DARK_BG, **kwargs):
         super().__init__(**kwargs)
         with self.canvas.before:
@@ -183,6 +191,7 @@ class ColoredBoxLayout(BoxLayout):
 
 
 class SlopButton(Button):
+    """Button that cancels touch if dragged beyond a threshold."""
     touch_slop = dp(25)
     
     def __init__(self, **kwargs):
@@ -217,10 +226,8 @@ class SlopButton(Button):
         return super().on_touch_up(touch)
 
 
-# Global references for UI update during TCP transfers
-_active_transfer_screen = None
-
 class TCPFileServerThread(threading.Thread):
+    """Dedicated background thread for handling incoming TCP file transfers."""
     def __init__(self):
         super().__init__()
         self.daemon = True
@@ -298,6 +305,9 @@ class TCPFileServerThread(threading.Thread):
                 last_progress_time = start_time
                 last_bytes = 0
                 
+                app = App.get_running_app()
+                transfer_screen = app.root.get_screen('transfer') if app and app.root else None
+                
                 with open(filepath, "wb") as f:
                     while received_bytes < filesize:
                         to_read = min(65536, filesize - received_bytes)
@@ -311,29 +321,34 @@ class TCPFileServerThread(threading.Thread):
                         if now - last_progress_time >= 0.5:
                             dt = now - last_progress_time
                             delta = received_bytes - last_bytes
-                            speed = (delta / dt) / (1024 * 1024)
-                            percent = int((received_bytes / filesize) * 100)
+                            speed = (delta / dt) / (1024 * 1024) if dt > 0 else 0
+                            percent = int((received_bytes / filesize) * 100) if filesize > 0 else 0
                             eta = (filesize - received_bytes) / (delta / dt) if delta > 0 else 0
                             
-                            if _active_transfer_screen:
-                                _active_transfer_screen.update_progress_from_server(percent, speed, eta, filename)
+                            if transfer_screen:
+                                transfer_screen.update_progress_from_server(percent, speed, eta, filename)
                             
                             last_bytes = received_bytes
                             last_progress_time = now
                 
                 conn.close()
                 app_log(f"Successfully received '{filename}'")
-                if _active_transfer_screen:
-                    _active_transfer_screen.on_server_transfer_complete(True, filename)
+                if transfer_screen:
+                    transfer_screen.on_server_transfer_complete(True, filename)
         except Exception as e:
-            try: conn.close()
-            except: pass
+            try:
+                conn.close()
+            except OSError:
+                pass
             app_log(f"TCP server receive error: {e}")
-            if _active_transfer_screen:
-                _active_transfer_screen.on_server_transfer_complete(False, str(e))
+            app = App.get_running_app()
+            transfer_screen = app.root.get_screen('transfer') if app and app.root else None
+            if transfer_screen:
+                transfer_screen.on_server_transfer_complete(False, str(e))
 
 
 class MainScreen(Screen):
+    """The main interface for the Scrcpy Link."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = ColoredBoxLayout(orientation='vertical', padding=dp(16), spacing=dp(12))
@@ -344,23 +359,23 @@ class MainScreen(Screen):
         
         btn_layout = BoxLayout(orientation='vertical', spacing=dp(8), size_hint_y=None, height=dp(340))
         
-        restart_btn = SlopButton(text="⚡ Restart Link", background_color=(0.1, 0.2, 0.4, 1), color=ACCENT, font_size=sp(16))
+        restart_btn = SlopButton(text="Restart Link", background_color=(0.1, 0.2, 0.4, 1), color=ACCENT, font_size=sp(16))
         restart_btn.bind(on_press=self.restart_connection)
         
-        transfer_btn = SlopButton(text="🚀 WiFi File Transfer (Send/Recv)", background_color=(0.1, 0.35, 0.25, 1), color=ACCENT, font_size=sp(16))
-        transfer_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'transfer'))
+        transfer_btn = SlopButton(text="WiFi File Transfer (Send/Recv)", background_color=(0.1, 0.35, 0.25, 1), color=ACCENT, font_size=sp(16))
+        transfer_btn.bind(on_press=self.go_transfer)
 
-        vault_btn = SlopButton(text="📂 Received Files Vault", background_color=(0.3, 0.15, 0.05, 1), color=ACCENT, font_size=sp(16))
-        vault_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'vault'))
+        vault_btn = SlopButton(text="Received Files Vault", background_color=(0.3, 0.15, 0.05, 1), color=ACCENT, font_size=sp(16))
+        vault_btn.bind(on_press=self.go_vault)
         
-        logs_btn = SlopButton(text="📋 Live System Logs", background_color=(0.2, 0.1, 0.35, 1), color=ACCENT, font_size=sp(16))
-        logs_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'logs'))
+        logs_btn = SlopButton(text="Live System Logs", background_color=(0.2, 0.1, 0.35, 1), color=ACCENT, font_size=sp(16))
+        logs_btn.bind(on_press=self.go_logs)
         
-        settings_btn = SlopButton(text="⚙️ App Settings", background_color=(0.2, 0.2, 0.25, 1), color=ACCENT, font_size=sp(16))
-        settings_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'settings'))
+        settings_btn = SlopButton(text="App Settings", background_color=(0.2, 0.2, 0.25, 1), color=ACCENT, font_size=sp(16))
+        settings_btn.bind(on_press=self.go_settings)
 
-        help_btn = SlopButton(text="📖 Help Guide", background_color=(0.05, 0.25, 0.15, 1), color=ACCENT, font_size=sp(16))
-        help_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'help'))
+        help_btn = SlopButton(text="Help Guide", background_color=(0.05, 0.25, 0.15, 1), color=ACCENT, font_size=sp(16))
+        help_btn.bind(on_press=self.go_help)
         
         btn_layout.add_widget(restart_btn)
         btn_layout.add_widget(transfer_btn)
@@ -380,6 +395,31 @@ class MainScreen(Screen):
         self.discovered_pc_ip = None
         self._discovery_running = False
 
+    def go_transfer(self, instance):
+        """Navigate to transfer screen."""
+        self.manager.transition.direction = 'left'
+        self.manager.current = 'transfer'
+
+    def go_vault(self, instance):
+        """Navigate to vault screen."""
+        self.manager.transition.direction = 'left'
+        self.manager.current = 'vault'
+
+    def go_logs(self, instance):
+        """Navigate to logs screen."""
+        self.manager.transition.direction = 'left'
+        self.manager.current = 'logs'
+
+    def go_settings(self, instance):
+        """Navigate to settings screen."""
+        self.manager.transition.direction = 'left'
+        self.manager.current = 'settings'
+
+    def go_help(self, instance):
+        """Navigate to help screen."""
+        self.manager.transition.direction = 'left'
+        self.manager.current = 'help'
+
     def on_enter(self):
         disable_file_uri_exposure_check()
         if not self._discovery_running:
@@ -388,6 +428,7 @@ class MainScreen(Screen):
             self._start_services()
 
     def restart_connection(self, instance):
+        """Restarts the network services."""
         app_log("Restarting link...")
         self._stop_services()
         threading.Thread(target=enable_shizuku_wireless_adb, daemon=True).start()
@@ -404,8 +445,9 @@ class MainScreen(Screen):
         self.sending = False
 
     def discovery_listener(self):
+        """Listens for PC UDP broadcasts."""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.settimeout(2.0)
             sock.bind(("0.0.0.0", config["discovery_port"]))
@@ -423,11 +465,15 @@ class MainScreen(Screen):
                 except socket.timeout:
                     pass
                 except Exception as e:
+                    app_log(f"Discovery receive error: {e}")
                     time.sleep(1)
         except Exception as e:
             app_log(f"Discovery socket failed: {e}")
+        finally:
+            sock.close()
 
     def start_heartbeat(self, pc_ip):
+        """Initiates the heartbeat loop."""
         self.pc_ip_input.text = pc_ip
         self.status_label.text = f"PC found! Initiating link..."
         if not self.sending:
@@ -435,38 +481,38 @@ class MainScreen(Screen):
             threading.Thread(target=self.heartbeat_loop, args=(pc_ip,), daemon=True).start()
 
     def heartbeat_loop(self, target_ip):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        """Sends periodic heartbeats back to the PC."""
         port = config["heartbeat_port"]
-        while self.sending:
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                s.connect(("8.8.8.8", 80))
-                phone_ip = s.getsockname()[0]
-                s.close()
-                
-                msg = f"HELLO_USER|{phone_ip}|{config['adb_port']}"
-                sock.sendto(msg.encode('utf-8'), (target_ip, port))
-            except Exception as e:
-                pass
-            time.sleep(4)
-        sock.close()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            while self.sending:
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.connect(("8.8.8.8", 80))
+                    phone_ip = s.getsockname()[0]
+                    s.close()
+                    
+                    msg = f"HELLO_USER|{phone_ip}|{config['adb_port']}"
+                    sock.sendto(msg.encode('utf-8'), (target_ip, port))
+                except Exception as e:
+                    app_log(f"Heartbeat loop error: {e}")
+                time.sleep(4)
+        finally:
+            sock.close()
 
 
-# BRAND NEW FULLY FEATURED WIRELESS FILE TRANSFER SCREEN!
 class FileTransferScreen(Screen):
+    """Screen for handling file transfers."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        global _active_transfer_screen
-        _active_transfer_screen = self
         
         layout = ColoredBoxLayout(orientation='vertical', padding=dp(16), spacing=dp(10))
         
         title = Label(text="WiFi File Transfer Hub", font_size=sp(22), bold=True, color=ACCENT, size_hint_y=None, height=dp(40))
         layout.add_widget(title)
 
-        # 1. SERVER RECEIVER PANEL
         server_group = ColoredBoxLayout(orientation='vertical', bg_color=PANEL_BG, padding=dp(12), spacing=dp(8), size_hint_y=None, height=dp(180))
-        server_group.add_widget(Label(text="📥 WiFi Receiver Status: ACTIVE", font_size=sp(14), bold=True, color=ACCENT, halign='left'))
+        server_group.add_widget(Label(text="WiFi Receiver Status: ACTIVE", font_size=sp(14), bold=True, color=ACCENT, halign='left'))
         
         self.serv_file_lbl = Label(text="Waiting for PC transfer...", font_size=sp(12), color=TEXT, halign='center')
         self.serv_progress = Label(text="0%", font_size=sp(16), bold=True, color=ACCENT)
@@ -477,15 +523,14 @@ class FileTransferScreen(Screen):
         server_group.add_widget(self.serv_stats)
         layout.add_widget(server_group)
 
-        # 2. SENDER PANEL (Phone -> PC)
         sender_group = ColoredBoxLayout(orientation='vertical', bg_color=PANEL_BG, padding=dp(12), spacing=dp(8), size_hint_y=None, height=dp(200))
-        sender_group.add_widget(Label(text="📤 Send Vault File to PC", font_size=sp(14), bold=True, color=ACCENT))
+        sender_group.add_widget(Label(text="Send Vault File to PC", font_size=sp(14), bold=True, color=ACCENT))
         
         self.sender_spinner = Spinner(text="Select file from Vault...", values=[], background_color=DARK_BG, color=TEXT)
         self.sender_spinner.bind(on_press=self.populate_vault_files)
         
         self.send_progress_lbl = Label(text="Push speed: --  |  ETA: --", font_size=sp(12), color=TEXT)
-        self.send_btn = SlopButton(text="🚀 Push Selected File to PC", background_color=(0.1, 0.35, 0.2, 1), color=ACCENT)
+        self.send_btn = SlopButton(text="Push Selected File to PC", background_color=(0.1, 0.35, 0.2, 1), color=ACCENT)
         self.send_btn.bind(on_press=self.start_file_send_to_pc)
 
         sender_group.add_widget(self.sender_spinner)
@@ -493,21 +538,28 @@ class FileTransferScreen(Screen):
         sender_group.add_widget(self.send_btn)
         layout.add_widget(sender_group)
 
-        # Back Button
-        back_btn = SlopButton(text="[<] Back to Home", background_color=(0.2, 0.1, 0.3, 1), color=ACCENT, size_hint_y=None, height=dp(50))
-        back_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'main'))
+        back_btn = SlopButton(text="Back to Home", background_color=(0.2, 0.1, 0.3, 1), color=ACCENT, size_hint_y=None, height=dp(50))
+        back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
         
         self.add_widget(layout)
 
+    def go_back(self, instance):
+        """Navigate back to main screen."""
+        self.manager.transition.direction = 'right'
+        self.manager.current = 'main'
+
     def populate_vault_files(self, instance):
+        """Populates the list of files to send."""
         try:
             files = sorted(os.listdir(VAULT_DIR))
             self.sender_spinner.values = [f for f in files if os.path.isfile(os.path.join(VAULT_DIR, f))]
-        except:
+        except OSError as e:
+            app_log(f"Failed to list vault files: {e}")
             self.sender_spinner.values = []
 
     def start_file_send_to_pc(self, instance):
+        """Begins transferring the selected file to the PC."""
         filename = self.sender_spinner.text
         if filename == "Select file from Vault..." or not filename:
             self.send_progress_lbl.text = "Please select a file first!"
@@ -548,8 +600,8 @@ class FileTransferScreen(Screen):
                         if now - last_progress_time >= 0.5:
                             dt = now - last_progress_time
                             delta = sent_bytes - last_bytes
-                            speed = (delta / dt) / (1024 * 1024)
-                            percent = int((sent_bytes / filesize) * 100)
+                            speed = (delta / dt) / (1024 * 1024) if dt > 0 else 0
+                            percent = int((sent_bytes / filesize) * 100) if filesize > 0 else 0
                             eta = (filesize - sent_bytes) / (delta / dt) if delta > 0 else 0
                             
                             Clock.schedule_once(lambda dt, p=percent, s=speed, e=eta: self.update_send_ui(p, s, e))
@@ -561,20 +613,22 @@ class FileTransferScreen(Screen):
                 Clock.schedule_once(lambda dt: self.on_send_complete(True, f"Sent '{filename}' successfully!"))
             except Exception as e:
                 try: sock.close()
-                except: pass
+                except OSError: pass
                 Clock.schedule_once(lambda dt, err=str(e): self.on_send_complete(False, f"Push failed: {err}"))
 
         threading.Thread(target=_task, daemon=True).start()
 
     def update_send_ui(self, percent, speed, eta):
+        """Updates the progress UI for sending."""
         self.send_progress_lbl.text = f"Progress: {percent}% | Speed: {speed:.1f} MB/s | ETA: {int(eta)}s"
 
     def on_send_complete(self, success, msg):
+        """Handles completion of the file send task."""
         self.send_btn.disabled = False
         self.send_progress_lbl.text = msg
 
-    # Server callbacks (Triggered from server thread safely)
     def update_progress_from_server(self, percent, speed, eta, filename):
+        """Updates UI based on incoming server transfer."""
         def _update(dt):
             self.serv_file_lbl.text = f"Receiving: '{filename}'"
             self.serv_progress.text = f"{percent}%"
@@ -582,6 +636,7 @@ class FileTransferScreen(Screen):
         Clock.schedule_once(_update)
 
     def on_server_transfer_complete(self, success, details):
+        """Handles completion of incoming server transfer."""
         def _update(dt):
             self.serv_progress.text = "100%" if success else "Error!"
             self.serv_file_lbl.text = f"Success: {details}" if success else f"Failed: {details}"
@@ -589,15 +644,15 @@ class FileTransferScreen(Screen):
         Clock.schedule_once(_update)
 
 
-# BRAND NEW IN-APP LOG VIEWER
 class LogsScreen(Screen):
+    """Screen for viewing application logs."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = ColoredBoxLayout(orientation='vertical', padding=dp(16), spacing=dp(10))
         
         header = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(40))
         title = Label(text="Live System Logs", font_size=sp(20), bold=True, color=ACCENT)
-        refresh_btn = SlopButton(text="🔄 Refresh", background_color=(0.1, 0.25, 0.4, 1), size_hint_x=None, width=dp(90))
+        refresh_btn = SlopButton(text="Refresh", background_color=(0.1, 0.25, 0.4, 1), size_hint_x=None, width=dp(90))
         refresh_btn.bind(on_press=lambda x: self.load_logs())
         header.add_widget(title)
         header.add_widget(refresh_btn)
@@ -612,39 +667,47 @@ class LogsScreen(Screen):
         layout.add_widget(self.scroll)
 
         btn_row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50), spacing=dp(10))
-        clear_btn = SlopButton(text="🗑️ Clear Logs", background_color=(0.4, 0.1, 0.1, 1), color=ACCENT)
+        clear_btn = SlopButton(text="Clear Logs", background_color=(0.4, 0.1, 0.1, 1), color=ACCENT)
         clear_btn.bind(on_press=self.clear_logs)
-        back_btn = SlopButton(text="[<] Back to Home", background_color=(0.2, 0.1, 0.3, 1), color=ACCENT)
-        back_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'main'))
+        back_btn = SlopButton(text="Back to Home", background_color=(0.2, 0.1, 0.3, 1), color=ACCENT)
+        back_btn.bind(on_press=self.go_back)
         btn_row.add_widget(clear_btn)
         btn_row.add_widget(back_btn)
         layout.add_widget(btn_row)
 
         self.add_widget(layout)
 
+    def go_back(self, instance):
+        """Navigate back to main screen."""
+        self.manager.transition.direction = 'right'
+        self.manager.current = 'main'
+
     def on_enter(self):
         self.load_logs()
 
     def load_logs(self):
+        """Loads and displays the latest log content."""
         try:
             if os.path.exists(LOG_FILE):
                 with open(LOG_FILE, "r") as f:
                     self.log_label.text = f.read().strip() or "Log file is empty."
             else:
                 self.log_label.text = "No log file found."
-        except Exception as e:
+        except OSError as e:
             self.log_label.text = f"Error reading logs: {e}"
 
     def clear_logs(self, instance):
+        """Clears the application logs."""
         try:
             with open(LOG_FILE, "w") as f:
                 f.write("")
             self.log_label.text = "Logs cleared successfully."
-        except Exception as e:
+        except OSError as e:
             self.log_label.text = f"Failed to clear logs: {e}"
 
 
 class SettingsScreen(Screen):
+    """Screen for app configuration."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = ColoredBoxLayout(orientation='vertical', padding=dp(20), spacing=dp(12))
@@ -659,19 +722,25 @@ class SettingsScreen(Screen):
         log_layout.add_widget(self.log_switch)
         layout.add_widget(log_layout)
         
-        self.add_port_spinner(layout, "Heartbeat Port (Phone ➔ PC)", "heartbeat_port")
+        self.add_port_spinner(layout, "Heartbeat Port (Phone -> PC)", "heartbeat_port")
         self.add_port_spinner(layout, "Discovery Port (PC Broadcast)", "discovery_port")
         self.add_port_spinner(layout, "scrcpy ADB Port", "adb_port")
         
         layout.add_widget(Widget())
         
-        back_btn = SlopButton(text="[<] Save & Return", background_color=(0.2, 0.1, 0.4, 1), color=ACCENT, font_size=sp(18), size_hint_y=None, height=dp(50))
-        back_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'main'))
+        back_btn = SlopButton(text="Save & Return", background_color=(0.2, 0.1, 0.4, 1), color=ACCENT, font_size=sp(18), size_hint_y=None, height=dp(50))
+        back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
         
         self.add_widget(layout)
 
+    def go_back(self, instance):
+        """Navigate back to main screen."""
+        self.manager.transition.direction = 'right'
+        self.manager.current = 'main'
+
     def add_port_spinner(self, layout, label_text, config_key):
+        """Adds a UI spinner for port configuration."""
         box = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50))
         box.add_widget(Label(text=label_text, color=TEXT, font_size=sp(14), size_hint_x=0.6))
         spinner = Spinner(text=str(config.get(config_key)), values=[str(p) for p in range(5550, 5560)], background_color=PANEL_BG, color=TEXT, size_hint_x=0.4)
@@ -680,18 +749,21 @@ class SettingsScreen(Screen):
         layout.add_widget(box)
 
     def on_log_switch(self, instance, value):
+        """Toggles logging feature."""
         config["logging_enabled"] = value
         save_config(config)
 
     def on_port_change(self, key, value):
+        """Updates port configuration."""
         try:
             config[key] = int(value)
             save_config(config)
-        except:
+        except ValueError:
             pass
 
 
 class HelpScreen(Screen):
+    """Screen that displays the help guide."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical', padding=dp(16), spacing=dp(10))
@@ -729,21 +801,27 @@ class HelpScreen(Screen):
         scroll.add_widget(content)
         layout.add_widget(scroll)
         
-        back_btn = SlopButton(text="[<] Back to Home", background_color=(0.2, 0.1, 0.4, 1), color=ACCENT, font_size=sp(16), size_hint_y=None, height=dp(55))
-        back_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'main'))
+        back_btn = SlopButton(text="Back to Home", background_color=(0.2, 0.1, 0.4, 1), color=ACCENT, font_size=sp(16), size_hint_y=None, height=dp(55))
+        back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
         
         self.add_widget(layout)
 
+    def go_back(self, instance):
+        """Navigate back to main screen."""
+        self.manager.transition.direction = 'right'
+        self.manager.current = 'main'
+
 
 class VaultScreen(Screen):
+    """Screen for displaying downloaded vault files."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = ColoredBoxLayout(orientation='vertical', padding=dp(16), spacing=dp(10))
         
         header = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(40))
         title = Label(text="Vault Files", color=ACCENT, font_size=sp(20), bold=True)
-        refresh_btn = SlopButton(text="🔄 Refresh", background_color=(0.1, 0.25, 0.4, 1), size_hint_x=None, width=dp(90))
+        refresh_btn = SlopButton(text="Refresh", background_color=(0.1, 0.25, 0.4, 1), size_hint_x=None, width=dp(90))
         refresh_btn.bind(on_press=lambda x: self.refresh_vault())
         header.add_widget(title)
         header.add_widget(refresh_btn)
@@ -758,16 +836,22 @@ class VaultScreen(Screen):
         self.empty_label = Label(text="No files found in Vault.\nTry pushing files from your PC wirelessly!", color=(0.5, 0.5, 0.5, 1), font_size=sp(13), halign='center')
         layout.add_widget(self.empty_label)
         
-        back_btn = SlopButton(text="[<] Back to Home", background_color=(0.2, 0.1, 0.3, 1), color=ACCENT, font_size=sp(16), size_hint_y=None, height=dp(55))
-        back_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'main'))
+        back_btn = SlopButton(text="Back to Home", background_color=(0.2, 0.1, 0.3, 1), color=ACCENT, font_size=sp(16), size_hint_y=None, height=dp(55))
+        back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
         
         self.add_widget(layout)
+
+    def go_back(self, instance):
+        """Navigate back to main screen."""
+        self.manager.transition.direction = 'right'
+        self.manager.current = 'main'
     
     def on_enter(self):
         self.refresh_vault()
     
     def refresh_vault(self):
+        """Refreshes the list of files stored in the vault."""
         self.file_list.clear_widgets()
         try:
             files = sorted(os.listdir(VAULT_DIR))
@@ -797,10 +881,11 @@ class VaultScreen(Screen):
                 row.add_widget(size_label)
                 row.add_widget(share_btn)
                 self.file_list.add_widget(row)
-        except Exception as e:
+        except OSError as e:
             app_log(f"Vault refresh failed: {e}")
     
     def share_file(self, file_path):
+        """Triggers the Android share intent for the specified file."""
         try:
             from jnius import autoclass, cast
             PythonActivity = autoclass('org.kivy.android.PythonActivity')
@@ -822,22 +907,22 @@ class VaultScreen(Screen):
             app_log(f"Share trigger failed: {e}")
 
 
-# Main Kivy App Definition
 class HeartbeatApp(App):
+    """The main application class."""
     def build(self):
-        # Start dedicated Port 5558 server thread for fast wireless transfers!
+        Window.bind(on_keyboard=self.on_keyboard)
+
         server = TCPFileServerThread()
         server.start()
 
-        sm = ScreenManager()
-        sm.add_widget(MainScreen(name='main'))
-        sm.add_widget(FileTransferScreen(name='transfer'))
-        sm.add_widget(VaultScreen(name='vault'))
-        sm.add_widget(LogsScreen(name='logs'))
-        sm.add_widget(SettingsScreen(name='settings'))
-        sm.add_widget(HelpScreen(name='help'))
+        self.root_sm = ScreenManager(transition=SlideTransition())
+        self.root_sm.add_widget(MainScreen(name='main'))
+        self.root_sm.add_widget(FileTransferScreen(name='transfer'))
+        self.root_sm.add_widget(VaultScreen(name='vault'))
+        self.root_sm.add_widget(LogsScreen(name='logs'))
+        self.root_sm.add_widget(SettingsScreen(name='settings'))
+        self.root_sm.add_widget(HelpScreen(name='help'))
         
-        # Rig JNI clipboard broadcasts
         try:
             from android.broadcast import BroadcastReceiver
             
@@ -856,9 +941,19 @@ class HeartbeatApp(App):
         except Exception as e:
             app_log(f"Clipboard receiver bind failed: {e}")
             
-        return sm
+        return self.root_sm
+
+    def on_keyboard(self, window, key, scancode, codepoint, modifier):
+        """Handles hardware back button and escape key."""
+        if key == 27:
+            if self.root_sm.current != 'main':
+                self.root_sm.transition.direction = 'right'
+                self.root_sm.current = 'main'
+                return True
+        return False
 
     def set_local_clipboard(self, text):
+        """Sets the Android clipboard."""
         try:
             from jnius import autoclass
             Context = autoclass('android.content.Context')
@@ -873,6 +968,7 @@ class HeartbeatApp(App):
             app_log(f"Failed to write device clipboard: {e}")
 
     def send_local_clipboard_to_pc(self):
+        """Sends clipboard content back to the PC."""
         try:
             from jnius import autoclass
             Context = autoclass('android.content.Context')
@@ -883,8 +979,7 @@ class HeartbeatApp(App):
                 clip_data = clipboard.getPrimaryClip()
                 if clip_data.getItemCount() > 0:
                     text = clip_data.getItemAt(0).coerceToText(activity).toString()
-                    # Broadcast it back via UDP
-                    main_screen = self.root.get_screen('main')
+                    main_screen = self.root_sm.get_screen('main')
                     pc_ip = main_screen.discovered_pc_ip
                     if pc_ip:
                         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

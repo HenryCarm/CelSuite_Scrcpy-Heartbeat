@@ -1,0 +1,1 @@
+cd /home/henry/Documents/Projects/Python/ScrcpyUltimateLink && /home/henry/Documents/Projects/Python/venv/bin/python -m nuitka --standalone --onefile --enable-plugin=pyqt6 --linux-icon=icon.png main.py

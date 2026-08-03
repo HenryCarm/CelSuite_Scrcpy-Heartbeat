@@ -1,17 +1,55 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-*.log
-main.build/
-main.dist/
-main.onefile-build/
-*.bin
-ScrcpyUltimateLink
-final_*.png
-verification.png
-tmp/
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+.env/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Buildozer
 .buildozer/
-bin/*.apk
-last_ip.txt
-phone_simulator.py
-how to pakage.txt
+bin/
+
+# Nuitka
+*.build/
+*.dist/
+
+# OS/IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# App logs/config
+config.json
+scrcpy_heartbeat_config.json
+*.log
+ScrcpyLink.log
+
+# Proof images / temp
+*.png
+!icon.png
+*.jpg
