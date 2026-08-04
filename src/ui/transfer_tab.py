@@ -13,13 +13,11 @@ import os
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QFileDialog,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
     QProgressBar,
-    QPushButton,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -34,6 +32,8 @@ from src.constants import (
 from src.logger import get_logger
 from src.transfer.tcp_client import TCPFileClient
 from src.ui.widgets.drop_zone import DropZone
+from src.ui.animations import AnimatedButton
+from src.ui.widgets.section_card import SectionCard
 
 log = get_logger(__name__)
 
@@ -78,8 +78,8 @@ class TransferTab(QWidget):
         layout.addWidget(self._push_info)
 
         # Progress group
-        push_progress_group = QGroupBox("Transfer Progress")
-        pp_layout = QVBoxLayout(push_progress_group)
+        push_progress_group = SectionCard("Transfer Progress")
+        pp_layout = QVBoxLayout()
 
         self._push_progress = QProgressBar()
         self._push_progress.setRange(0, 100)
@@ -89,16 +89,17 @@ class TransferTab(QWidget):
         self._push_speed_label = QLabel("")
         self._push_speed_label.setObjectName("subtitle")
         pp_layout.addWidget(self._push_speed_label)
+        push_progress_group.addLayout(pp_layout)
         layout.addWidget(push_progress_group)
 
         # Buttons
         btn_layout = QHBoxLayout()
-        self._send_btn = QPushButton("\U0001f680  Send File")
+        self._send_btn = AnimatedButton("\U0001f680  Send File")
         self._send_btn.setObjectName("action-primary")
         self._send_btn.setEnabled(False)
         self._send_btn.clicked.connect(self._send_file)
 
-        self._cancel_push_btn = QPushButton("\u274c  Cancel")
+        self._cancel_push_btn = AnimatedButton("\u274c  Cancel")
         self._cancel_push_btn.setObjectName("action-danger")
         self._cancel_push_btn.setEnabled(False)
         self._cancel_push_btn.clicked.connect(self._cancel_send)
@@ -130,7 +131,7 @@ class TransferTab(QWidget):
 
         # Controls
         ctrl_layout = QHBoxLayout()
-        refresh_btn = QPushButton("\U0001f504  Refresh Remote File List")
+        refresh_btn = AnimatedButton("\U0001f504  Refresh Remote File List")
         refresh_btn.clicked.connect(self._refresh_file_list)
         ctrl_layout.addWidget(refresh_btn)
         layout.addLayout(ctrl_layout)
@@ -143,8 +144,8 @@ class TransferTab(QWidget):
         layout.addWidget(self._file_list)
 
         # Progress
-        pull_progress_group = QGroupBox("Download Progress")
-        dp_layout = QVBoxLayout(pull_progress_group)
+        pull_progress_group = SectionCard("Download Progress")
+        dp_layout = QVBoxLayout()
 
         self._pull_progress = QProgressBar()
         self._pull_progress.setRange(0, 100)
@@ -154,16 +155,17 @@ class TransferTab(QWidget):
         self._pull_speed_label = QLabel("")
         self._pull_speed_label.setObjectName("subtitle")
         dp_layout.addWidget(self._pull_speed_label)
+        pull_progress_group.addLayout(dp_layout)
         layout.addWidget(pull_progress_group)
 
         # Pull button
         btn_layout = QHBoxLayout()
-        self._pull_btn = QPushButton("\u2b07  Download Selected")
+        self._pull_btn = AnimatedButton("\u2b07  Download Selected")
         self._pull_btn.setObjectName("action-primary")
         self._pull_btn.setEnabled(False)
         self._pull_btn.clicked.connect(self._pull_file)
 
-        self._cancel_pull_btn = QPushButton("\u274c  Cancel")
+        self._cancel_pull_btn = AnimatedButton("\u274c  Cancel")
         self._cancel_pull_btn.setObjectName("action-danger")
         self._cancel_pull_btn.setEnabled(False)
         self._cancel_pull_btn.clicked.connect(self._cancel_pull)

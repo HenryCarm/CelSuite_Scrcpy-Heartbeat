@@ -10,11 +10,15 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFileDialog, QFrame, QLabel, QPushButton, QVBoxLayout
 
 from src.constants import get_file_icon
+from src.ui.animations import fade_in
 
 
 class DropZone(QFrame):
     """
     A drag-and-drop zone for selecting files to transfer.
+
+    Features glassmorphic styling with animated border and
+    file icon preview with fade-in animation.
 
     Signals
     -------
@@ -27,14 +31,20 @@ class DropZone(QFrame):
     def __init__(self) -> None:
         super().__init__()
         self.setAcceptDrops(True)
-        self.setMinimumHeight(160)
+        self.setMinimumHeight(180)
         self.setObjectName("drop-zone")
 
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.setSpacing(12)
+        layout.setSpacing(14)
 
-        hint_label = QLabel("Drag & Drop File Here\n\u2014 or \u2014")
+        # Drop icon
+        icon_label = QLabel("📂")
+        icon_label.setStyleSheet("font-size: 36px; background: transparent;")
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(icon_label)
+
+        hint_label = QLabel("Drag & Drop File Here\n— or —")
         hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         hint_label.setObjectName("subtitle")
 
@@ -42,9 +52,11 @@ class DropZone(QFrame):
         self._file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._file_label.setObjectName("status")
 
-        browse_btn = QPushButton("Browse File\u2026")
-        browse_btn.setFixedWidth(180)
+        browse_btn = QPushButton("📁  Browse File…")
+        browse_btn.setFixedWidth(200)
+        browse_btn.setObjectName("control-btn")
         browse_btn.clicked.connect(self._browse)
+        browse_btn.setCursor(Qt.CursorShape.PointingHandCursor)
 
         layout.addWidget(hint_label)
         layout.addWidget(self._file_label)
@@ -88,4 +100,6 @@ class DropZone(QFrame):
         name = os.path.basename(path)
         icon = get_file_icon(name)
         self._file_label.setText(f"{icon}  {name}")
+        # Fade in the file label
+        fade_in(self._file_label, duration=200)
         self.file_selected.emit(path)

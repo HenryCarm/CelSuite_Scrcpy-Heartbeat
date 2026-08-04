@@ -6,11 +6,9 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import (
     QFileDialog,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
     QScrollArea,
     QSpinBox,
     QVBoxLayout,
@@ -25,6 +23,8 @@ from src.constants import (
     DEFAULT_TCP_TRANSFER_PORT,
 )
 from src.logger import get_logger
+from src.ui.animations import AnimatedButton
+from src.ui.widgets.section_card import SectionCard
 
 log = get_logger(__name__)
 
@@ -49,8 +49,8 @@ class SettingsTab(QWidget):
         layout.addWidget(title)
 
         # ── Network Ports ─────────────────────────────────────────────
-        ports_group = QGroupBox("\U0001f310  Network Ports")
-        ports_layout = QVBoxLayout(ports_group)
+        ports_group = SectionCard("\U0001f310  Network Ports")
+        ports_layout = QVBoxLayout()
 
         self._port_widgets: dict[str, QSpinBox] = {}
         port_defs = [
@@ -71,11 +71,12 @@ class SettingsTab(QWidget):
             ports_layout.addLayout(row)
             self._port_widgets[key] = spin
 
+        ports_group.addLayout(ports_layout)
         layout.addWidget(ports_group)
 
         # ── Binary Paths ──────────────────────────────────────────────
-        bins_group = QGroupBox("\U0001f527  Binary Paths")
-        bins_layout = QVBoxLayout(bins_group)
+        bins_group = SectionCard("\U0001f527  Binary Paths")
+        bins_layout = QVBoxLayout()
 
         # scrcpy
         scrcpy_row = QHBoxLayout()
@@ -84,7 +85,7 @@ class SettingsTab(QWidget):
         self._scrcpy_input.textChanged.connect(
             lambda t: self._config.__setitem__("scrcpy_bin", t)
         )
-        scrcpy_browse = QPushButton("Browse\u2026")
+        scrcpy_browse = AnimatedButton("Browse\u2026")
         scrcpy_browse.clicked.connect(
             lambda: self._browse_binary(self._scrcpy_input, "scrcpy_bin")
         )
@@ -99,7 +100,7 @@ class SettingsTab(QWidget):
         self._adb_input.textChanged.connect(
             lambda t: self._config.__setitem__("adb_bin", t)
         )
-        adb_browse = QPushButton("Browse\u2026")
+        adb_browse = AnimatedButton("Browse\u2026")
         adb_browse.clicked.connect(
             lambda: self._browse_binary(self._adb_input, "adb_bin")
         )
@@ -107,11 +108,12 @@ class SettingsTab(QWidget):
         adb_row.addWidget(adb_browse)
         bins_layout.addLayout(adb_row)
 
+        bins_group.addLayout(bins_layout)
         layout.addWidget(bins_group)
 
         # ── Directories ───────────────────────────────────────────────
-        dirs_group = QGroupBox("\U0001f4c2  Directories")
-        dirs_layout = QVBoxLayout(dirs_group)
+        dirs_group = SectionCard("\U0001f4c2  Directories")
+        dirs_layout = QVBoxLayout()
 
         ss_row = QHBoxLayout()
         ss_row.addWidget(QLabel("Screenshot Save Directory:"))
@@ -122,16 +124,16 @@ class SettingsTab(QWidget):
         self._ss_dir_input.textChanged.connect(
             lambda t: self._config.__setitem__("screenshot_dir", t)
         )
-        ss_browse = QPushButton("Browse\u2026")
+        ss_browse = AnimatedButton("Browse\u2026")
         ss_browse.clicked.connect(self._browse_ss_dir)
         ss_row.addWidget(self._ss_dir_input)
         ss_row.addWidget(ss_browse)
         dirs_layout.addLayout(ss_row)
-
+        dirs_group.addLayout(dirs_layout)
         layout.addWidget(dirs_group)
 
         # ── Reset ─────────────────────────────────────────────────────
-        reset_btn = QPushButton("\U0001f504  Reset All Settings to Defaults")
+        reset_btn = AnimatedButton("\U0001f504  Reset All Settings to Defaults")
         reset_btn.setObjectName("action-danger")
         reset_btn.clicked.connect(self._reset_all)
         layout.addWidget(reset_btn)

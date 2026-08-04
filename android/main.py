@@ -6,35 +6,60 @@ import threading
 import json
 import subprocess
 import traceback
+import random
 
 # Samsung JNI and Modified UTF-8 sensor workarounds
 os.environ['SDL_SENSOR_DRIVER'] = 'dummy'
+os.environ['KIVY_NO_ARGS'] = '1'
 
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.switch import Switch
 from kivy.uix.spinner import Spinner
-from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
+from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.widget import Widget
 from kivy.uix.scrollview import ScrollView
 from kivy.clock import Clock
-from kivy.graphics import Color, Rectangle
+from kivy.graphics import Color, Rectangle, RoundedRectangle, Line, Ellipse, Scale, PushMatrix, PopMatrix
 from kivy.metrics import dp, sp
 from kivy.core.window import Window
+from kivy.animation import Animation
+from kivy.properties import NumericProperty
 
-Window.fullscreen = 'auto'
+if 'ANDROID_ARGUMENT' in os.environ:
+    Window.fullscreen = 'auto'
+else:
+    Window.size = (380, 680)
 
 # Port configuration
 PORT_TCP_TRANSFER = 5558
 
-# Kivy theme configuration
-DARK_BG = (0.07, 0.07, 0.14, 1)
-PANEL_BG = (0.1, 0.1, 0.22, 1)
-ACCENT = (0.0, 0.85, 0.647, 1)
-TEXT = (0.9, 0.9, 0.9, 1)
+# Royal Nebula Color Palette
+DARK_BG = (0.04, 0.04, 0.08, 1)
+PRIMARY_BG = (0.06, 0.06, 0.12, 1)
+SECONDARY_BG = (0.08, 0.08, 0.16, 1)
+CARD_BG = (0.10, 0.10, 0.21, 1)
+INPUT_BG = (0.12, 0.12, 0.24, 1)
+BUTTON_BG = (0.15, 0.15, 0.31, 1)
+
+ACCENT_PRIMARY = (0.486, 0.227, 0.929, 1)
+ACCENT_SECONDARY = (0.659, 0.333, 0.969, 1)
+ACCENT_TERTIARY = (0.388, 0.400, 0.945, 1)
+ACCENT_GLOW = (0.545, 0.361, 0.965, 1)
+
+TEXT_PRIMARY = (0.94, 0.94, 0.96, 1)
+TEXT_SECONDARY = (0.612, 0.639, 0.686, 1)
+TEXT_ON_ACCENT = (1, 1, 1, 1)
+
+SUCCESS = (0.063, 0.725, 0.506, 1)
+WARNING = (0.961, 0.620, 0.043, 1)
+ERROR = (0.937, 0.267, 0.267, 1)
+
+BORDER_SUBTLE = (0.165, 0.165, 0.322, 1)
 
 def get_storage_dirs():
     """Determines the correct internal and external storage directories for the app."""
@@ -143,38 +168,191 @@ def disable_file_uri_exposure_check():
         app_log(f"Failed to disable VmPolicy: {e}")
 
 def enable_shizuku_wireless_adb():
-    """Attempts to enable wireless ADB via Shizuku or root."""
+    """Attempts to enable wireless ADB via Shizuku API, then falls back to root."""
     app_log("Starting Shizuku/Root wireless ADB trigger...")
     adb_cmd = "setprop service.adb.tcp.port 5555; setprop persist.adb.tcp.port 5555; setprop service.adb.tcp.bind 0.0.0.0; stop adbd && start adbd"
     
+    # Method 1: Shizuku API (proper SDK integration)
     try:
-        import jnius
-        jnius.autoclass('java.lang.System')
-        Runtime = jnius.autoclass('java.lang.Runtime')
+        from jnius import autoclass
+        Shizuku = autoclass('rikka.shizuku.Shizuku')
+        
+        if not Shizuku.pingBinder():
+            app_log("Shizuku service not running, skipping API method")
+        elif Shizuku.checkSelfPermission() != 0:
+            app_log("Shizuku permission not granted, requesting...")
+            Shizuku.requestPermission(0)
+            app_log("Requested Shizuku permission. Will try again next heartbeat.")
+        else:
+            process = Shizuku.newProcess(
+                ["sh", "-c", adb_cmd], None, None
+            )
+            exit_code = process.waitFor()
+            app_log(f"Shizuku API: wireless ADB enabled! (exit={exit_code})")
+            return
+    except Exception as e:
+        app_log(f"Shizuku API failed: {e}")
+    
+    # Method 2: Root (su) via JNI
+    try:
+        from jnius import autoclass
+        Runtime = autoclass('java.lang.Runtime')
         process = Runtime.getRuntime().exec(["su", "-c", adb_cmd])
         process.waitFor()
         app_log("Root trigger successful via JNI Runtime")
         return
     except Exception as e:
-        app_log(f"JNI Root failed: {e}")
+        app_log(f"Root failed: {e}")
+    
+    app_log("All ADB trigger methods exhausted. User needs Shizuku or root.")
 
-    try:
-        subprocess.run(["su", "-c", adb_cmd], check=True, timeout=5)
-        app_log("Root trigger successful via subprocess su")
-        return
-    except Exception as e:
-        app_log(f"Subprocess Root failed: {e}")
+# --- CUSTOM WIDGET CLASSES ---
+
+class RoundedCard(BoxLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas.before:
+            Color(*CARD_BG)
+            self.rect = RoundedRectangle(radius=[dp(12)])
+            Color(*BORDER_SUBTLE)
+            self.border = Line(width=1.2)
+        self.bind(pos=self.update_canvas, size=self.update_canvas)
         
-    try:
-        pkg_name = "org.henry.scrcpy.scrcpyheartbeat"
-        env = os.environ.copy()
-        env["RISH_APPLICATION_ID"] = pkg_name
-        unrooted_cmd = "setprop service.adb.tcp.port 5555; setprop ctl.restart adbd; adb tcpip 5555; cmd appops set moe.shizuku.privileged.api RUN_IN_BACKGROUND allow 2>/dev/null; cmd appops set com.thedjchi.shizuku RUN_IN_BACKGROUND allow 2>/dev/null"
-        subprocess.run(["rish", "-c", unrooted_cmd], check=False, timeout=5, env=env)
-        app_log("Shizuku rish execution attempted.")
-    except Exception as e:
-        app_log(f"Shizuku execution failed: {e}")
+    def update_canvas(self, *args):
+        self.rect.pos = self.pos
+        self.rect.size = self.size
+        self.border.rounded_rectangle = [self.x, self.y, self.width, self.height, dp(12)]
 
+class AnimatedButton(Button):
+    scale_value = NumericProperty(1.0)
+    
+    def __init__(self, **kwargs):
+        kwargs.setdefault('background_normal', '')
+        kwargs.setdefault('background_down', '')
+        kwargs.setdefault('background_color', (0, 0, 0, 0)) # transparent so we draw custom bg
+        kwargs.setdefault('color', TEXT_ON_ACCENT)
+        kwargs.setdefault('font_size', sp(15))
+        kwargs.setdefault('bold', True)
+        self.btn_color = kwargs.pop('btn_color', ACCENT_PRIMARY)
+        super().__init__(**kwargs)
+        
+        with self.canvas.before:
+            PushMatrix()
+            self.scale_inst = Scale(1.0, 1.0, 1.0)
+            self.color_inst = Color(*self.btn_color)
+            self.bg_rect = RoundedRectangle(radius=[dp(10)])
+        with self.canvas.after:
+            PopMatrix()
+            
+        self.bind(scale_value=self.on_scale_value, pos=self.on_pos_size, size=self.on_pos_size)
+
+    def on_pos_size(self, *args):
+        self.scale_inst.origin = self.center
+        self.bg_rect.pos = self.pos
+        self.bg_rect.size = self.size
+        
+    def on_scale_value(self, instance, value):
+        self.scale_inst.x = value
+        self.scale_inst.y = value
+
+    def on_press(self):
+        super().on_press()
+        anim = Animation(scale_value=0.95, duration=0.05, t='out_quad') + Animation(scale_value=1.0, duration=0.1, t='out_bounce')
+        anim.start(self)
+
+class GridCard(BoxLayout):
+    def __init__(self, icon="", title="", subtitle="", btn_color=CARD_BG, on_press_callback=None, **kwargs):
+        kwargs.setdefault('orientation', 'vertical')
+        kwargs.setdefault('padding', dp(12))
+        kwargs.setdefault('spacing', dp(4))
+        super().__init__(**kwargs)
+        self.btn_color = btn_color
+        self.on_press_callback = on_press_callback
+        
+        with self.canvas.before:
+            Color(*self.btn_color)
+            self.bg_rect = RoundedRectangle(radius=[dp(16)])
+            Color(*BORDER_SUBTLE)
+            self.border_line = Line(width=1.2)
+            
+        self.bind(pos=self.update_canvas, size=self.update_canvas)
+
+        icon_lbl = Label(text=icon, font_size=sp(20), bold=True, size_hint_y=0.45, halign='center', valign='middle', color=ACCENT_PRIMARY)
+        icon_lbl.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        title_lbl = Label(text=title, font_size=sp(14), bold=True, size_hint_y=0.35, halign='center', valign='middle', color=TEXT_PRIMARY)
+        title_lbl.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        sub_lbl = Label(text=subtitle, font_size=sp(11), size_hint_y=0.2, halign='center', valign='middle', color=TEXT_SECONDARY)
+        sub_lbl.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        self.add_widget(icon_lbl)
+        self.add_widget(title_lbl)
+        self.add_widget(sub_lbl)
+
+    def update_canvas(self, *args):
+        self.bg_rect.pos = self.pos
+        self.bg_rect.size = self.size
+        self.border_line.rounded_rectangle = [self.x, self.y, self.width, self.height, dp(16)]
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            if self.on_press_callback:
+                self.on_press_callback(self)
+            return True
+        return super().on_touch_down(touch)
+
+class PulseIndicator(Widget):
+    radius = NumericProperty(dp(10))
+    alpha = NumericProperty(0.8)
+    
+    def __init__(self, **kwargs):
+        kwargs.setdefault('size_hint_y', None)
+        kwargs.setdefault('height', dp(60))
+        kwargs.setdefault('size_hint_x', None)
+        kwargs.setdefault('width', dp(60))
+        super().__init__(**kwargs)
+        self.is_connected = False
+        with self.canvas:
+            self.color_inst = Color(WARNING[0], WARNING[1], WARNING[2], self.alpha)
+            self.line_inst = Line(circle=(self.center_x, self.center_y, self.radius), width=dp(2))
+        self.bind(radius=self.update_circle, alpha=self.update_circle, pos=self.update_circle, size=self.update_circle)
+        Clock.schedule_interval(self.pulse, 1.2)
+        
+    def update_circle(self, *args):
+        self.color_inst.a = self.alpha
+        self.line_inst.circle = (self.center_x, self.center_y, self.radius)
+        
+    def pulse(self, dt):
+        c = SUCCESS if self.is_connected else WARNING
+        self.color_inst.rgb = c[:3]
+        self.radius = dp(10)
+        self.alpha = 0.8
+        anim = Animation(radius=dp(25), alpha=0, duration=1.0, t='out_quad')
+        anim.start(self)
+
+    def set_state(self, connected):
+        self.is_connected = connected
+
+class GradientBar(Widget):
+    progress = NumericProperty(0) # 0 to 100
+    
+    def __init__(self, **kwargs):
+        kwargs.setdefault('size_hint_y', None)
+        kwargs.setdefault('height', dp(10))
+        super().__init__(**kwargs)
+        with self.canvas.before:
+            Color(*INPUT_BG)
+            self.bg_rect = RoundedRectangle(radius=[dp(5)])
+            self.fg_color = Color(*ACCENT_PRIMARY)
+            self.fg_rect = RoundedRectangle(radius=[dp(5)])
+        self.bind(pos=self.update_rect, size=self.update_rect, progress=self.update_rect)
+        
+    def update_rect(self, *args):
+        self.bg_rect.pos = self.pos
+        self.bg_rect.size = self.size
+        self.fg_rect.pos = self.pos
+        self.fg_rect.size = (self.width * (self.progress / 100.0), self.height)
 
 class ColoredBoxLayout(BoxLayout):
     """BoxLayout with a customizable background color."""
@@ -188,7 +366,6 @@ class ColoredBoxLayout(BoxLayout):
     def _update_rect(self, instance, value):
         self.rect.pos = instance.pos
         self.rect.size = instance.size
-
 
 class SlopButton(Button):
     """Button that cancels touch if dragged beyond a threshold."""
@@ -346,78 +523,125 @@ class TCPFileServerThread(threading.Thread):
             if transfer_screen:
                 transfer_screen.on_server_transfer_complete(False, str(e))
 
+class ParticleBackground(Widget):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.particles = []
+        Clock.schedule_interval(self.update_particles, 1/30)
+        
+    def update_particles(self, dt):
+        if not self.canvas: return
+        if random.random() < 0.1 and len(self.particles) < 40:
+            p = {
+                'x': random.uniform(self.x, self.right),
+                'y': self.y - dp(10),
+                'speed': random.uniform(dp(20), dp(50)),
+                'size': random.uniform(dp(3), dp(8)),
+                'alpha': random.uniform(0.1, 0.4),
+                'inst': None,
+                'color_inst': None
+            }
+            with self.canvas:
+                p['color_inst'] = Color(*ACCENT_GLOW[:3], p['alpha'])
+                p['inst'] = Ellipse(pos=(p['x'], p['y']), size=(p['size'], p['size']))
+            self.particles.append(p)
+            
+        for p in self.particles[:]:
+            p['y'] += p['speed'] * dt
+            if p['y'] > self.top:
+                self.canvas.remove(p['color_inst'])
+                self.canvas.remove(p['inst'])
+                self.particles.remove(p)
+            else:
+                p['inst'].pos = (p['x'], p['y'])
 
 class MainScreen(Screen):
     """The main interface for the Scrcpy Link."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        layout = ColoredBoxLayout(orientation='vertical', padding=dp(16), spacing=dp(12))
         
-        self.label = Label(text="Scrcpy Ultimate Link", font_size=sp(26), bold=True, color=ACCENT, size_hint_y=None, height=dp(50))
-        self.pc_ip_input = TextInput(text="Discovering PC...", readonly=True, halign='center', font_size=sp(18), background_color=PANEL_BG, foreground_color=TEXT, size_hint_y=None, height=dp(50))
-        self.status_label = Label(text="Listening for PC broadcast...", font_size=sp(14), color=(0.6, 0.6, 0.6, 1), size_hint_y=None, height=dp(30))
+        from kivy.uix.floatlayout import FloatLayout
+        float_lay = FloatLayout()
+        with float_lay.canvas.before:
+            Color(*DARK_BG)
+            self.bg_rect = Rectangle()
+        float_lay.bind(pos=self._update_bg, size=self._update_bg)
         
-        btn_layout = BoxLayout(orientation='vertical', spacing=dp(8), size_hint_y=None, height=dp(340))
+        self.particle_bg = ParticleBackground(size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
+        float_lay.add_widget(self.particle_bg)
         
-        restart_btn = SlopButton(text="Restart Link", background_color=(0.1, 0.2, 0.4, 1), color=ACCENT, font_size=sp(16))
+        # UI layer over particles (ScrollView top-aligned layout)
+        scroll = ScrollView(size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
+        content = BoxLayout(orientation='vertical', padding=dp(16), spacing=dp(14), size_hint_y=None)
+        content.bind(minimum_height=content.setter('height'))
+        
+        # ── 1. Top Header Bar ───────────────────────────────────────────
+        top_bar = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(40), spacing=dp(8))
+        self.label = Label(text="Scrcpy Link", font_size=sp(20), bold=True, color=ACCENT_PRIMARY, size_hint_x=0.45, halign='left', valign='middle')
+        self.label.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        
+        self.pc_ip_input = TextInput(text="Discovering PC...", readonly=True, halign='center', font_size=sp(12), background_color=INPUT_BG, foreground_color=TEXT_PRIMARY, size_hint_x=0.55, size_hint_y=None, height=dp(38))
+        top_bar.add_widget(self.label)
+        top_bar.add_widget(self.pc_ip_input)
+        content.add_widget(top_bar)
+        
+        # ── 2. Central Hero Connection Card ─────────────────────────────
+        hero_card = RoundedCard(orientation='vertical', size_hint_y=None, height=dp(190), padding=dp(16), spacing=dp(10))
+        
+        status_row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(45), spacing=dp(10))
+        self.pulse = PulseIndicator()
+        self.status_label = Label(text="Listening for PC broadcast...", font_size=sp(13), color=TEXT_SECONDARY, halign='left', valign='middle')
+        self.status_label.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        status_row.add_widget(self.pulse)
+        status_row.add_widget(self.status_label)
+        
+        restart_btn = AnimatedButton(text="TAP TO LINK", btn_color=ACCENT_PRIMARY, size_hint_y=None, height=dp(54))
         restart_btn.bind(on_press=self.restart_connection)
         
-        transfer_btn = SlopButton(text="WiFi File Transfer (Send/Recv)", background_color=(0.1, 0.35, 0.25, 1), color=ACCENT, font_size=sp(16))
-        transfer_btn.bind(on_press=self.go_transfer)
+        hero_card.add_widget(status_row)
+        hero_card.add_widget(restart_btn)
+        content.add_widget(hero_card)
+        
+        # ── 3. 2x2 Glassmorphic Action Grid ──────────────────────────────
+        grid = GridLayout(cols=2, spacing=dp(12), size_hint_y=None, height=dp(230))
+        
+        transfer_card = GridCard(icon="TRANSFER", title="WiFi Transfer", subtitle="Send & receive files", btn_color=CARD_BG, on_press_callback=self.go_transfer)
+        vault_card = GridCard(icon="VAULT", title="File Vault", subtitle="Downloaded media", btn_color=CARD_BG, on_press_callback=self.go_vault)
+        settings_card = GridCard(icon="SETTINGS", title="Settings & Help", subtitle="App preferences", btn_color=CARD_BG, on_press_callback=self.go_settings)
+        logs_card = GridCard(icon="LOGS", title="System Logs", subtitle="Live terminal logs", btn_color=CARD_BG, on_press_callback=self.go_logs)
+        
+        grid.add_widget(transfer_card)
+        grid.add_widget(vault_card)
+        grid.add_widget(settings_card)
+        grid.add_widget(logs_card)
+        
+        content.add_widget(grid)
+        scroll.add_widget(content)
+        
+        float_lay.add_widget(scroll)
+        self.add_widget(float_lay)
 
-        vault_btn = SlopButton(text="Received Files Vault", background_color=(0.3, 0.15, 0.05, 1), color=ACCENT, font_size=sp(16))
-        vault_btn.bind(on_press=self.go_vault)
-        
-        logs_btn = SlopButton(text="Live System Logs", background_color=(0.2, 0.1, 0.35, 1), color=ACCENT, font_size=sp(16))
-        logs_btn.bind(on_press=self.go_logs)
-        
-        settings_btn = SlopButton(text="App Settings", background_color=(0.2, 0.2, 0.25, 1), color=ACCENT, font_size=sp(16))
-        settings_btn.bind(on_press=self.go_settings)
-
-        help_btn = SlopButton(text="Help Guide", background_color=(0.05, 0.25, 0.15, 1), color=ACCENT, font_size=sp(16))
-        help_btn.bind(on_press=self.go_help)
-        
-        btn_layout.add_widget(restart_btn)
-        btn_layout.add_widget(transfer_btn)
-        btn_layout.add_widget(vault_btn)
-        btn_layout.add_widget(logs_btn)
-        btn_layout.add_widget(settings_btn)
-        btn_layout.add_widget(help_btn)
-        
-        layout.add_widget(self.label)
-        layout.add_widget(self.pc_ip_input)
-        layout.add_widget(self.status_label)
-        layout.add_widget(btn_layout)
-        layout.add_widget(Widget())
-        self.add_widget(layout)
-        
         self.sending = False
         self.discovered_pc_ip = None
         self._discovery_running = False
 
+    def _update_bg(self, instance, value):
+        self.bg_rect.pos = instance.pos
+        self.bg_rect.size = instance.size
+
     def go_transfer(self, instance):
-        """Navigate to transfer screen."""
-        self.manager.transition.direction = 'left'
         self.manager.current = 'transfer'
 
     def go_vault(self, instance):
-        """Navigate to vault screen."""
-        self.manager.transition.direction = 'left'
         self.manager.current = 'vault'
 
     def go_logs(self, instance):
-        """Navigate to logs screen."""
-        self.manager.transition.direction = 'left'
         self.manager.current = 'logs'
 
     def go_settings(self, instance):
-        """Navigate to settings screen."""
-        self.manager.transition.direction = 'left'
         self.manager.current = 'settings'
 
     def go_help(self, instance):
-        """Navigate to help screen."""
-        self.manager.transition.direction = 'left'
         self.manager.current = 'help'
 
     def on_enter(self):
@@ -428,12 +652,12 @@ class MainScreen(Screen):
             self._start_services()
 
     def restart_connection(self, instance):
-        """Restarts the network services."""
         app_log("Restarting link...")
         self._stop_services()
         threading.Thread(target=enable_shizuku_wireless_adb, daemon=True).start()
         self.pc_ip_input.text = "Discovering PC..."
         self.status_label.text = "Listening for PC broadcast..."
+        self.pulse.set_state(False)
         self._start_services()
 
     def _start_services(self):
@@ -445,7 +669,6 @@ class MainScreen(Screen):
         self.sending = False
 
     def discovery_listener(self):
-        """Listens for PC UDP broadcasts."""
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -473,15 +696,14 @@ class MainScreen(Screen):
             sock.close()
 
     def start_heartbeat(self, pc_ip):
-        """Initiates the heartbeat loop."""
         self.pc_ip_input.text = pc_ip
         self.status_label.text = f"PC found! Initiating link..."
+        self.pulse.set_state(True)
         if not self.sending:
             self.sending = True
             threading.Thread(target=self.heartbeat_loop, args=(pc_ip,), daemon=True).start()
 
     def heartbeat_loop(self, target_ip):
-        """Sends periodic heartbeats back to the PC."""
         port = config["heartbeat_port"]
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
@@ -502,55 +724,57 @@ class MainScreen(Screen):
 
 
 class FileTransferScreen(Screen):
-    """Screen for handling file transfers."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
-        layout = ColoredBoxLayout(orientation='vertical', padding=dp(16), spacing=dp(10))
+        layout = ColoredBoxLayout(orientation='vertical', bg_color=DARK_BG, padding=dp(20), spacing=dp(16))
         
-        title = Label(text="WiFi File Transfer Hub", font_size=sp(22), bold=True, color=ACCENT, size_hint_y=None, height=dp(40))
+        title = Label(text="WiFi File Transfer Hub", font_size=sp(24), bold=True, color=ACCENT_PRIMARY, size_hint_y=None, height=dp(40))
         layout.add_widget(title)
 
-        server_group = ColoredBoxLayout(orientation='vertical', bg_color=PANEL_BG, padding=dp(12), spacing=dp(8), size_hint_y=None, height=dp(180))
-        server_group.add_widget(Label(text="WiFi Receiver Status: ACTIVE", font_size=sp(14), bold=True, color=ACCENT, halign='left'))
+        server_group = RoundedCard(orientation='vertical', padding=dp(16), spacing=dp(10), size_hint_y=None, height=dp(180))
+        server_group.add_widget(Label(text="WiFi Receiver Status: ACTIVE", font_size=sp(16), bold=True, color=SUCCESS, halign='left', size_hint_y=None, height=dp(20)))
         
-        self.serv_file_lbl = Label(text="Waiting for PC transfer...", font_size=sp(12), color=TEXT, halign='center')
-        self.serv_progress = Label(text="0%", font_size=sp(16), bold=True, color=ACCENT)
-        self.serv_stats = Label(text="Speed: -- MB/s  |  ETA: --:--", font_size=sp(11), color=(0.7, 0.7, 0.7, 1))
+        self.serv_file_lbl = Label(text="Waiting for PC transfer...", font_size=sp(14), color=TEXT_PRIMARY, halign='center')
+        self.serv_progress_lbl = Label(text="0%", font_size=sp(18), bold=True, color=ACCENT_PRIMARY, size_hint_y=None, height=dp(30))
+        self.serv_progress = GradientBar(progress=0)
+        self.serv_stats = Label(text="Speed: -- MB/s  |  ETA: --:--", font_size=sp(12), color=TEXT_SECONDARY, size_hint_y=None, height=dp(20))
         
         server_group.add_widget(self.serv_file_lbl)
+        server_group.add_widget(self.serv_progress_lbl)
         server_group.add_widget(self.serv_progress)
         server_group.add_widget(self.serv_stats)
         layout.add_widget(server_group)
 
-        sender_group = ColoredBoxLayout(orientation='vertical', bg_color=PANEL_BG, padding=dp(12), spacing=dp(8), size_hint_y=None, height=dp(200))
-        sender_group.add_widget(Label(text="Send Vault File to PC", font_size=sp(14), bold=True, color=ACCENT))
+        sender_group = RoundedCard(orientation='vertical', padding=dp(16), spacing=dp(12), size_hint_y=None, height=dp(220))
+        sender_group.add_widget(Label(text="Send Vault File to PC", font_size=sp(16), bold=True, color=ACCENT_PRIMARY, size_hint_y=None, height=dp(20)))
         
-        self.sender_spinner = Spinner(text="Select file from Vault...", values=[], background_color=DARK_BG, color=TEXT)
+        self.sender_spinner = Spinner(text="Select file from Vault...", values=[], background_color=INPUT_BG, color=TEXT_PRIMARY, size_hint_y=None, height=dp(45))
         self.sender_spinner.bind(on_press=self.populate_vault_files)
         
-        self.send_progress_lbl = Label(text="Push speed: --  |  ETA: --", font_size=sp(12), color=TEXT)
-        self.send_btn = SlopButton(text="Push Selected File to PC", background_color=(0.1, 0.35, 0.2, 1), color=ACCENT)
+        self.send_progress_lbl = Label(text="Push speed: --  |  ETA: --", font_size=sp(14), color=TEXT_PRIMARY, size_hint_y=None, height=dp(30))
+        self.send_bar = GradientBar(progress=0)
+        self.send_btn = AnimatedButton(text="Push Selected File to PC", btn_color=ACCENT_TERTIARY, size_hint_y=None, height=dp(48))
         self.send_btn.bind(on_press=self.start_file_send_to_pc)
 
         sender_group.add_widget(self.sender_spinner)
         sender_group.add_widget(self.send_progress_lbl)
+        sender_group.add_widget(self.send_bar)
         sender_group.add_widget(self.send_btn)
         layout.add_widget(sender_group)
 
-        back_btn = SlopButton(text="Back to Home", background_color=(0.2, 0.1, 0.3, 1), color=ACCENT, size_hint_y=None, height=dp(50))
+        layout.add_widget(Widget())
+
+        back_btn = AnimatedButton(text="Back to Home", btn_color=BUTTON_BG, size_hint_y=None, height=dp(50))
         back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
         
         self.add_widget(layout)
 
     def go_back(self, instance):
-        """Navigate back to main screen."""
-        self.manager.transition.direction = 'right'
         self.manager.current = 'main'
 
     def populate_vault_files(self, instance):
-        """Populates the list of files to send."""
         try:
             files = sorted(os.listdir(VAULT_DIR))
             self.sender_spinner.values = [f for f in files if os.path.isfile(os.path.join(VAULT_DIR, f))]
@@ -559,7 +783,6 @@ class FileTransferScreen(Screen):
             self.sender_spinner.values = []
 
     def start_file_send_to_pc(self, instance):
-        """Begins transferring the selected file to the PC."""
         filename = self.sender_spinner.text
         if filename == "Select file from Vault..." or not filename:
             self.send_progress_lbl.text = "Please select a file first!"
@@ -619,57 +842,58 @@ class FileTransferScreen(Screen):
         threading.Thread(target=_task, daemon=True).start()
 
     def update_send_ui(self, percent, speed, eta):
-        """Updates the progress UI for sending."""
+        self.send_bar.progress = percent
         self.send_progress_lbl.text = f"Progress: {percent}% | Speed: {speed:.1f} MB/s | ETA: {int(eta)}s"
 
     def on_send_complete(self, success, msg):
-        """Handles completion of the file send task."""
         self.send_btn.disabled = False
         self.send_progress_lbl.text = msg
+        if success: self.send_bar.progress = 100
 
     def update_progress_from_server(self, percent, speed, eta, filename):
-        """Updates UI based on incoming server transfer."""
         def _update(dt):
             self.serv_file_lbl.text = f"Receiving: '{filename}'"
-            self.serv_progress.text = f"{percent}%"
+            self.serv_progress_lbl.text = f"{percent}%"
+            self.serv_progress.progress = percent
             self.serv_stats.text = f"Speed: {speed:.1f} MB/s  |  ETA: {int(eta)}s"
         Clock.schedule_once(_update)
 
     def on_server_transfer_complete(self, success, details):
-        """Handles completion of incoming server transfer."""
         def _update(dt):
-            self.serv_progress.text = "100%" if success else "Error!"
+            if success:
+                self.serv_progress_lbl.text = "100%"
+                self.serv_progress.progress = 100
             self.serv_file_lbl.text = f"Success: {details}" if success else f"Failed: {details}"
             self.serv_stats.text = "Done" if success else "Stopped"
         Clock.schedule_once(_update)
 
 
 class LogsScreen(Screen):
-    """Screen for viewing application logs."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        layout = ColoredBoxLayout(orientation='vertical', padding=dp(16), spacing=dp(10))
+        layout = ColoredBoxLayout(orientation='vertical', bg_color=DARK_BG, padding=dp(20), spacing=dp(16))
         
-        header = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(40))
-        title = Label(text="Live System Logs", font_size=sp(20), bold=True, color=ACCENT)
-        refresh_btn = SlopButton(text="Refresh", background_color=(0.1, 0.25, 0.4, 1), size_hint_x=None, width=dp(90))
+        header = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(48))
+        title = Label(text="Live System Logs", font_size=sp(24), bold=True, color=ACCENT_PRIMARY)
+        refresh_btn = AnimatedButton(text="Refresh", btn_color=ACCENT_TERTIARY, size_hint_x=None, width=dp(100))
         refresh_btn.bind(on_press=lambda x: self.load_logs())
         header.add_widget(title)
         header.add_widget(refresh_btn)
         layout.add_widget(header)
 
+        card = RoundedCard(orientation='vertical', padding=dp(10))
         self.scroll = ScrollView()
-        self.log_label = Label(text="Loading system logs...", font_size=sp(12), color=TEXT, size_hint_y=None, halign='left', valign='top')
+        self.log_label = Label(text="Loading system logs...", font_size=sp(12), color=TEXT_PRIMARY, size_hint_y=None, halign='left', valign='top')
         self.log_label.bind(width=lambda inst, val: setattr(inst, 'text_size', (val, None)))
         self.log_label.bind(texture_size=lambda inst, val: setattr(inst, 'height', val[1]))
-        
         self.scroll.add_widget(self.log_label)
-        layout.add_widget(self.scroll)
+        card.add_widget(self.scroll)
+        layout.add_widget(card)
 
-        btn_row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50), spacing=dp(10))
-        clear_btn = SlopButton(text="Clear Logs", background_color=(0.4, 0.1, 0.1, 1), color=ACCENT)
+        btn_row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50), spacing=dp(12))
+        clear_btn = AnimatedButton(text="Clear Logs", btn_color=ERROR)
         clear_btn.bind(on_press=self.clear_logs)
-        back_btn = SlopButton(text="Back to Home", background_color=(0.2, 0.1, 0.3, 1), color=ACCENT)
+        back_btn = AnimatedButton(text="Back to Home", btn_color=BUTTON_BG)
         back_btn.bind(on_press=self.go_back)
         btn_row.add_widget(clear_btn)
         btn_row.add_widget(back_btn)
@@ -678,15 +902,12 @@ class LogsScreen(Screen):
         self.add_widget(layout)
 
     def go_back(self, instance):
-        """Navigate back to main screen."""
-        self.manager.transition.direction = 'right'
         self.manager.current = 'main'
 
     def on_enter(self):
         self.load_logs()
 
     def load_logs(self):
-        """Loads and displays the latest log content."""
         try:
             if os.path.exists(LOG_FILE):
                 with open(LOG_FILE, "r") as f:
@@ -697,7 +918,6 @@ class LogsScreen(Screen):
             self.log_label.text = f"Error reading logs: {e}"
 
     def clear_logs(self, instance):
-        """Clears the application logs."""
         try:
             with open(LOG_FILE, "w") as f:
                 f.write("")
@@ -707,54 +927,53 @@ class LogsScreen(Screen):
 
 
 class SettingsScreen(Screen):
-    """Screen for app configuration."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        layout = ColoredBoxLayout(orientation='vertical', padding=dp(20), spacing=dp(12))
+        layout = ColoredBoxLayout(orientation='vertical', bg_color=DARK_BG, padding=dp(20), spacing=dp(16))
         
-        title = Label(text="App Configuration", font_size=sp(22), bold=True, color=ACCENT, size_hint_y=None, height=dp(40))
+        title = Label(text="App Configuration", font_size=sp(24), bold=True, color=ACCENT_PRIMARY, size_hint_y=None, height=dp(40))
         layout.add_widget(title)
         
+        card = RoundedCard(orientation='vertical', padding=dp(16), spacing=dp(16), size_hint_y=None, height=dp(260))
+        
         log_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50))
-        log_layout.add_widget(Label(text="Enable Session Logging", color=TEXT, font_size=sp(15), size_hint_x=0.7))
+        log_layout.add_widget(Label(text="Enable Session Logging", color=TEXT_PRIMARY, font_size=sp(16), halign='left', size_hint_x=0.7))
         self.log_switch = Switch(active=config.get("logging_enabled", True))
         self.log_switch.bind(active=self.on_log_switch)
         log_layout.add_widget(self.log_switch)
-        layout.add_widget(log_layout)
+        card.add_widget(log_layout)
         
-        self.add_port_spinner(layout, "Heartbeat Port (Phone -> PC)", "heartbeat_port")
-        self.add_port_spinner(layout, "Discovery Port (PC Broadcast)", "discovery_port")
-        self.add_port_spinner(layout, "scrcpy ADB Port", "adb_port")
+        self.add_port_spinner(card, "Heartbeat Port (Phone -> PC)", "heartbeat_port")
+        self.add_port_spinner(card, "Discovery Port (PC Broadcast)", "discovery_port")
+        self.add_port_spinner(card, "scrcpy ADB Port", "adb_port")
         
+        layout.add_widget(card)
         layout.add_widget(Widget())
         
-        back_btn = SlopButton(text="Save & Return", background_color=(0.2, 0.1, 0.4, 1), color=ACCENT, font_size=sp(18), size_hint_y=None, height=dp(50))
+        back_btn = AnimatedButton(text="Save & Return", btn_color=ACCENT_PRIMARY, font_size=sp(18), size_hint_y=None, height=dp(50))
         back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
         
         self.add_widget(layout)
 
     def go_back(self, instance):
-        """Navigate back to main screen."""
-        self.manager.transition.direction = 'right'
         self.manager.current = 'main'
 
     def add_port_spinner(self, layout, label_text, config_key):
-        """Adds a UI spinner for port configuration."""
         box = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50))
-        box.add_widget(Label(text=label_text, color=TEXT, font_size=sp(14), size_hint_x=0.6))
-        spinner = Spinner(text=str(config.get(config_key)), values=[str(p) for p in range(5550, 5560)], background_color=PANEL_BG, color=TEXT, size_hint_x=0.4)
+        lbl = Label(text=label_text, color=TEXT_PRIMARY, font_size=sp(14), halign='left', size_hint_x=0.6)
+        lbl.bind(size=lbl.setter('text_size'))
+        box.add_widget(lbl)
+        spinner = Spinner(text=str(config.get(config_key)), values=[str(p) for p in range(5550, 5560)], background_color=INPUT_BG, color=TEXT_PRIMARY, size_hint_x=0.4)
         spinner.bind(text=lambda instance, text: self.on_port_change(config_key, text))
         box.add_widget(spinner)
         layout.add_widget(box)
 
     def on_log_switch(self, instance, value):
-        """Toggles logging feature."""
         config["logging_enabled"] = value
         save_config(config)
 
     def on_port_change(self, key, value):
-        """Updates port configuration."""
         try:
             config[key] = int(value)
             save_config(config)
@@ -763,21 +982,16 @@ class SettingsScreen(Screen):
 
 
 class HelpScreen(Screen):
-    """Screen that displays the help guide."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        layout = BoxLayout(orientation='vertical', padding=dp(16), spacing=dp(10))
-        with layout.canvas.before:
-            Color(*DARK_BG)
-            self.bg_rect = Rectangle(pos=layout.pos, size=layout.size)
-        layout.bind(pos=lambda i, v: setattr(self.bg_rect, 'pos', v))
-        layout.bind(size=lambda i, v: setattr(self.bg_rect, 'size', v))
+        layout = ColoredBoxLayout(orientation='vertical', bg_color=DARK_BG, padding=dp(20), spacing=dp(16))
         
-        title = Label(text="Help & Setup Manual", color=ACCENT, font_size=sp(22), bold=True, size_hint_y=None, height=dp(40))
+        title = Label(text="Help & Setup Manual", color=ACCENT_PRIMARY, font_size=sp(24), bold=True, size_hint_y=None, height=dp(40))
         layout.add_widget(title)
         
+        card = RoundedCard(orientation='vertical', padding=dp(16))
         scroll = ScrollView()
-        content = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(8))
+        content = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(12))
         content.bind(minimum_height=content.setter('height'))
         
         guide_text = (
@@ -786,72 +1000,70 @@ class HelpScreen(Screen):
             "2. Open the PC PyQt6 client, then open this app on your phone.\n"
             "3. High-performance scrcpy mirroring session starts instantly!\n\n"
             "[b]Shizuku Wireless Setup:[/b]\n"
-            "• Execute: [color=00d9a5]rish -c 'adb tcpip 5555'[/color]\n\n"
+            "• Execute: [color=8B5CF6]rish -c 'adb tcpip 5555'[/color]\n\n" # ACCENT_PRIMARY approx in hex
             "[b]Bidirectional Clipboard Sync:[/b]\n"
             "• Turn on auto-sync on the PC app for seamless, instant, zero-delay copying across systems!\n\n"
             "[b]WiFi File Transfer Hub:[/b]\n"
             "• Uses dedicated, multi-megabyte TCP file protocol. Super fast and bypasses restrictive ADB permission pipelines."
         )
         
-        guide_label = Label(text=guide_text, markup=True, color=TEXT, font_size=sp(14), halign='left', valign='top', size_hint_y=None)
+        guide_label = Label(text=guide_text, markup=True, color=TEXT_PRIMARY, font_size=sp(14), halign='left', valign='top', size_hint_y=None)
         guide_label.bind(width=lambda inst, val: setattr(inst, 'text_size', (val, None)))
         guide_label.bind(texture_size=lambda inst, val: setattr(inst, 'height', val[1]))
         
         content.add_widget(guide_label)
         scroll.add_widget(content)
-        layout.add_widget(scroll)
+        card.add_widget(scroll)
+        layout.add_widget(card)
         
-        back_btn = SlopButton(text="Back to Home", background_color=(0.2, 0.1, 0.4, 1), color=ACCENT, font_size=sp(16), size_hint_y=None, height=dp(55))
+        back_btn = AnimatedButton(text="Back to Home", btn_color=BUTTON_BG, font_size=sp(16), size_hint_y=None, height=dp(50))
         back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
         
         self.add_widget(layout)
 
     def go_back(self, instance):
-        """Navigate back to main screen."""
-        self.manager.transition.direction = 'right'
         self.manager.current = 'main'
 
 
 class VaultScreen(Screen):
-    """Screen for displaying downloaded vault files."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        layout = ColoredBoxLayout(orientation='vertical', padding=dp(16), spacing=dp(10))
+        layout = ColoredBoxLayout(orientation='vertical', bg_color=DARK_BG, padding=dp(20), spacing=dp(16))
         
-        header = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(40))
-        title = Label(text="Vault Files", color=ACCENT, font_size=sp(20), bold=True)
-        refresh_btn = SlopButton(text="Refresh", background_color=(0.1, 0.25, 0.4, 1), size_hint_x=None, width=dp(90))
+        header = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(48))
+        title = Label(text="Vault Files", color=ACCENT_PRIMARY, font_size=sp(24), bold=True)
+        refresh_btn = AnimatedButton(text="Refresh", btn_color=ACCENT_TERTIARY, size_hint_x=None, width=dp(100))
         refresh_btn.bind(on_press=lambda x: self.refresh_vault())
         header.add_widget(title)
         header.add_widget(refresh_btn)
         layout.add_widget(header)
         
+        self.card = RoundedCard(orientation='vertical', padding=dp(10))
         self.scroll = ScrollView()
-        self.file_list = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(6))
+        self.file_list = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(8))
         self.file_list.bind(minimum_height=self.file_list.setter('height'))
         self.scroll.add_widget(self.file_list)
-        layout.add_widget(self.scroll)
+        self.card.add_widget(self.scroll)
+        layout.add_widget(self.card)
         
-        self.empty_label = Label(text="No files found in Vault.\nTry pushing files from your PC wirelessly!", color=(0.5, 0.5, 0.5, 1), font_size=sp(13), halign='center')
+        self.empty_label = Label(text="No files found in Vault.\nTry pushing files from your PC wirelessly!", color=TEXT_SECONDARY, font_size=sp(14), halign='center', size_hint_y=None, height=dp(60))
+        self.empty_label.opacity = 0
         layout.add_widget(self.empty_label)
         
-        back_btn = SlopButton(text="Back to Home", background_color=(0.2, 0.1, 0.3, 1), color=ACCENT, font_size=sp(16), size_hint_y=None, height=dp(55))
+        back_btn = AnimatedButton(text="Back to Home", btn_color=BUTTON_BG, font_size=sp(16), size_hint_y=None, height=dp(50))
         back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
         
         self.add_widget(layout)
 
     def go_back(self, instance):
-        """Navigate back to main screen."""
-        self.manager.transition.direction = 'right'
         self.manager.current = 'main'
     
     def on_enter(self):
         self.refresh_vault()
     
     def refresh_vault(self):
-        """Refreshes the list of files stored in the vault."""
         self.file_list.clear_widgets()
         try:
             files = sorted(os.listdir(VAULT_DIR))
@@ -859,22 +1071,24 @@ class VaultScreen(Screen):
             
             if not received_files:
                 self.empty_label.opacity = 1
+                self.card.opacity = 0
                 return
             
             self.empty_label.opacity = 0
+            self.card.opacity = 1
             
             for filename in received_files:
                 filepath = os.path.join(VAULT_DIR, filename)
                 size = os.path.getsize(filepath)
                 
-                row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50), spacing=dp(8))
+                row = RoundedCard(orientation='horizontal', size_hint_y=None, height=dp(56), padding=dp(10), spacing=dp(10))
                 
-                name_label = Label(text=filename, color=TEXT, font_size=sp(13), halign='left')
+                name_label = Label(text=filename, color=TEXT_PRIMARY, font_size=sp(14), halign='left')
                 name_label.bind(width=lambda i, v: setattr(i, 'text_size', (v, None)))
                 
-                size_label = Label(text=f"{size / (1024*1024):.1f} MB" if size >= 1024*1024 else f"{size/1024:.1f} KB", color=(0.5, 0.5, 0.5, 1), font_size=sp(11), size_hint_x=None, width=dp(70))
+                size_label = Label(text=f"{size / (1024*1024):.1f} MB" if size >= 1024*1024 else f"{size/1024:.1f} KB", color=TEXT_SECONDARY, font_size=sp(12), size_hint_x=None, width=dp(70))
                 
-                share_btn = SlopButton(text="Share", background_color=(0.1, 0.3, 0.2, 1), color=ACCENT, size_hint_x=None, width=dp(70))
+                share_btn = AnimatedButton(text="Share", btn_color=ACCENT_SECONDARY, size_hint_x=None, width=dp(80))
                 share_btn.bind(on_press=lambda btn, path=filepath: self.share_file(path))
                 
                 row.add_widget(name_label)
@@ -885,7 +1099,6 @@ class VaultScreen(Screen):
             app_log(f"Vault refresh failed: {e}")
     
     def share_file(self, file_path):
-        """Triggers the Android share intent for the specified file."""
         try:
             from jnius import autoclass, cast
             PythonActivity = autoclass('org.kivy.android.PythonActivity')
@@ -911,11 +1124,26 @@ class HeartbeatApp(App):
     """The main application class."""
     def build(self):
         Window.bind(on_keyboard=self.on_keyboard)
+        
+        # Request standard runtime permissions on startup
+        try:
+            from android.permissions import request_permissions, Permission
+            request_permissions([
+                Permission.READ_EXTERNAL_STORAGE, 
+                Permission.WRITE_EXTERNAL_STORAGE
+            ])
+            app_log("Requested Storage permissions from OS.")
+        except Exception as e:
+            app_log(f"Permissions request skipped: {e}")
+            
+        app_log(f"Storage mode: {'External (/sdcard)' if CAN_WRITE_EXTERNAL else 'Internal App Data'}")
+        app_log(f"Log path: {LOG_FILE}")
+
 
         server = TCPFileServerThread()
         server.start()
 
-        self.root_sm = ScreenManager(transition=SlideTransition())
+        self.root_sm = ScreenManager(transition=FadeTransition())
         self.root_sm.add_widget(MainScreen(name='main'))
         self.root_sm.add_widget(FileTransferScreen(name='transfer'))
         self.root_sm.add_widget(VaultScreen(name='vault'))
@@ -943,17 +1171,26 @@ class HeartbeatApp(App):
             
         return self.root_sm
 
+    def on_start(self):
+        if "--auto-screenshot" in sys.argv:
+            def capture_and_quit(dt):
+                from kivy.core.window import Window
+                target_path = "/home/henry/.gemini/antigravity/brain/755897b6-21b8-41d0-8ad7-f610a2e21dd7/android_auto_screenshot.png"
+                Window.screenshot(name=target_path)
+                app_log(f"Auto screenshot saved to {target_path}")
+                Clock.schedule_once(lambda d: App.get_running_app().stop(), 2)
+
+            app_log("Auto-screenshot mode active: capturing in 5 seconds...")
+            Clock.schedule_once(capture_and_quit, 5)
+
     def on_keyboard(self, window, key, scancode, codepoint, modifier):
-        """Handles hardware back button and escape key."""
         if key == 27:
             if self.root_sm.current != 'main':
-                self.root_sm.transition.direction = 'right'
                 self.root_sm.current = 'main'
                 return True
         return False
 
     def set_local_clipboard(self, text):
-        """Sets the Android clipboard."""
         try:
             from jnius import autoclass
             Context = autoclass('android.content.Context')
@@ -968,7 +1205,6 @@ class HeartbeatApp(App):
             app_log(f"Failed to write device clipboard: {e}")
 
     def send_local_clipboard_to_pc(self):
-        """Sends clipboard content back to the PC."""
         try:
             from jnius import autoclass
             Context = autoclass('android.content.Context')

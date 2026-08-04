@@ -13,10 +13,12 @@ import time
 from datetime import timedelta
 
 from PyQt6.QtCore import QTimer, pyqtSignal
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QGroupBox,
+    QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -45,8 +47,12 @@ from src.constants import (
 )
 from src.logger import get_logger
 from src.networking import adb, heartbeat, latency, scanner
+from src.ui.animations import AnimatedButton
+from src.ui.widgets.collapsible_card import CollapsibleCard
 from src.ui.widgets.dashboard import DashboardWidget
+from src.ui.widgets.heartbeat_indicator import HeartbeatIndicator
 from src.ui.widgets.log_panel import LogPanel
+from src.ui.widgets.section_card import SectionCard
 
 log = get_logger(__name__)
 
@@ -71,6 +77,9 @@ class MirrorTab(QWidget):
         self._broadcaster = heartbeat.DiscoveryBroadcaster(config)
         self._scanner = scanner.SubnetScanner(config)
 
+        self._heartbeat_indicator = HeartbeatIndicator(size=0)
+        self._status_label = QLabel()
+
         # Build UI
         self._build_ui()
 
@@ -81,64 +90,67 @@ class MirrorTab(QWidget):
         self._scanner.scan_complete.connect(self._on_scan_complete)
 
     def _build_ui(self) -> None:
-        """Construct the tab layout."""
+        """Construct the tab layout with clean, un-cluttered visual hierarchy."""
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         container = QWidget()
         main_layout = QVBoxLayout(container)
-        main_layout.setSpacing(14)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(20)
 
-        # ── Header ──────────────────────────────────────────────────────
-        header = QHBoxLayout()
-        title = QLabel(f"{APP_NAME} v{APP_VERSION}")
-        title.setObjectName("title")
+        # ── 1. HERO CONNECTION CARD (Main Central Focus) ─────────────
+        hero_card = QFrame()
+        hero_card.setObjectName("hero-card")
+        hero_layout = QVBoxLayout(hero_card)
+        hero_layout.setContentsMargins(24, 24, 24, 24)
+        hero_layout.setSpacing(16)
+
+        # Header Title inside Hero Card
+        hero_header = QHBoxLayout()
+        hero_title = QLabel("📱 Connect & Mirror Phone")
+        hero_title.setStyleSheet("font-size: 20px; font-weight: bold; color: #F0F0F5;")
+        
         local_ip = heartbeat.get_local_ip()
-        ip_label = QLabel(f"\U0001f4e1  PC IP: {local_ip}")
-        ip_label.setObjectName("subtitle")
-        header.addWidget(title)
-        header.addStretch()
-        header.addWidget(ip_label)
-        main_layout.addLayout(header)
+        self._ip_label = QLabel(f"📡 PC IP: {local_ip}")
+        self._ip_label.setObjectName("subtitle")
 
-        # ── Status ──────────────────────────────────────────────────────
-        status_layout = QHBoxLayout()
-        self._status_label = QLabel("\U0001f534  Disconnected")
-        self._status_label.setObjectName("status")
-        self._duration_label = QLabel("")
-        self._duration_label.setObjectName("subtitle")
-        status_layout.addWidget(self._status_label)
-        status_layout.addStretch()
-        status_layout.addWidget(self._duration_label)
-        main_layout.addLayout(status_layout)
+        hero_header.addWidget(hero_title)
+        hero_header.addStretch()
+        hero_header.addWidget(self._ip_label)
+        hero_layout.addLayout(hero_header)
 
-        # ── Connection Buttons ──────────────────────────────────────────
-        conn_group = QGroupBox("\U0001f50c  Connection")
-        conn_layout = QHBoxLayout(conn_group)
+        # Primary One-Tap Connect Button
+        self._hero_connect_btn = QPushButton("⚡ One-Tap Connect")
+        self._hero_connect_btn.setObjectName("hero-button")
+        self._hero_connect_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._hero_connect_btn.clicked.connect(self._start_auto_discover)
+        hero_layout.addWidget(self._hero_connect_btn)
 
-        self._auto_btn = QPushButton("\U0001f4e1  Auto-Discover (Heartbeat)")
-        self._auto_btn.setObjectName("action-primary")
+        # Quick action row (Discovered / Saved / Scan / Disconnect)
+        conn_actions_layout = QHBoxLayout()
+        self._auto_btn = AnimatedButton("📡 Auto-Discover")
         self._auto_btn.clicked.connect(self._start_auto_discover)
 
-        self._saved_btn = QPushButton("\U0001f4be  Connect Saved IP")
+        self._saved_btn = AnimatedButton("💾 Saved IP")
         self._saved_btn.clicked.connect(self._connect_saved_ip)
 
-        self._scan_btn = QPushButton("\U0001f50d  Subnet Scan")
+        self._scan_btn = AnimatedButton("🔍 Subnet Scan")
         self._scan_btn.clicked.connect(self._start_subnet_scan)
 
-        self._disconnect_btn = QPushButton("\u274c  Disconnect")
+        self._disconnect_btn = AnimatedButton("❌ Disconnect")
         self._disconnect_btn.setObjectName("action-danger")
         self._disconnect_btn.clicked.connect(self._disconnect)
         self._disconnect_btn.setEnabled(False)
 
-        conn_layout.addWidget(self._auto_btn)
-        conn_layout.addWidget(self._saved_btn)
-        conn_layout.addWidget(self._scan_btn)
-        conn_layout.addWidget(self._disconnect_btn)
-        main_layout.addWidget(conn_group)
+        conn_actions_layout.addWidget(self._auto_btn)
+        conn_actions_layout.addWidget(self._saved_btn)
+        conn_actions_layout.addWidget(self._scan_btn)
+        conn_actions_layout.addWidget(self._disconnect_btn)
+        hero_layout.addLayout(conn_actions_layout)
 
-        # ── Scrcpy Preset ──────────────────────────────────────────────
+        # Advanced connection options (Video quality preset)
         preset_layout = QHBoxLayout()
-        preset_layout.addWidget(QLabel("Video Quality:"))
+        preset_layout.addWidget(QLabel("Video Quality Preset:"))
         self._preset_combo = QComboBox()
         self._preset_combo.addItems(SCRCPY_PRESETS.keys())
         saved_preset = self._config.get("scrcpy_preset", "Balanced (Default)")
@@ -147,38 +159,28 @@ class MirrorTab(QWidget):
             self._preset_combo.setCurrentIndex(idx)
         self._preset_combo.currentTextChanged.connect(self._on_preset_changed)
         preset_layout.addWidget(self._preset_combo)
-        main_layout.addLayout(preset_layout)
+        preset_layout.addStretch()
 
-        # ── Clipboard Sync ─────────────────────────────────────────────
-        clip_group = QGroupBox("\U0001f4cb  Clipboard Sync")
-        clip_layout = QHBoxLayout(clip_group)
-        self._auto_clip_cb = QCheckBox("Auto Sync")
-        self._auto_clip_cb.setChecked(self._config.get("auto_clip_sync", False))
-        self._auto_clip_cb.toggled.connect(
-            lambda v: self._config.__setitem__("auto_clip_sync", v)
-        )
-        push_clip_btn = QPushButton("\u2b06  Push to Phone")
-        push_clip_btn.clicked.connect(self._push_clipboard)
-        pull_clip_btn = QPushButton("\u2b07  Pull from Phone")
-        pull_clip_btn.clicked.connect(self._pull_clipboard)
-        clip_layout.addWidget(self._auto_clip_cb)
-        clip_layout.addWidget(push_clip_btn)
-        clip_layout.addWidget(pull_clip_btn)
-        main_layout.addWidget(clip_group)
+        self._duration_label = QLabel("")
+        self._duration_label.setObjectName("subtitle")
+        preset_layout.addWidget(self._duration_label)
 
-        # ── Remote Control ─────────────────────────────────────────────
-        ctrl_group = QGroupBox("\U0001f3ae  Remote Control")
-        ctrl_main = QVBoxLayout(ctrl_group)
+        hero_layout.addLayout(preset_layout)
 
-        # Navigation row
+        main_layout.addWidget(hero_card)
+
+        # ── 2. COLLAPSIBLE REMOTE CONTROLS ────────────────────────────
+        remote_card = CollapsibleCard("🎮 Quick Remote Controls (Back, Home, Volume, Power)", expanded=False)
+        ctrl_main = QVBoxLayout()
+
+        # Nav row
         nav_layout = QHBoxLayout()
         for label, keycode in [
-            ("\u2b60  Back", KEYCODE_BACK),
-            ("\u2302  Home", KEYCODE_HOME),
-            ("\u25a1  Recents", KEYCODE_RECENTS),
+            ("⬅ Back", KEYCODE_BACK),
+            ("⌂ Home", KEYCODE_HOME),
+            ("◻ Recents", KEYCODE_RECENTS),
         ]:
-            btn = QPushButton(label)
-            btn.setObjectName("control-btn")
+            btn = AnimatedButton(label)
             btn.clicked.connect(lambda _, k=keycode: self._send_key(k))
             nav_layout.addWidget(btn)
         ctrl_main.addLayout(nav_layout)
@@ -186,70 +188,96 @@ class MirrorTab(QWidget):
         # Media + power row
         media_layout = QHBoxLayout()
         for label, keycode in [
-            ("\U0001f50a  Vol+", KEYCODE_VOLUME_UP),
-            ("\U0001f509  Vol\u2212", KEYCODE_VOLUME_DOWN),
-            ("\u23fb  Power", KEYCODE_POWER),
-            ("\U0001f4f4  Screen Off", KEYCODE_SCREEN_OFF),
+            ("🔊 Vol+", KEYCODE_VOLUME_UP),
+            ("🔉 Vol−", KEYCODE_VOLUME_DOWN),
+            ("⏻ Power", KEYCODE_POWER),
+            ("📴 Screen Off", KEYCODE_SCREEN_OFF),
         ]:
-            btn = QPushButton(label)
-            btn.setObjectName("control-btn")
+            btn = AnimatedButton(label)
             btn.clicked.connect(lambda _, k=keycode: self._send_key(k))
             media_layout.addWidget(btn)
         ctrl_main.addLayout(media_layout)
 
         # Custom keycode row
         custom_layout = QHBoxLayout()
-        custom_layout.addWidget(QLabel("Custom Key:"))
+        custom_layout.addWidget(QLabel("Custom Keycode:"))
         self._custom_key_input = QSpinBox()
         self._custom_key_input.setRange(0, 999)
-        self._custom_key_input.setToolTip("Enter Android keycode number")
-        custom_key_btn = QPushButton("Send Key")
+        custom_key_btn = AnimatedButton("Send Key")
         custom_key_btn.clicked.connect(self._send_custom_key)
         custom_layout.addWidget(self._custom_key_input)
         custom_layout.addWidget(custom_key_btn)
+        custom_layout.addStretch()
         ctrl_main.addLayout(custom_layout)
 
-        main_layout.addWidget(ctrl_group)
+        remote_card.addLayout(ctrl_main)
+        main_layout.addWidget(remote_card)
 
-        # ── Screen Capture ─────────────────────────────────────────────
-        capture_group = QGroupBox("\U0001f4f8  Screen Capture")
-        capture_layout = QHBoxLayout(capture_group)
-        screenshot_btn = QPushButton("\U0001f4f7  Take Screenshot")
+        # ── 3. COLLAPSIBLE TOOLS (Clipboard & Screen Capture & URL) ─────
+        tools_card = CollapsibleCard("🧰 Quick Tools (Clipboard, Capture & URL)", expanded=False)
+        tools_main = QVBoxLayout()
+
+        # Row 1: Clipboard & Screenshot
+        row1 = QHBoxLayout()
+        self._auto_clip_cb = QCheckBox("Auto Clipboard Sync")
+        self._auto_clip_cb.setChecked(self._config.get("auto_clip_sync", False))
+        self._auto_clip_cb.toggled.connect(
+            lambda v: self._config.__setitem__("auto_clip_sync", v)
+        )
+        push_clip_btn = AnimatedButton("⬆ Push Clipboard")
+        push_clip_btn.clicked.connect(self._push_clipboard)
+
+        pull_clip_btn = AnimatedButton("⬇ Pull Clipboard")
+        pull_clip_btn.clicked.connect(self._pull_clipboard)
+
+        screenshot_btn = AnimatedButton("📸 Take Screenshot")
         screenshot_btn.clicked.connect(self._take_screenshot)
-        capture_layout.addWidget(screenshot_btn)
-        main_layout.addWidget(capture_group)
 
-        # ── Open URL on Phone ──────────────────────────────────────────
-        url_group = QGroupBox("\U0001f310  Open URL on Phone")
-        url_layout = QHBoxLayout(url_group)
+        row1.addWidget(self._auto_clip_cb)
+        row1.addWidget(push_clip_btn)
+        row1.addWidget(pull_clip_btn)
+        row1.addWidget(screenshot_btn)
+        tools_main.addLayout(row1)
+
+        # Row 2: Open URL
+        row2 = QHBoxLayout()
+        row2.addWidget(QLabel("Open URL:"))
         self._url_input = QLineEdit()
         self._url_input.setPlaceholderText("https://example.com")
-        url_btn = QPushButton("Open")
+        url_btn = AnimatedButton("Open on Phone")
         url_btn.clicked.connect(self._open_url)
-        url_layout.addWidget(self._url_input)
-        url_layout.addWidget(url_btn)
-        main_layout.addWidget(url_group)
+        row2.addWidget(self._url_input)
+        row2.addWidget(url_btn)
+        tools_main.addLayout(row2)
 
-        # ── Hardware Dashboard ─────────────────────────────────────────
+        tools_card.addLayout(tools_main)
+        main_layout.addWidget(tools_card)
+
+        # ── 4. COLLAPSIBLE HARDWARE TELEMETRY ─────────────────────────
+        telemetry_card = CollapsibleCard("📊 Live Hardware Telemetry (CPU, RAM, Latency)", expanded=False)
         self._dashboard = DashboardWidget()
         self._dashboard.refresh_btn.clicked.connect(self._refresh_dashboard)
-        main_layout.addWidget(self._dashboard)
+        telemetry_card.addWidget(self._dashboard)
+        main_layout.addWidget(telemetry_card)
 
-        # ── Log Panel ──────────────────────────────────────────────────
+        # Log panel at bottom
         self._log_panel = LogPanel()
         main_layout.addWidget(self._log_panel)
 
-        # Final layout
+        main_layout.addStretch()
         scroll.setWidget(container)
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.addWidget(scroll)
+
+        # Set central layout for this widget tab
+        tab_layout = QVBoxLayout(self)
+        tab_layout.setContentsMargins(0, 0, 0, 0)
+        tab_layout.addWidget(scroll)
 
     # ── Connection Handlers ───────────────────────────────────────────────
 
     def _start_auto_discover(self) -> None:
         """Start heartbeat listener + discovery broadcaster."""
-        self._update_status("\U0001f7e1  Discovering...", "status-warning")
+        self._update_status("Discovering...", "status-warning")
+        self._heartbeat_indicator.set_state("discovering")
         self._heartbeat.start()
         self._broadcaster.start()
         log.info("Auto-discovery started")
@@ -261,7 +289,8 @@ class MirrorTab(QWidget):
             log.warning("No saved phone IP found")
             self._update_status("\U0001f534  No saved IP", "status-error")
             return
-        self._update_status(f"\U0001f7e1  Connecting to {saved_ip}...", "status-warning")
+        self._update_status(f"Connecting to {saved_ip}...", "status-warning")
+        self._heartbeat_indicator.set_state("connecting")
         port = self._config.get("last_phone_port", DEFAULT_ADB_PORT)
         threading.Thread(
             target=self._connect_worker, args=(saved_ip, port),
@@ -270,7 +299,8 @@ class MirrorTab(QWidget):
 
     def _start_subnet_scan(self) -> None:
         """Launch a subnet scan."""
-        self._update_status("\U0001f7e1  Scanning subnet...", "status-warning")
+        self._update_status("Scanning subnet...", "status-warning")
+        self._heartbeat_indicator.set_state("discovering")
         self._scan_btn.setEnabled(False)
         self._scanner.start_scan()
 
@@ -304,7 +334,8 @@ class MirrorTab(QWidget):
         """Handle subnet scan completion."""
         self._scan_btn.setEnabled(True)
         if result is None:
-            self._update_status("\U0001f534  No devices found on subnet", "status-error")
+            self._update_status("No devices found on subnet", "status-error")
+            self._heartbeat_indicator.set_state("error")
 
     # ── Workers ───────────────────────────────────────────────────────────
 
@@ -319,7 +350,10 @@ class MirrorTab(QWidget):
             QTimer.singleShot(0, lambda: self._set_connected(ip, port))
         else:
             QTimer.singleShot(
-                0, lambda: self._update_status(f"\U0001f534  {msg}", "status-error")
+                0, lambda: self._update_status(f"{msg}", "status-error")
+            )
+            QTimer.singleShot(
+                0, lambda: self._heartbeat_indicator.set_state("error")
             )
 
     # ── UI State ──────────────────────────────────────────────────────────
@@ -331,23 +365,28 @@ class MirrorTab(QWidget):
         self._connected = True
         self._connect_time = time.time()
         self._update_status(
-            f"\U0001f7e2  Connected to {ip}:{port} | scrcpy running", "status"
+            f"Connected to {ip}:{port} | scrcpy running", "status"
         )
+    def _set_connected(self, ip: str, port: int = 5555) -> None:
+        """Update UI to connected state and emit signal."""
+        self._phone_ip = ip
+        self._connected = True
+        self._connect_time = time.time()
+        
         self._disconnect_btn.setEnabled(True)
         self._auto_btn.setEnabled(False)
         self._saved_btn.setEnabled(False)
         self._scan_btn.setEnabled(False)
-        self.connection_state_changed.emit(ConnectionState.MIRRORING)
         self._start_dashboard_timer()
         self._start_duration_timer()
-        log.info("Connected and mirroring: %s:%d", ip, port)
+        self.connection_state_changed.emit(ConnectionState.MIRRORING)
 
     def _set_disconnected(self) -> None:
         """Update UI to disconnected state."""
         self._phone_ip = None
         self._connected = False
         self._connect_time = None
-        self._update_status("\U0001f534  Disconnected", "status-error")
+        
         self._duration_label.setText("")
         self._disconnect_btn.setEnabled(False)
         self._auto_btn.setEnabled(True)
@@ -359,10 +398,8 @@ class MirrorTab(QWidget):
         self.connection_state_changed.emit(ConnectionState.DISCONNECTED)
 
     def _update_status(self, text: str, obj_name: str = "status") -> None:
-        self._status_label.setText(text)
-        self._status_label.setObjectName(obj_name)
-        self._status_label.style().unpolish(self._status_label)
-        self._status_label.style().polish(self._status_label)
+        # Legacy method; status is now handled by MainWindow
+        pass
 
     # ── Dashboard ─────────────────────────────────────────────────────────
 

@@ -15,19 +15,23 @@ from PyQt6.QtWidgets import (
 )
 
 from src.logger import get_signal_bridge
+from src.ui.animations import animate_height
 
 
 class LogPanel(QGroupBox):
     """
     A collapsible log viewer that auto-scrolls and can be connected
     to the centralized logging system.
+
+    Features smooth collapse/expand height animation.
     """
 
-    def __init__(self, title: str = "System Logs", max_height: int = 180) -> None:
+    def __init__(self, title: str = "📜  System Logs", max_height: int = 200) -> None:
         super().__init__(title)
+        self._max_height = max_height
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(4)
+        layout.setSpacing(6)
 
         # Log text area
         self._log_area = QTextEdit()
@@ -37,17 +41,17 @@ class LogPanel(QGroupBox):
 
         # Button bar
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(6)
+        btn_layout.setSpacing(8)
 
-        self._toggle_btn = QPushButton("\u25bc  Collapse")
+        self._toggle_btn = QPushButton("▼  Collapse")
         self._toggle_btn.setObjectName("control-btn")
         self._toggle_btn.clicked.connect(self._toggle)
 
-        copy_btn = QPushButton("\U0001f4cb  Copy")
+        copy_btn = QPushButton("📋  Copy")
         copy_btn.setObjectName("control-btn")
         copy_btn.clicked.connect(self._copy_logs)
 
-        clear_btn = QPushButton("\U0001f5d1  Clear")
+        clear_btn = QPushButton("🗑  Clear")
         clear_btn.setObjectName("control-btn")
         clear_btn.clicked.connect(self._clear_logs)
 
@@ -70,12 +74,14 @@ class LogPanel(QGroupBox):
         scrollbar.setValue(scrollbar.maximum())
 
     def _toggle(self) -> None:
-        """Toggle the log area visibility."""
+        """Toggle the log area visibility with smooth animation."""
         self._collapsed = not self._collapsed
-        self._log_area.setVisible(not self._collapsed)
-        self._toggle_btn.setText(
-            "\u25b6  Expand" if self._collapsed else "\u25bc  Collapse"
-        )
+        if self._collapsed:
+            animate_height(self._log_area, 0, duration=250)
+            self._toggle_btn.setText("▶  Expand")
+        else:
+            animate_height(self._log_area, self._max_height, duration=250)
+            self._toggle_btn.setText("▼  Collapse")
 
     def _copy_logs(self) -> None:
         """Copy all log text to the clipboard."""

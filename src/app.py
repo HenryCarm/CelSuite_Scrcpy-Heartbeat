@@ -30,6 +30,12 @@ def _install_exception_hook() -> None:
 
 def main() -> int:
     """Launch the ScrcpyUltimateLink application."""
+    import argparse
+    parser = argparse.ArgumentParser(description=APP_NAME)
+    parser.add_argument("--auto-screenshot", action="store_true", help="Auto screenshot and quit mode")
+    parser.add_argument("--screenshot-path", type=str, default="", help="Path to save auto screenshot")
+    args, _ = parser.parse_known_args()
+
     # 1. Load config
     config = AppConfig()
 
@@ -54,6 +60,18 @@ def main() -> int:
     from src.ui.main_window import MainWindow
     window = MainWindow(config)
     window.show()
+
+    if args.auto_screenshot:
+        from PyQt6.QtCore import QTimer
+        def capture_and_quit():
+            target_path = args.screenshot_path or "/home/henry/.gemini/antigravity/brain/755897b6-21b8-41d0-8ad7-f610a2e21dd7/auto_screenshot.png"
+            pixmap = window.grab()
+            pixmap.save(target_path)
+            log.info("Auto screenshot saved to %s", target_path)
+            QTimer.singleShot(2000, app.quit)
+
+        log.info("Auto-screenshot mode active: capturing in 5 seconds...")
+        QTimer.singleShot(5000, capture_and_quit)
 
     log.info("GUI ready")
     return app.exec()

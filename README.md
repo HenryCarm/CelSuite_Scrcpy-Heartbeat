@@ -7,7 +7,7 @@ A zero-config, cross-platform wireless screen mirroring and control suite built 
 ## Key Features
 
 - **Zero-Cable Wireless Mirroring:** Connects your PC and Android device seamlessly over local WiFi or Hotspot without ever needing a dying USB cable.
-- **Android Heartbeat & Shizuku Client:** Native Kivy mobile app that binds TCP port `5555` in the background using **Shizuku (`rish`)** or **Magisk Root** with automatic auto-reconnect loops.
+- **Android Heartbeat & Shizuku Client:** Native Kivy mobile app that binds TCP port `5555` in the background using the **Shizuku API** or **Magisk Root** with automatic auto-reconnect loops.
 - **PyQt6 Tabbed Desktop GUI:** Clean, resizable desktop application with dedicated tabs for Main Controls, Server Configuration, and Setup Guides.
 - **Smart mDNS Zero-Config Discovery:** Automatically discovers your phone's IP address and ADB debugging ports across network shifts without slow subnet sweeps.
 - **100% Cloud-Compiled Releases:** All standalone Linux desktop binaries and Android APKs are compiled and published automatically via GitHub Actions CI/CD datacenters.
@@ -16,15 +16,17 @@ A zero-config, cross-platform wireless screen mirroring and control suite built 
 
 ## Quick Start & Installation
 
-### 1. Desktop Application (Linux / Windows / macOS)
+### 1. Desktop Application (Linux / Windows)
 
 1. Head over to the [Latest GitHub Release](../../releases/latest) page.
-2. Download the standalone executable for your system (e.g., `ScrcpyUltimateLink-Linux-x86_64`).
-3. Make it executable and run:
+2. Download the package for your system:
+   - **Portable (Single File):** e.g., `ScrcpyUltimateLink-Windows-Portable` (Just double click and run. Slower startup time as it unpacks to a temp directory).
+   - **Standalone (Folder):** e.g., `ScrcpyUltimateLink-Windows-Standalone` (Extract the ZIP and run the `app.exe` or `app.bin` inside. Extremely fast startup time).
+3. If using Linux, make sure to mark the binary as executable:
 
 ```bash
-chmod +x ScrcpyUltimateLink-Linux-x86_64
-./ScrcpyUltimateLink-Linux-x86_64
+chmod +x app.bin
+./app.bin
 ```
 
 > Ensure you have [Scrcpy v4.0+](https://github.com/Genymobile/scrcpy) installed on your system. The app uses your system PATH default (`scrcpy`), but you can point it to a custom binary in the Settings tab.

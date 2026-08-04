@@ -1,7 +1,8 @@
 """
 Main application window for ScrcpyUltimateLink.
 
-Assembles all tabs, menu bar, status bar, and system tray.
+Assembles all tabs, menu bar, status bar with heartbeat indicator,
+and system tray. Features animated tab transitions.
 """
 
 from __future__ import annotations
@@ -11,11 +12,15 @@ import sys
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QAction, QCloseEvent, QIcon, QKeySequence
 from PyQt6.QtWidgets import (
+    QHBoxLayout,
     QLabel,
     QMainWindow,
     QMessageBox,
     QStatusBar,
-    QTabWidget,
+    QStackedWidget,
+    QListWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
 from src.config import AppConfig
@@ -28,6 +33,7 @@ from src.ui.mirror_tab import MirrorTab
 from src.ui.settings_tab import SettingsTab
 from src.ui.transfer_tab import TransferTab
 from src.ui.styles import STYLESHEET
+from src.ui.widgets.heartbeat_indicator import HeartbeatIndicator
 
 log = get_logger(__name__)
 
@@ -40,7 +46,6 @@ class MainWindow(QMainWindow):
         self._config = config
         self._build_window()
         self._build_menubar()
-        self._build_statusbar()
         self._build_tabs()
         self._start_services()
 
@@ -80,17 +85,58 @@ class MainWindow(QMainWindow):
         about_action.triggered.connect(self._show_about)
         help_menu.addAction(about_action)
 
-    def _build_statusbar(self) -> None:
-        """Build the status bar."""
-        self._statusbar = QStatusBar()
-        self.setStatusBar(self._statusbar)
-
-        self._conn_indicator = QLabel("\U0001f534  Disconnected")
-        self._statusbar.addPermanentWidget(self._conn_indicator)
+    # Status bar removed; integrated into sidebar.
 
     def _build_tabs(self) -> None:
-        """Build all tab widgets."""
-        self._tabs = QTabWidget()
+        """Build the sidebar navigation and content stack."""
+        self._central_widget = QWidget()
+        self.setCentralWidget(self._central_widget)
+        
+        # We use a horizontal layout: Sidebar on left, Stack on right
+        layout = QHBoxLayout(self._central_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Sidebar Container
+        sidebar_container = QWidget()
+        sidebar_container.setFixedWidth(220)
+        sidebar_container.setStyleSheet("background-color: #0D0A14;")
+        sidebar_layout = QVBoxLayout(sidebar_container)
+        sidebar_layout.setContentsMargins(0, 16, 0, 16)
+        sidebar_layout.setSpacing(8)
+        
+        # App Title in Sidebar
+        title_lbl = QLabel(f" {APP_NAME}")
+        title_lbl.setStyleSheet("color: #F0F0F5; font-size: 16px; font-weight: bold;")
+        sidebar_layout.addWidget(title_lbl)
+        
+        # Sidebar List
+        self._sidebar = QListWidget()
+        self._sidebar.setObjectName("sidebar")
+        self._sidebar.currentRowChanged.connect(self._on_sidebar_changed)
+        sidebar_layout.addWidget(self._sidebar)
+        
+        sidebar_layout.addStretch()
+        
+        # Connection Status in Sidebar
+        status_layout = QHBoxLayout()
+        status_layout.setContentsMargins(16, 0, 16, 0)
+        self._heartbeat = HeartbeatIndicator(size=24)
+        self._heartbeat.set_state("disconnected")
+        status_layout.addWidget(self._heartbeat)
+
+        self._conn_label = QLabel("Disconnected")
+        self._conn_label.setStyleSheet("color: #9CA3AF; font-size: 13px; font-weight: bold;")
+        status_layout.addWidget(self._conn_label)
+        status_layout.addStretch()
+        sidebar_layout.addLayout(status_layout)
+        
+        layout.addWidget(sidebar_container)
+
+        # Content Stack
+        self._stack = QStackedWidget()
+        self._stack.setObjectName("content-stack")
+        layout.addWidget(self._stack)
 
         self._mirror_tab = MirrorTab(self._config)
         self._mirror_tab.connection_state_changed.connect(self._on_connection_state)
@@ -103,12 +149,22 @@ class MainWindow(QMainWindow):
         self._settings_tab = SettingsTab(self._config)
         self._about_tab = AboutTab(self._config)
 
-        self._tabs.addTab(self._mirror_tab, "\U0001f4f1  Mirror Phone")
-        self._tabs.addTab(self._transfer_tab, "\U0001f4e4  File Transfer")
-        self._tabs.addTab(self._settings_tab, "\u2699  Settings")
-        self._tabs.addTab(self._about_tab, "\u2753  About")
+        # Add items to sidebar and stack
+        tabs = [
+            ("📱  Mirror Phone", self._mirror_tab),
+            ("📤  File Transfer", self._transfer_tab),
+            ("⚙️  Settings", self._settings_tab),
+            ("❓  About", self._about_tab),
+        ]
+        
+        for name, widget in tabs:
+            self._sidebar.addItem(name)
+            self._stack.addWidget(widget)
 
-        self.setCentralWidget(self._tabs)
+        self._sidebar.setCurrentRow(0)
+
+    def _on_sidebar_changed(self, index: int) -> None:
+        self._stack.setCurrentIndex(index)
 
     def _start_services(self) -> None:
         """Start background network services."""
@@ -122,26 +178,28 @@ class MainWindow(QMainWindow):
     # ── Signal Handlers ───────────────────────────────────────────────────
 
     def _on_connection_state(self, state: str) -> None:
-        """Update status bar based on connection state."""
-        indicators = {
-            ConnectionState.DISCONNECTED: "\U0001f534  Disconnected",
-            ConnectionState.DISCOVERING: "\U0001f7e1  Discovering...",
-            ConnectionState.CONNECTING: "\U0001f7e1  Connecting...",
-            ConnectionState.CONNECTED: "\U0001f7e2  Connected",
-            ConnectionState.MIRRORING: "\U0001f7e2  Mirroring",
-            ConnectionState.ERROR: "\U0001f534  Connection Error",
+        """Update status bar heartbeat indicator and label."""
+        self._heartbeat.set_state(state)
+
+        labels = {
+            ConnectionState.DISCONNECTED: ("Disconnected", "#9CA3AF"),
+            ConnectionState.DISCOVERING: ("Discovering...", "#F59E0B"),
+            ConnectionState.CONNECTING: ("Connecting...", "#F59E0B"),
+            ConnectionState.CONNECTED: ("Connected", "#10B981"),
+            ConnectionState.MIRRORING: ("Mirroring Active", "#10B981"),
+            ConnectionState.ERROR: ("Connection Error", "#EF4444"),
         }
-        self._conn_indicator.setText(
-            indicators.get(state, f"\u2753  {state}")
-        )
+        label_text, color = labels.get(state, (state, "#9CA3AF"))
+        self._conn_label.setText(label_text)
+        self._conn_label.setStyleSheet(f"color: {color}; font-size: 12px; font-weight: bold;")
 
     # ── Dialogs ───────────────────────────────────────────────────────────
 
     def _show_about(self) -> None:
         """Switch to the About tab."""
-        for i in range(self._tabs.count()):
-            if isinstance(self._tabs.widget(i), AboutTab):
-                self._tabs.setCurrentIndex(i)
+        for i in range(self._stack.count()):
+            if isinstance(self._stack.widget(i), AboutTab):
+                self._sidebar.setCurrentRow(i)
                 break
 
     # ── Window Events ─────────────────────────────────────────────────────

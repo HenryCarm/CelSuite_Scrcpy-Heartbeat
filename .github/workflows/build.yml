@@ -1,0 +1,135 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build Windows PC App
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyQt6 nuitka zstandard
+
+      - name: Compile with Nuitka (Standalone)
+        run: |
+          python -m nuitka --standalone --enable-plugin=pyqt6 --noinclude-qt-translations --nofollow-import-to=pytest,numpy,pandas,matplotlib,tkinter src/app.py
+          
+      - name: Compile with Nuitka (Onefile Portable)
+        run: |
+          python -m nuitka --onefile --enable-plugin=pyqt6 --noinclude-qt-translations --nofollow-import-to=pytest,numpy,pandas,matplotlib,tkinter src/app.py
+
+      - name: Upload Windows Artifact (Standalone)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScrcpyUltimateLink-Windows-Standalone
+          path: app.dist/
+          
+      - name: Upload Windows Artifact (Portable)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScrcpyUltimateLink-Windows-Portable
+          path: app.exe
+          
+  build-android:
+    name: Build Android App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Buildozer dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          pip install --upgrade buildozer cython virtualenv
+          
+      - name: Compile with Buildozer
+        run: |
+          buildozer android debug
+          
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScrcpyUltimateLink-Android
+          path: bin/*.apk
+
+  build-linux:
+    name: Build Linux PC App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y patchelf upx-ucl libqt6core6 libqt6gui6 libqt6widgets6
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyQt6 nuitka zstandard
+
+      - name: Compile with Nuitka (Standalone)
+        run: |
+          python -m nuitka --standalone --enable-plugin=pyqt6,upx --noinclude-qt-translations --nofollow-import-to=pytest,numpy,pandas,matplotlib,tkinter src/app.py
+          
+      - name: Compile with Nuitka (Onefile Portable)
+        run: |
+          python -m nuitka --onefile --enable-plugin=pyqt6,upx --noinclude-qt-translations --nofollow-import-to=pytest,numpy,pandas,matplotlib,tkinter src/app.py
+
+      - name: Upload Linux Artifact (Standalone)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScrcpyUltimateLink-Linux-Standalone
+          path: app.dist/
+          
+      - name: Upload Linux Artifact (Portable)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScrcpyUltimateLink-Linux-Portable
+          path: app.bin
+
+  release:
+    name: Create Release
+    needs: [build-windows, build-android, build-linux]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+          
+      - name: Display structure of downloaded files
+        run: ls -R
+        working-directory: ./artifacts

@@ -9,7 +9,6 @@ import sys
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QGroupBox,
     QLabel,
     QScrollArea,
     QVBoxLayout,
@@ -20,6 +19,7 @@ from src.config import AppConfig
 from src.constants import APP_NAME, APP_VERSION
 from src.networking.adb import get_adb_version
 from src.logger import get_logger
+from src.ui.widgets.section_card import SectionCard
 
 log = get_logger(__name__)
 
@@ -40,8 +40,8 @@ class AboutTab(QWidget):
         layout.setSpacing(16)
 
         # ── App Info ──────────────────────────────────────────────────
-        info_group = QGroupBox(f"\u2728  {APP_NAME}")
-        info_layout = QVBoxLayout(info_group)
+        info_group = SectionCard(f"\u2728  {APP_NAME}")
+        info_layout = QVBoxLayout()
 
         version_label = QLabel(f"Version: {APP_VERSION}")
         version_label.setObjectName("section-title")
@@ -56,11 +56,12 @@ class AboutTab(QWidget):
             "with zero USB cables needed."
         ))
 
+        info_group.addLayout(info_layout)
         layout.addWidget(info_group)
 
         # ── Quick Setup Guide ─────────────────────────────────────────
-        guide_group = QGroupBox("\U0001f4d6  Quick Setup Guide")
-        guide_layout = QVBoxLayout(guide_group)
+        guide_group = SectionCard("\U0001f4d6  Quick Setup Guide")
+        guide_layout = QVBoxLayout()
 
         steps = [
             "1. Connect your phone and PC to the same WiFi/hotspot network.",
@@ -78,11 +79,12 @@ class AboutTab(QWidget):
             else:
                 guide_layout.addWidget(QLabel(""))
 
+        guide_group.addLayout(guide_layout)
         layout.addWidget(guide_group)
 
         # ── Shizuku Setup ─────────────────────────────────────────────
-        shizuku_group = QGroupBox("\U0001f511  Shizuku (Rootless ADB)")
-        shizuku_layout = QVBoxLayout(shizuku_group)
+        shizuku_group = SectionCard("\U0001f511  Shizuku (Rootless ADB)")
+        shizuku_layout = QVBoxLayout()
         shizuku_layout.addWidget(QLabel(
             "For Android apps requiring ADB commands without root:"
         ))
@@ -91,11 +93,12 @@ class AboutTab(QWidget):
         shizuku_layout.addWidget(QLabel(
             "3. The companion app will use 'rish' to execute ADB commands."
         ))
+        shizuku_group.addLayout(shizuku_layout)
         layout.addWidget(shizuku_group)
 
         # ── System Diagnostics ────────────────────────────────────────
-        diag_group = QGroupBox("\U0001f4bb  System Diagnostics")
-        diag_layout = QVBoxLayout(diag_group)
+        diag_group = SectionCard("\U0001f4bb  System Diagnostics")
+        diag_layout = QVBoxLayout()
 
         diag_layout.addWidget(QLabel(f"Python: {sys.version.split()[0]}"))
 
@@ -130,16 +133,18 @@ class AboutTab(QWidget):
             scrcpy_ver = "Not installed"
         diag_layout.addWidget(QLabel(f"scrcpy: {scrcpy_ver}"))
 
+        diag_group.addLayout(diag_layout)
         layout.addWidget(diag_group)
 
         # ── Credits ───────────────────────────────────────────────────
-        credits_group = QGroupBox("\U0001f4dd  Credits")
-        credits_layout = QVBoxLayout(credits_group)
+        credits_group = SectionCard("\U0001f4dd  Credits")
+        credits_layout = QVBoxLayout()
         credits_layout.addWidget(QLabel(f"Developed by Henry"))
         credits_layout.addWidget(QLabel("Built with PyQt6, scrcpy, and ADB"))
         credits_layout.addWidget(QLabel(
             "scrcpy is open-source: https://github.com/Genymobile/scrcpy"
         ))
+        credits_group.addLayout(credits_layout)
         layout.addWidget(credits_group)
 
         layout.addStretch()
