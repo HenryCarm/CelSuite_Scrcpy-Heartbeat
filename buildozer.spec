@@ -19,7 +19,7 @@ android.meta_data = moe.shizuku.client.V3_SUPPORT=true,com.thedjchi.shizuku.clie
 android.api = 33
 android.minapi = 21
 android.ndk = 25b
-p4a.branch = master
+p4a.branch = v2024.01.21
 android.accept_sdk_license = True
 android.application = org.kivy.android.ScrcpyApplication
 

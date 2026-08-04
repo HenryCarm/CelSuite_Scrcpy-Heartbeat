@@ -78,7 +78,7 @@ jobs:
       - name: Install Dependencies
         run: pip install nuitka PyQt6 requests pyjnius
 
-      - name: Compile PC Binary with Nuitka (Max Compressed)
+      - name: Compile PC Binary (Portable Onefile)
         run: |
           python3 -m nuitka \
             --standalone \
@@ -89,14 +89,30 @@ jobs:
             --noinclude-qt-translations \
             --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PyQt6.QtQml,PyQt6.QtQuick,PyQt6.QtWebEngineCore,PyQt6.QtWebEngineWidgets,PyQt6.Qt3DCore,PyQt6.QtPdf,PyQt6.QtSql,PyQt6.QtMultimedia,PyQt6.QtTest,PyQt6.QtSensors,PyQt6.QtPositioning,PyQt6.QtBluetooth,PyQt6.QtDesigner \
             --linux-icon=icon.png \
-            --output-filename=ScrcpyUltimateLink-Linux-x86_64 \
+            --output-filename=ScrcpyUltimateLink-Linux-Portable.bin \
             main.py
+
+      - name: Compile PC Binary (Standalone Folder)
+        run: |
+          python3 -m nuitka \
+            --standalone \
+            --enable-plugin=pyqt6 \
+            --enable-plugin=upx \
+            --upx-binary=$(which upx) \
+            --noinclude-qt-translations \
+            --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PyQt6.QtQml,PyQt6.QtQuick,PyQt6.QtWebEngineCore,PyQt6.QtWebEngineWidgets,PyQt6.Qt3DCore,PyQt6.QtPdf,PyQt6.QtSql,PyQt6.QtMultimedia,PyQt6.QtTest,PyQt6.QtSensors,PyQt6.QtPositioning,PyQt6.QtBluetooth,PyQt6.QtDesigner \
+            --linux-icon=icon.png \
+            --output-dir=standalone_build \
+            main.py
+          zip -r ScrcpyUltimateLink-Linux-Standalone.zip standalone_build/main.dist/
 
       - name: Upload PC Binary Artifact
         uses: actions/upload-artifact@v4
         with:
           name: pc-binary
-          path: ScrcpyUltimateLink-Linux-x86_64
+          path: |
+            ScrcpyUltimateLink-Linux-Portable.bin
+            ScrcpyUltimateLink-Linux-Standalone.zip
 
   publish-release:
     name: Publish GitHub Release
