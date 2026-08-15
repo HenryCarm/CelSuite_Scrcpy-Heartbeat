@@ -30,9 +30,7 @@ from kivy.core.window import Window
 from kivy.animation import Animation
 from kivy.properties import NumericProperty
 
-if 'ANDROID_ARGUMENT' in os.environ:
-    Window.fullscreen = 'auto'
-else:
+if 'ANDROID_ARGUMENT' not in os.environ and 'PYTHON_SERVICE_ARGUMENT' not in os.environ:
     Window.size = (380, 680)
 
 # Port configuration
