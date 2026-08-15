@@ -24,6 +24,7 @@ p4a.branch = v2024.01.21
 android.accept_sdk_license = True
 android.add_src = src/java
 android.application = org.kivy.android.ScrcpyApplication
+android.activity_class_name = org.henry.scrcpy.ScrcpyActivity
 
 # App icon - use local icon in repo
 icon.filename = icon.png
