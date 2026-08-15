@@ -20,4 +20,12 @@ public class ScrcpyApplication extends Application {
             }
         });
     }
+
+    @Override
+    public Object getSystemService(String name) {
+        if (Context.SENSOR_SERVICE.equals(name)) {
+            return null;
+        }
+        return super.getSystemService(name);
+    }
 }
