@@ -7,17 +7,17 @@ for the Royal Nebula UI theme.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import (
+from PySide6.QtCore import (
     QEasingCurve,
     QPropertyAnimation,
     QRect,
     QSize,
     Qt,
     QTimer,
-    pyqtProperty,
+    Property,
 )
-from PyQt6.QtGui import QColor, QPainter, QPen
-from PyQt6.QtWidgets import (
+from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect,
     QGraphicsOpacityEffect,
     QPushButton,

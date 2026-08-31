@@ -343,12 +343,7 @@ def get_hardware_info(
     info: dict[str, Any] = {"ip": phone_ip, "port": adb_port}
 
     # Batch multiple queries into one shell call for efficiency
-    batch_cmd = (
-        "echo '---MODEL---'; getprop ro.product.model; "
-        "echo '---VERSION---'; getprop ro.build.version.release; "
-        "echo '---BATTERY---'; dumpsys battery; "
-        "echo '---DISPLAY---'; wm size"
-    )
+    batch_cmd = "getprop ro.product.model; getprop ro.build.version.release; dumpsys battery; wm size"
 
     try:
         result = subprocess.run(
@@ -361,37 +356,34 @@ def get_hardware_info(
             return info
 
         output = result.stdout
-        sections = output.split("---")
+        lines = [l.strip() for l in output.splitlines() if l.strip()]
 
-        for i, section in enumerate(sections):
-            section = section.strip()
-            if not section:
-                continue
+        if lines:
+            info["model"] = lines[0]
+        if len(lines) > 1:
+            info["android_version"] = f"Android {lines[1]}"
 
-            if section == "MODEL" and i + 1 < len(sections):
-                info["model"] = sections[i + 1].strip().split("\n")[0]
-            elif section == "VERSION" and i + 1 < len(sections):
-                ver = sections[i + 1].strip().split("\n")[0]
-                info["android_version"] = f"Android {ver}"
-            elif section == "BATTERY" and i + 1 < len(sections):
-                for line in sections[i + 1].strip().split("\n"):
-                    line = line.strip()
-                    if line.startswith("level:"):
-                        info["battery_level"] = f"{line.split(':')[1].strip()}%"
-                    elif line.startswith("status:"):
-                        code = line.split(":")[1].strip()
-                        info["charging"] = (
-                            "Charging" if code in ("2", "5") else "Discharging"
-                        )
-                    elif line.startswith("temperature:"):
-                        try:
-                            raw = int(line.split(":")[1].strip())
-                            info["temperature"] = f"{raw / 10.0:.1f}\u00b0C"
-                        except ValueError:
-                            pass
-            elif section == "DISPLAY" and i + 1 < len(sections):
-                display_line = sections[i + 1].strip().split("\n")[0]
-                info["resolution"] = display_line.replace("Physical size: ", "")
+        import re
+        lvl = re.search(r"level:\s*(\d+)", output)
+        if lvl:
+            info["battery_level"] = f"{lvl.group(1)}%"
+
+        st = re.search(r"status:\s*(\d+)", output)
+        if st and st.group(1) in ("2", "5"):
+            info["charging"] = "Charging"
+        else:
+            info["charging"] = "Discharging"
+
+        temp = re.search(r"temperature:\s*(\d+)", output)
+        if temp:
+            try:
+                info["temperature"] = f"{int(temp.group(1)) / 10.0:.1f}\u00b0C"
+            except ValueError:
+                pass
+
+        res = re.search(r"Physical size:\s*(\d+x\d+)", output)
+        if res:
+            info["resolution"] = res.group(1)
 
     except FileNotFoundError:
         info["error"] = "ADB not found"

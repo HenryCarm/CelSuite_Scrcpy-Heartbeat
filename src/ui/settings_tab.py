@@ -4,7 +4,7 @@ Settings tab for ScrcpyUltimateLink.
 
 from __future__ import annotations
 
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,

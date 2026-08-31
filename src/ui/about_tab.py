@@ -7,8 +7,8 @@ from __future__ import annotations
 import platform
 import sys
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
     QLabel,
     QScrollArea,
     QVBoxLayout,
@@ -103,9 +103,10 @@ class AboutTab(QWidget):
         diag_layout.addWidget(QLabel(f"Python: {sys.version.split()[0]}"))
 
         try:
-            from PyQt6.QtCore import PYQT_VERSION_STR, QT_VERSION_STR
-            diag_layout.addWidget(QLabel(f"Qt: {QT_VERSION_STR}"))
-            diag_layout.addWidget(QLabel(f"PyQt6: {PYQT_VERSION_STR}"))
+            import PySide6
+            from PySide6.QtCore import qVersion
+            diag_layout.addWidget(QLabel(f"Qt: {qVersion()}"))
+            diag_layout.addWidget(QLabel(f"PySide6: {PySide6.__version__}"))
         except ImportError:
             diag_layout.addWidget(QLabel("Qt: unknown"))
 
@@ -140,7 +141,7 @@ class AboutTab(QWidget):
         credits_group = SectionCard("\U0001f4dd  Credits")
         credits_layout = QVBoxLayout()
         credits_layout.addWidget(QLabel(f"Developed by Henry"))
-        credits_layout.addWidget(QLabel("Built with PyQt6, scrcpy, and ADB"))
+        credits_layout.addWidget(QLabel("Built with PySide6, scrcpy, and ADB"))
         credits_layout.addWidget(QLabel(
             "scrcpy is open-source: https://github.com/Genymobile/scrcpy"
         ))

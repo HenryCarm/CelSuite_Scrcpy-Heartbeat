@@ -7,9 +7,9 @@ connection heartbeat. Color changes based on connection state.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QPropertyAnimation, QEasingCurve, Qt, QTimer, pyqtProperty
-from PyQt6.QtGui import QColor, QPainter, QPen
-from PyQt6.QtWidgets import QWidget
+from PySide6.QtCore import QPropertyAnimation, QEasingCurve, Qt, QTimer, Property
+from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtWidgets import QWidget
 
 from src.ui.styles import COLORS
 
@@ -65,7 +65,7 @@ class HeartbeatIndicator(QWidget):
 
     # ── Qt Properties ─────────────────────────────────────────────────
 
-    @pyqtProperty(float)
+    @Property(float)
     def ringRadius(self) -> float:  # noqa: N802
         return self._ring_radius
 
@@ -74,7 +74,7 @@ class HeartbeatIndicator(QWidget):
         self._ring_radius = value
         self.update()
 
-    @pyqtProperty(float)
+    @Property(float)
     def ringOpacity(self) -> float:  # noqa: N802
         return self._ring_opacity
 

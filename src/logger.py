@@ -19,7 +19,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 from typing import Callable, Optional
 
-from PyQt6.QtCore import QObject, pyqtSignal
+from PySide6.QtCore import QObject, Signal
 
 from src.constants import LOG_FILE
 
@@ -27,7 +27,7 @@ from src.constants import LOG_FILE
 
 class _QtLogSignalBridge(QObject):
     """Singleton QObject that emits a signal for every log record."""
-    log_message = pyqtSignal(str)
+    log_message = Signal(str)
 
 _bridge: Optional[_QtLogSignalBridge] = None
 

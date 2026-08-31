@@ -575,17 +575,22 @@ class MainScreen(Screen):
         
         # ── 1. Top Header Bar ───────────────────────────────────────────
         top_bar = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(40), spacing=dp(8))
-        self.label = Label(text="Scrcpy Link", font_size=sp(20), bold=True, color=ACCENT_PRIMARY, size_hint_x=0.45, halign='left', valign='middle')
+        self.label = Label(text="Scrcpy Heartbeat :)", font_size=sp(22), bold=True, color=ACCENT_PRIMARY, size_hint_x=1.0, halign='left', valign='middle')
         self.label.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
-        
-        self.pc_ip_input = TextInput(text="Discovering PC...", readonly=True, halign='center', font_size=sp(12), background_color=INPUT_BG, foreground_color=TEXT_PRIMARY, size_hint_x=0.55, size_hint_y=None, height=dp(38))
         top_bar.add_widget(self.label)
-        top_bar.add_widget(self.pc_ip_input)
         content.add_widget(top_bar)
         
         # ── 2. Central Hero Connection Card ─────────────────────────────
-        hero_card = RoundedCard(orientation='vertical', size_hint_y=None, height=dp(190), padding=dp(16), spacing=dp(10))
+        hero_card = RoundedCard(orientation='vertical', size_hint_y=None, height=dp(220), padding=dp(16), spacing=dp(10))
         
+        # PC IP status badge inside hero card on top
+        self.pc_ip_input = TextInput(
+            text="Discovering PC...", readonly=True, halign='center',
+            font_size=sp(13), background_color=INPUT_BG, foreground_color=TEXT_PRIMARY,
+            size_hint_y=None, height=dp(38)
+        )
+        hero_card.add_widget(self.pc_ip_input)
+
         status_row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(45), spacing=dp(10))
         self.pulse = PulseIndicator()
         self.status_label = Label(text="Listening for PC broadcast...", font_size=sp(13), color=TEXT_SECONDARY, halign='left', valign='middle')
@@ -871,11 +876,18 @@ class LogsScreen(Screen):
         super().__init__(**kwargs)
         layout = ColoredBoxLayout(orientation='vertical', bg_color=DARK_BG, padding=dp(20), spacing=dp(16))
         
-        header = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(48))
-        title = Label(text="Live System Logs", font_size=sp(24), bold=True, color=ACCENT_PRIMARY)
-        refresh_btn = AnimatedButton(text="Refresh", btn_color=ACCENT_TERTIARY, size_hint_x=None, width=dp(100))
+        header = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(48), spacing=dp(8))
+        title = Label(text="Live System Logs", font_size=sp(20), bold=True, color=ACCENT_PRIMARY, size_hint_x=0.45, halign='left', valign='middle')
+        title.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        
+        self.copy_btn = AnimatedButton(text="📋 Copy", btn_color=ACCENT_PRIMARY, size_hint_x=None, width=dp(95))
+        self.copy_btn.bind(on_press=self.copy_logs)
+        
+        refresh_btn = AnimatedButton(text="Refresh", btn_color=ACCENT_TERTIARY, size_hint_x=None, width=dp(85))
         refresh_btn.bind(on_press=lambda x: self.load_logs())
+        
         header.add_widget(title)
+        header.add_widget(self.copy_btn)
         header.add_widget(refresh_btn)
         layout.add_widget(header)
 
@@ -904,6 +916,16 @@ class LogsScreen(Screen):
 
     def on_enter(self):
         self.load_logs()
+
+    def copy_logs(self, instance=None):
+        try:
+            from kivy.core.clipboard import Clipboard
+            text = self.log_label.text
+            Clipboard.copy(text)
+            self.copy_btn.text = "✅ Copied!"
+            Clock.schedule_once(lambda dt: setattr(self.copy_btn, 'text', '📋 Copy'), 1.5)
+        except Exception as e:
+            app_log(f"Failed to copy logs: {e}")
 
     def load_logs(self):
         try:

@@ -52,7 +52,7 @@ def main() -> int:
     log.info("Starting %s", APP_NAME)
 
     # 4. Create Qt application
-    from PyQt6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
 
@@ -62,7 +62,7 @@ def main() -> int:
     window.show()
 
     if args.auto_screenshot:
-        from PyQt6.QtCore import QTimer
+        from PySide6.QtCore import QTimer
         def capture_and_quit():
             target_path = args.screenshot_path or "/home/henry/.gemini/antigravity/brain/755897b6-21b8-41d0-8ad7-f610a2e21dd7/auto_screenshot.png"
             pixmap = window.grab()

@@ -7,7 +7,7 @@ with glassmorphic styling and glow-on-update effects.
 
 from __future__ import annotations
 
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QGridLayout,
     QGroupBox,
     QHBoxLayout,

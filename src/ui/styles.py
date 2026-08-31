@@ -155,7 +155,7 @@ QLabel#section-title {{
 }}
 
 QLabel#stat-value {{
-    font-size: 20px;
+    font-size: 16px;
     font-weight: bold;
     color: {COLORS["text"]};
 }}

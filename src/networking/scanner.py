@@ -13,7 +13,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional
 
-from PyQt6.QtCore import QObject, pyqtSignal
+from PySide6.QtCore import QObject, Signal
 
 from src.config import AppConfig
 from src.constants import (
@@ -41,9 +41,9 @@ class SubnetScanner(QObject):
         Emitted when the scan finishes. ``None`` if no device found.
     """
 
-    device_found = pyqtSignal(str)
-    scan_progress = pyqtSignal(int, int)  # current, total
-    scan_complete = pyqtSignal(object)    # str or None
+    device_found = Signal(str)
+    scan_progress = Signal(int, int)  # current, total
+    scan_complete = Signal(object)    # str or None
 
     def __init__(self, config: AppConfig) -> None:
         super().__init__()

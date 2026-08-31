@@ -11,7 +11,7 @@ import os
 import sys
 
 # ── Application Metadata ──────────────────────────────────────────────────────
-APP_NAME = "Scrcpy Ultimate Link"
+APP_NAME = "Scrcpy Heartbeat"
 APP_VERSION = "268.03.17"
 APP_AUTHOR = "Henry"
 APP_DOMAIN = "org.henry.scrcpy"
@@ -27,7 +27,7 @@ else:
 
 CONFIG_FILENAME = "config.json"
 CONFIG_FILE = os.path.join(APP_DIR, CONFIG_FILENAME)
-LOG_FILENAME = "ScrcpyUltimateLink.log"
+LOG_FILENAME = "ScrcpyHeartbeat.log"
 LOG_FILE = os.path.join(APP_DIR, LOG_FILENAME)
 
 # ── Network Defaults ──────────────────────────────────────────────────────────

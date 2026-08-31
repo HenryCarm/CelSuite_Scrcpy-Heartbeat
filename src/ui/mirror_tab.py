@@ -12,9 +12,9 @@ import threading
 import time
 from datetime import timedelta
 
-from PyQt6.QtCore import QTimer, pyqtSignal
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import QTimer, Signal
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFrame,
@@ -60,7 +60,7 @@ log = get_logger(__name__)
 class MirrorTab(QWidget):
     """Main mirror phone tab with connection, controls, and dashboard."""
 
-    connection_state_changed = pyqtSignal(str)
+    connection_state_changed = Signal(str)
 
     def __init__(self, config: AppConfig) -> None:
         super().__init__()
@@ -446,15 +446,24 @@ class MirrorTab(QWidget):
             self._dashboard_timer.stop()
 
     def _refresh_dashboard(self) -> None:
-        """Refresh hardware info (only when connected)."""
-        if not self._connected or not self._phone_ip:
+        """Refresh hardware info."""
+        phone_ip = self._phone_ip
+        adb_port = getattr(self, "_adb_port", DEFAULT_ADB_PORT)
+        if not phone_ip:
+            phone_ip, port = adb.get_connected_phone(self._config)
+            if phone_ip:
+                self._phone_ip = phone_ip
+                if port:
+                    self._adb_port = port
+                    adb_port = port
+        if not phone_ip:
             return
 
         def worker() -> None:
             info = adb.get_hardware_info(
-                self._config, self._phone_ip, self._adb_port
+                self._config, phone_ip, adb_port
             )
-            lat, _ = latency.measure_latency(self._phone_ip, self._adb_port)
+            lat, _ = latency.measure_latency(phone_ip, adb_port)
             QTimer.singleShot(0, lambda: self._dashboard.update_info(info))
             QTimer.singleShot(0, lambda: self._dashboard.update_latency(lat))
 
@@ -499,7 +508,7 @@ class MirrorTab(QWidget):
     def _push_clipboard(self) -> None:
         if not self._phone_ip:
             return
-        from PyQt6.QtWidgets import QApplication
+        from PySide6.QtWidgets import QApplication
         clipboard = QApplication.clipboard()
         if clipboard:
             text = clipboard.text()

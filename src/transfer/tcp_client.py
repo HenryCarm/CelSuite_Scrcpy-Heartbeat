@@ -14,7 +14,7 @@ import threading
 import time
 from typing import Optional
 
-from PyQt6.QtCore import QObject, pyqtSignal
+from PySide6.QtCore import QObject, Signal
 
 from src.constants import (
     DEFAULT_TCP_TRANSFER_PORT,
@@ -48,9 +48,9 @@ class TCPFileClient(QObject):
         Emitted when the remote file list is received.
     """
 
-    progress_updated = pyqtSignal(int, float, float)
-    transfer_finished = pyqtSignal(bool, str)
-    file_list_ready = pyqtSignal(list)
+    progress_updated = Signal(int, float, float)
+    transfer_finished = Signal(bool, str)
+    file_list_ready = Signal(list)
 
     def __init__(self, port: int = DEFAULT_TCP_TRANSFER_PORT) -> None:
         super().__init__()

@@ -16,7 +16,7 @@ import time
 import threading
 from typing import Optional
 
-from PyQt6.QtCore import QObject, pyqtSignal
+from PySide6.QtCore import QObject, Signal
 
 from src.constants import (
     DEFAULT_DISCOVERY_PORT,
@@ -128,8 +128,8 @@ class HeartbeatListener(QObject):
         Emitted when the connection state changes.
     """
 
-    heartbeat_received = pyqtSignal(str, int)  # ip, port
-    state_changed = pyqtSignal(str)
+    heartbeat_received = Signal(str, int)  # ip, port
+    state_changed = Signal(str)
 
     def __init__(self, config: AppConfig) -> None:
         super().__init__()

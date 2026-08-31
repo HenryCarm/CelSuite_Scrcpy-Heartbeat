@@ -18,7 +18,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
-from PyQt6.QtCore import QObject, pyqtSignal
+from PySide6.QtCore import QObject, Signal
 
 from src.constants import (
     DEFAULT_TCP_TRANSFER_PORT,
@@ -56,9 +56,9 @@ class TCPFileServer(QObject):
         Emitted on errors.
     """
 
-    file_received = pyqtSignal(str, str)   # filename, save_path
-    receive_progress = pyqtSignal(int, float, float)
-    error = pyqtSignal(str)
+    file_received = Signal(str, str)   # filename, save_path
+    receive_progress = Signal(int, float, float)
+    error = Signal(str)
 
     def __init__(
         self,

@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import os
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QFileDialog, QFrame, QLabel, QPushButton, QVBoxLayout
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QFileDialog, QFrame, QLabel, QPushButton, QVBoxLayout
 
 from src.constants import get_file_icon
 from src.ui.animations import fade_in
@@ -26,7 +26,7 @@ class DropZone(QFrame):
         Emitted when a file is selected via drag-drop or the browse dialog.
     """
 
-    file_selected = pyqtSignal(str)
+    file_selected = Signal(str)
 
     def __init__(self) -> None:
         super().__init__()

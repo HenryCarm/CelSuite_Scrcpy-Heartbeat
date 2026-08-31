@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import sys
 
-from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtGui import QAction, QCloseEvent, QIcon, QKeySequence
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QAction, QCloseEvent, QIcon, QKeySequence
+from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -29,6 +29,7 @@ from src.logger import get_logger
 from src.networking import adb
 from src.transfer.tcp_server import TCPFileServer
 from src.ui.about_tab import AboutTab
+from src.ui.logs_tab import LogsTab
 from src.ui.mirror_tab import MirrorTab
 from src.ui.settings_tab import SettingsTab
 from src.ui.transfer_tab import TransferTab
@@ -146,6 +147,7 @@ class MainWindow(QMainWindow):
             get_phone_ip=lambda: self._mirror_tab.phone_ip,
         )
 
+        self._logs_tab = LogsTab(self._config)
         self._settings_tab = SettingsTab(self._config)
         self._about_tab = AboutTab(self._config)
 
@@ -153,6 +155,7 @@ class MainWindow(QMainWindow):
         tabs = [
             ("📱  Mirror Phone", self._mirror_tab),
             ("📤  File Transfer", self._transfer_tab),
+            ("📜  Logs", self._logs_tab),
             ("⚙️  Settings", self._settings_tab),
             ("❓  About", self._about_tab),
         ]

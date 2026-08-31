@@ -4,8 +4,8 @@ Custom glassmorphic container widget to replace QGroupBox.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 
 class SectionCard(QFrame):

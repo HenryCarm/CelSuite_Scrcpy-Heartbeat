@@ -4,7 +4,7 @@ Collapsible log panel widget for ScrcpyUltimateLink.
 
 from __future__ import annotations
 
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QApplication,
     QGroupBox,
     QHBoxLayout,
