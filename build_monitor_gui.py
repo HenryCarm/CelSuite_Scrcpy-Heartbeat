@@ -214,6 +214,15 @@ class BuildMonitorWindow(QMainWindow):
             self.btn_wifi_toggle.setText("🌐 Start Wi-Fi Server")
             self.log("Wi-Fi File Server stopped.", "#9ca3af")
 
+    def _copy_pc_ip(self):
+        """Copies the local IP address to clipboard."""
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.local_ip)
+        self.btn_copy_ip.setText("✅ Copied!")
+        self.log(f"📋 Copied PC IP ({self.local_ip}) to clipboard!", "#38bdf8")
+        self.status_bar.setText(f"📋 Copied PC IP: {self.local_ip} ✨")
+        QTimer.singleShot(2000, lambda: self.btn_copy_ip.setText("📋 Copy IP"))
+
     def _apply_dark_theme(self):
         self.setStyleSheet("""
             QMainWindow {
@@ -455,6 +464,11 @@ class BuildMonitorWindow(QMainWindow):
         self.lbl_wifi_status = QLabel(f"Wi-Fi Server: http://{self.local_ip}:{HTTP_PORT}")
         self.lbl_wifi_status.setStyleSheet("color: #34d399; font-weight: bold;")
         wifi_row.addWidget(self.lbl_wifi_status)
+
+        self.btn_copy_ip = QPushButton("📋 Copy IP")
+        self.btn_copy_ip.setToolTip("Copy PC IP address to clipboard")
+        self.btn_copy_ip.clicked.connect(self._copy_pc_ip)
+        wifi_row.addWidget(self.btn_copy_ip)
 
         self.btn_wifi_toggle = QPushButton("🛑 Stop Wi-Fi Server")
         self.btn_wifi_toggle.clicked.connect(self.toggle_wifi_server)

@@ -111,12 +111,41 @@ class MirrorTab(QWidget):
         hero_title.setStyleSheet("font-size: 20px; font-weight: bold; color: #F0F0F5;")
         
         local_ip = heartbeat.get_local_ip()
+        self._current_local_ip = local_ip
+        
+        ip_box = QHBoxLayout()
+        ip_box.setSpacing(6)
+        
         self._ip_label = QLabel(f"📡 PC IP: {local_ip}")
         self._ip_label.setObjectName("subtitle")
+        
+        self._btn_copy_ip = QPushButton("📋 Copy")
+        self._btn_copy_ip.setToolTip("Copy PC IP address to clipboard")
+        self._btn_copy_ip.setStyleSheet("""
+            QPushButton {
+                background-color: #2D2D3D;
+                color: #A0A0B0;
+                border: 1px solid #3E3E50;
+                border-radius: 4px;
+                padding: 3px 8px;
+                font-size: 11px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #3E3E50;
+                color: #FFFFFF;
+                border-color: #7C4DFF;
+            }
+        """)
+        self._btn_copy_ip.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._btn_copy_ip.clicked.connect(self._copy_ip_to_clipboard)
+        
+        ip_box.addWidget(self._ip_label)
+        ip_box.addWidget(self._btn_copy_ip)
 
         hero_header.addWidget(hero_title)
         hero_header.addStretch()
-        hero_header.addWidget(self._ip_label)
+        hero_header.addLayout(ip_box)
         hero_layout.addLayout(hero_header)
 
         # Primary One-Tap Connect Button
@@ -527,6 +556,41 @@ class MirrorTab(QWidget):
             ),
             daemon=True,
         ).start()
+
+    # ── Copy IP Helper ───────────────────────────────────────────────────
+
+    def _copy_ip_to_clipboard(self) -> None:
+        ip = getattr(self, "_current_local_ip", heartbeat.get_local_ip())
+        QApplication.clipboard().setText(ip)
+        self._btn_copy_ip.setText("✅ Copied!")
+        self._btn_copy_ip.setStyleSheet("""
+            QPushButton {
+                background-color: #059669;
+                color: #FFFFFF;
+                border: 1px solid #10B981;
+                border-radius: 4px;
+                padding: 3px 8px;
+                font-size: 11px;
+                font-weight: 600;
+            }
+        """)
+        QTimer.singleShot(2000, lambda: self._btn_copy_ip.setText("📋 Copy"))
+        QTimer.singleShot(2000, lambda: self._btn_copy_ip.setStyleSheet("""
+            QPushButton {
+                background-color: #2D2D3D;
+                color: #A0A0B0;
+                border: 1px solid #3E3E50;
+                border-radius: 4px;
+                padding: 3px 8px;
+                font-size: 11px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #3E3E50;
+                color: #FFFFFF;
+                border-color: #7C4DFF;
+            }
+        """))
 
     # ── Preset ────────────────────────────────────────────────────────────
 
