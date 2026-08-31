@@ -23,7 +23,6 @@ android.ndk_api = 26
 android.ndk = 25b
 p4a.branch = v2024.01.21
 android.accept_sdk_license = True
-android.add_src = android/src/java
 android.application = org.kivy.android.ScrcpyApplication
 android.entrypoint = org.henry.scrcpy.ScrcpyActivity
 android.activity_class_name = org.henry.scrcpy.ScrcpyActivity
