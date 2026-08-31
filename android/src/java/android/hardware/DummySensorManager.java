@@ -4,13 +4,24 @@ import java.util.Collections;
 import java.util.List;
 import android.os.Handler;
 
+/**
+ * DummySensorManager
+ * Intercepts Android SensorManager requests on Samsung devices
+ * to avoid Samsung's proprietary HAL Modified UTF-8 JNI crash.
+ */
 public class DummySensorManager extends SensorManager {
+
     public DummySensorManager() {
         super();
     }
 
     @Override
     public List<Sensor> getSensorList(int type) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Sensor> getDynamicSensorList(int type) {
         return Collections.emptyList();
     }
 
@@ -25,41 +36,40 @@ public class DummySensorManager extends SensorManager {
     }
 
     @Override
-    protected List<Sensor> getFullSensorList() {
-        return Collections.emptyList();
+    public int getSensors() {
+        return 0;
     }
 
     @Override
-    protected List<Sensor> getFullDynamicSensorList() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    protected boolean registerListenerImpl(SensorEventListener listener, Sensor sensor, int delayUs, Handler handler, int maxBatchReportLatencyUs, int reservedFlags) {
+    public boolean registerListener(SensorEventListener listener, Sensor sensor, int samplingPeriodUs) {
         return false;
     }
 
     @Override
-    protected void unregisterListenerImpl(SensorEventListener listener, Sensor sensor) {
-    }
-
-    @Override
-    protected boolean flushImpl(SensorEventListener listener) {
+    public boolean registerListener(SensorEventListener listener, Sensor sensor, int samplingPeriodUs, Handler handler) {
         return false;
     }
 
     @Override
-    protected boolean initDataInjectionImpl(boolean enable, int reserved) {
+    public boolean registerListener(SensorEventListener listener, Sensor sensor, int samplingPeriodUs, int maxReportLatencyUs) {
         return false;
     }
 
     @Override
-    protected boolean injectSensorDataImpl(Sensor sensor, float[] values, int accuracy, long timestamp) {
+    public boolean registerListener(SensorEventListener listener, Sensor sensor, int samplingPeriodUs, int maxReportLatencyUs, Handler handler) {
         return false;
     }
 
     @Override
-    protected boolean setOperationParameterImpl(SensorAdditionalInfo parameter) {
+    public void unregisterListener(SensorEventListener listener) {
+    }
+
+    @Override
+    public void unregisterListener(SensorEventListener listener, Sensor sensor) {
+    }
+
+    @Override
+    public boolean flush(SensorEventListener listener) {
         return false;
     }
 }
