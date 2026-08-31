@@ -304,12 +304,17 @@ class MirrorTab(QWidget):
     # ── Connection Handlers ───────────────────────────────────────────────
 
     def _start_auto_discover(self) -> None:
-        """Start heartbeat listener + discovery broadcaster."""
+        """Refresh local IP and start heartbeat listener + discovery broadcaster + subnet probe."""
+        local_ip = heartbeat.get_local_ip()
+        self._current_local_ip = local_ip
+        self._ip_label.setText(f"📡 PC IP: {local_ip}")
+
         self._update_status("Discovering...", "status-warning")
         self._heartbeat_indicator.set_state("discovering")
         self._heartbeat.start()
         self._broadcaster.start()
-        log.info("Auto-discovery started")
+        self._scanner.start_scan()
+        log.info("Auto-discovery started (PC IP: %s)", local_ip)
 
     def _connect_saved_ip(self) -> None:
         """Try connecting to the last known phone IP."""
@@ -335,9 +340,14 @@ class MirrorTab(QWidget):
 
     def _disconnect(self) -> None:
         """Disconnect from the phone."""
+        self._scanner.cancel()
+        self._heartbeat.stop()
+        self._broadcaster.stop()
         adb.stop_scrcpy()
         if self._phone_ip:
-            adb.disconnect(self._config, self._phone_ip, self._adb_port)
+            adb.disconnect(self._config, self._phone_ip, getattr(self, "_adb_port", DEFAULT_ADB_PORT))
+        else:
+            adb.disconnect_all(self._config)
         self._set_disconnected()
         log.info("Disconnected from phone")
 
@@ -362,7 +372,7 @@ class MirrorTab(QWidget):
     def _on_scan_complete(self, result: str | None) -> None:
         """Handle subnet scan completion."""
         self._scan_btn.setEnabled(True)
-        if result is None:
+        if result is None and not self._connected:
             self._update_status("No devices found on subnet", "status-error")
             self._heartbeat_indicator.set_state("error")
 
@@ -387,18 +397,10 @@ class MirrorTab(QWidget):
 
     # ── UI State ──────────────────────────────────────────────────────────
 
-    def _set_connected(self, ip: str, port: int) -> None:
-        """Update UI to connected state."""
-        self._phone_ip = ip
-        self._adb_port = port
-        self._connected = True
-        self._connect_time = time.time()
-        self._update_status(
-            f"Connected to {ip}:{port} | scrcpy running", "status"
-        )
-    def _set_connected(self, ip: str, port: int = 5555) -> None:
+    def _set_connected(self, ip: str, port: int = DEFAULT_ADB_PORT) -> None:
         """Update UI to connected state and emit signal."""
         self._phone_ip = ip
+        self._adb_port = port
         self._connected = True
         self._connect_time = time.time()
         
