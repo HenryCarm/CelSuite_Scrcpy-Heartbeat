@@ -2,7 +2,8 @@
 """
 Scrcpy Cloud Build & Deploy Hub (PySide6)
 ========================================
-Local zero-AI-bandwidth monitor for GitHub Actions builds and one-click ADB deployment.
+Local zero-AI-bandwidth monitor for GitHub Actions builds, one-click ADB deployment,
+and instant Wi-Fi HTTP / File Sharing for your phone.
 Author: Henny & Antigravity 💖✨
 """
 
@@ -13,27 +14,73 @@ import subprocess
 import shutil
 import re
 import argparse
+import socket
+import threading
+import urllib.request
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QThread, Signal, Slot, QTimer, QSize
-from PySide6.QtGui import QFont, QIcon, QColor, QPalette, QPixmap
+from PySide6.QtGui import QFont, QIcon, QColor, QPalette, QPixmap, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QComboBox, QLineEdit, QTextEdit,
     QProgressBar, QFrame, QSplitter, QListWidget, QListWidgetItem,
-    QMessageBox, QSizePolicy
+    QMessageBox, QSizePolicy, QCheckBox
 )
 
 DEFAULT_REPO = "HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher"
 DEFAULT_PHONE_IP = "10.132.152.85:5555"
+DESKTOP_APK_DIR = Path("/home/henry/Desktop/ScrcpyAPK")
 PROJECT_DIR = Path(__file__).resolve().parent
-DOWNLOADS_DIR = PROJECT_DIR / "downloaded_artifacts"
+HTTP_PORT = 8080
+
+
+def get_local_wifi_ip() -> str:
+    """Detects local LAN IP."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "10.132.152.231"
+
+
+class DualDirectoryHandler(SimpleHTTPRequestHandler):
+    """Serves files from DESKTOP_APK_DIR."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(DESKTOP_APK_DIR), **kwargs)
+
+
+class LocalHttpServerThread(threading.Thread):
+    def __init__(self, port=HTTP_PORT):
+        super().__init__(daemon=True)
+        self.port = port
+        self.httpd = None
+        self.is_running = False
+
+    def run(self):
+        try:
+            self.httpd = HTTPServer(("0.0.0.0", self.port), DualDirectoryHandler)
+            self.is_running = True
+            self.httpd.serve_forever()
+        except Exception:
+            self.is_running = False
+
+    def stop(self):
+        if self.httpd:
+            self.httpd.shutdown()
+            self.httpd.server_close()
+        self.is_running = False
 
 
 class CommandWorker(QThread):
-    """Executes shell commands in the background without freezing the GUI."""
+    """Executes background work with live log and progress signals."""
     sig_log = Signal(str)
+    sig_progress = Signal(int, str)
     sig_result = Signal(str, dict)
     sig_error = Signal(str, str)
 
@@ -46,14 +93,13 @@ class CommandWorker(QThread):
 
     def run(self):
         try:
-            res = self.func(self.sig_log.emit, *self.args, **self.kwargs)
+            res = self.func(self.sig_log.emit, self.sig_progress.emit, *self.args, **self.kwargs)
             self.sig_result.emit(self.action_id, res if isinstance(res, dict) else {"data": res})
         except Exception as e:
             self.sig_error.emit(self.action_id, str(e))
 
 
 def run_gh_json(args: list[str]) -> list | dict:
-    """Helper to run gh CLI and return parsed JSON."""
     cmd = ["gh"] + args
     result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=str(PROJECT_DIR))
     if result.returncode != 0:
@@ -65,7 +111,6 @@ def run_gh_json(args: list[str]) -> list | dict:
 
 
 def extract_smart_error_snippet(full_log: str) -> str:
-    """Intelligently parses a failed build log to extract the core compiler/Gradle/Python error."""
     lines = full_log.splitlines()
     error_lines = []
     
@@ -109,17 +154,65 @@ class BuildMonitorWindow(QMainWindow):
         self.active_runs = []
         self.selected_run = None
         self.worker = None
+        self.http_server = None
+        self.local_ip = get_local_wifi_ip()
+
+        DESKTOP_APK_DIR.mkdir(parents=True, exist_ok=True)
 
         self.setWindowTitle("Scrcpy Cloud Build & Deploy Hub ✨")
-        self.resize(1180, 750)
-        self.setMinimumSize(1000, 650)
+        self.resize(1180, 780)
+        self.setMinimumSize(1000, 680)
+
+        # Auto-refresh timer (15 seconds)
+        self.auto_timer = QTimer(self)
+        self.auto_timer.setInterval(15000)
+        self.auto_timer.timeout.connect(self._on_auto_timer_tick)
 
         self._apply_dark_theme()
         self._init_ui()
+        self._setup_shortcuts()
 
         if not self.is_test_mode:
             QTimer.singleShot(100, self.refresh_adb_devices)
             QTimer.singleShot(300, self.fetch_workflow_runs)
+            # Auto-start Wi-Fi server for seamless phone downloads
+            QTimer.singleShot(500, self.toggle_wifi_server)
+
+    def _setup_shortcuts(self):
+        QShortcut(QKeySequence("F5"), self, self.fetch_workflow_runs)
+        QShortcut(QKeySequence("Ctrl+R"), self, self.fetch_workflow_runs)
+
+    def _toggle_auto_refresh(self, checked: bool):
+        if checked:
+            self.auto_timer.start()
+            self.status_bar.setText("⏱️ Auto-Refresh enabled (updating every 15s) ✨")
+            self.log("Auto-Refresh active: polling GitHub every 15 seconds locally.", "#a5b4fc")
+        else:
+            self.auto_timer.stop()
+            self.status_bar.setText("⏱️ Auto-Refresh stopped. Click Refresh or press F5.")
+            self.log("Auto-Refresh paused.", "#9ca3af")
+
+    def _on_auto_timer_tick(self):
+        if not self.progress_bar.isVisible():
+            self.fetch_workflow_runs(silent=True)
+
+    def toggle_wifi_server(self):
+        """Starts or stops the local Wi-Fi HTTP file server."""
+        if not self.http_server or not self.http_server.is_running:
+            self.http_server = LocalHttpServerThread(HTTP_PORT)
+            self.http_server.start()
+            server_url = f"http://{self.local_ip}:{HTTP_PORT}"
+            self.lbl_wifi_status.setText(f"🌐 Wi-Fi Server: {server_url}")
+            self.lbl_wifi_status.setStyleSheet("color: #34d399; font-weight: bold;")
+            self.btn_wifi_toggle.setText("🛑 Stop Server")
+            self.log(f"🚀 Local Wi-Fi File Server running at: {server_url}", "#34d399")
+            self.log(f"📁 Serving folder: {DESKTOP_APK_DIR}", "#60a5fa")
+        else:
+            self.http_server.stop()
+            self.lbl_wifi_status.setText("🌐 Wi-Fi Server: Stopped")
+            self.lbl_wifi_status.setStyleSheet("color: #9ca3af; font-weight: normal;")
+            self.btn_wifi_toggle.setText("🌐 Start Wi-Fi Server")
+            self.log("Wi-Fi File Server stopped.", "#9ca3af")
 
     def _apply_dark_theme(self):
         self.setStyleSheet("""
@@ -229,7 +322,7 @@ class BuildMonitorWindow(QMainWindow):
                 text-align: center;
                 color: white;
                 font-weight: bold;
-                height: 16px;
+                height: 18px;
             }
             QProgressBar::chunk {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #3b82f6, stop:1 #10b981);
@@ -275,7 +368,7 @@ class BuildMonitorWindow(QMainWindow):
         title_label.setFont(QFont("Arial", 16, QFont.Bold))
         title_label.setStyleSheet("color: #60a5fa;")
         
-        subtitle_label = QLabel("Zero AI bandwidth consumption • Local status & One-click ADB installation")
+        subtitle_label = QLabel(f"Save Path: {DESKTOP_APK_DIR} • Zero AI token bandwidth")
         subtitle_label.setStyleSheet("color: #9ca3af; font-size: 11px;")
         title_box.addWidget(title_label)
         title_box.addWidget(subtitle_label)
@@ -283,47 +376,98 @@ class BuildMonitorWindow(QMainWindow):
         header_layout.addLayout(title_box)
         header_layout.addStretch()
 
-        self.btn_refresh = QPushButton("🔄 Refresh Runs")
+        # Auto-Refresh Checkbox
+        self.chk_auto_refresh = QCheckBox("⏱️ Auto-Refresh (15s)")
+        self.chk_auto_refresh.setStyleSheet("""
+            QCheckBox {
+                color: #a5b4fc;
+                font-weight: 600;
+                padding: 4px 8px;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border-radius: 4px;
+                border: 1px solid #6366f1;
+                background-color: #1e1b4b;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #6366f1;
+            }
+        """)
+        self.chk_auto_refresh.toggled.connect(self._toggle_auto_refresh)
+        header_layout.addWidget(self.chk_auto_refresh)
+
+        self.btn_refresh = QPushButton("🔄 Refresh (F5)")
         self.btn_refresh.setProperty("class", "primary")
         self.btn_refresh.clicked.connect(self.fetch_workflow_runs)
         header_layout.addWidget(self.btn_refresh)
 
         main_layout.addWidget(header_card)
 
-        # 2. ADB Device Control Bar
-        adb_card = QFrame()
-        adb_card.setProperty("class", "card")
-        adb_layout = QHBoxLayout(adb_card)
-        adb_layout.setContentsMargins(14, 10, 14, 10)
-        adb_layout.setSpacing(12)
+        # 2. Control Bar (ADB & Local Wi-Fi Sharing)
+        ctrl_card = QFrame()
+        ctrl_card.setProperty("class", "card")
+        ctrl_layout = QVBoxLayout(ctrl_card)
+        ctrl_layout.setContentsMargins(14, 10, 14, 10)
+        ctrl_layout.setSpacing(10)
+
+        # Row 1: ADB Controls
+        adb_row = QHBoxLayout()
+        adb_row.setSpacing(10)
 
         adb_icon = QLabel("📱")
-        adb_icon.setFont(QFont("Arial", 14))
-        adb_layout.addWidget(adb_icon)
+        adb_icon.setFont(QFont("Arial", 13))
+        adb_row.addWidget(adb_icon)
 
         adb_label = QLabel("Target Phone ADB:")
         adb_label.setFont(QFont("Arial", 11, QFont.Bold))
-        adb_layout.addWidget(adb_label)
+        adb_row.addWidget(adb_label)
 
         self.combo_devices = QComboBox()
         self.combo_devices.setMinimumWidth(220)
         self.combo_devices.addItem(DEFAULT_PHONE_IP)
-        adb_layout.addWidget(self.combo_devices)
+        adb_row.addWidget(self.combo_devices)
 
         self.btn_refresh_adb = QPushButton("🔍 Scan Devices")
         self.btn_refresh_adb.clicked.connect(self.refresh_adb_devices)
-        adb_layout.addWidget(self.btn_refresh_adb)
+        adb_row.addWidget(self.btn_refresh_adb)
 
         self.btn_connect_ip = QPushButton("⚡ Connect IP")
         self.btn_connect_ip.clicked.connect(self.connect_custom_adb_ip)
-        adb_layout.addWidget(self.btn_connect_ip)
+        adb_row.addWidget(self.btn_connect_ip)
 
         self.lbl_adb_status = QLabel("Checking...")
         self.lbl_adb_status.setStyleSheet("color: #fbbf24; font-weight: bold;")
-        adb_layout.addWidget(self.lbl_adb_status)
+        adb_row.addWidget(self.lbl_adb_status)
+        adb_row.addStretch()
 
-        adb_layout.addStretch()
-        main_layout.addWidget(adb_card)
+        ctrl_layout.addLayout(adb_row)
+
+        # Row 2: Wi-Fi Local Sharing & Desktop Folder
+        wifi_row = QHBoxLayout()
+        wifi_row.setSpacing(10)
+
+        wifi_icon = QLabel("🌐")
+        wifi_icon.setFont(QFont("Arial", 13))
+        wifi_row.addWidget(wifi_icon)
+
+        self.lbl_wifi_status = QLabel(f"Wi-Fi Server: http://{self.local_ip}:{HTTP_PORT}")
+        self.lbl_wifi_status.setStyleSheet("color: #34d399; font-weight: bold;")
+        wifi_row.addWidget(self.lbl_wifi_status)
+
+        self.btn_wifi_toggle = QPushButton("🛑 Stop Wi-Fi Server")
+        self.btn_wifi_toggle.clicked.connect(self.toggle_wifi_server)
+        wifi_row.addWidget(self.btn_wifi_toggle)
+
+        self.btn_open_folder = QPushButton("📂 Open Desktop/ScrcpyAPK")
+        self.btn_open_folder.clicked.connect(lambda: subprocess.run(["xdg-open", str(DESKTOP_APK_DIR)]))
+        wifi_row.addWidget(self.btn_open_folder)
+
+        wifi_row.addStretch()
+        ctrl_layout.addLayout(wifi_row)
+
+        main_layout.addWidget(ctrl_card)
 
         # 3. Main Splitter (Left: Runs List, Right: Run Details & Actions)
         splitter = QSplitter(Qt.Horizontal)
@@ -337,15 +481,22 @@ class BuildMonitorWindow(QMainWindow):
         left_layout.setSpacing(8)
 
         runs_header = QHBoxLayout()
-        lbl_runs = QLabel("📦 Recent Workflow Runs")
+        lbl_runs = QLabel("📦 Recent Runs")
         lbl_runs.setFont(QFont("Arial", 12, QFont.Bold))
         lbl_runs.setStyleSheet("color: #e5e7eb;")
         runs_header.addWidget(lbl_runs)
-        runs_header.addStretch()
 
         self.lbl_run_count = QLabel("0 runs")
         self.lbl_run_count.setStyleSheet("color: #9ca3af; font-size: 11px;")
         runs_header.addWidget(self.lbl_run_count)
+        runs_header.addStretch()
+
+        self.btn_mini_refresh = QPushButton("🔄 Refresh")
+        self.btn_mini_refresh.setToolTip("Refresh Runs (F5 / Ctrl+R)")
+        self.btn_mini_refresh.setStyleSheet("padding: 3px 8px; font-size: 11px; font-weight: 600;")
+        self.btn_mini_refresh.clicked.connect(self.fetch_workflow_runs)
+        runs_header.addWidget(self.btn_mini_refresh)
+
         left_layout.addLayout(runs_header)
 
         self.list_runs = QListWidget()
@@ -401,19 +552,25 @@ class BuildMonitorWindow(QMainWindow):
         actions_box = QHBoxLayout()
         actions_box.setSpacing(10)
 
-        self.btn_install_apk = QPushButton("📥 Download && ADB Install APK")
+        self.btn_download_desktop = QPushButton("💾 Download APK to Desktop")
+        self.btn_download_desktop.setProperty("class", "primary")
+        self.btn_download_desktop.setEnabled(False)
+        self.btn_download_desktop.clicked.connect(self.download_apk_only)
+        actions_box.addWidget(self.btn_download_desktop)
+
+        self.btn_install_apk = QPushButton("📥 Download && ADB Install")
         self.btn_install_apk.setProperty("class", "success")
         self.btn_install_apk.setEnabled(False)
         self.btn_install_apk.clicked.connect(self.download_and_install_apk)
         actions_box.addWidget(self.btn_install_apk)
 
-        self.btn_copy_error = QPushButton("📋 Copy Error Snippet for Agent")
+        self.btn_copy_error = QPushButton("📋 Copy Error Snippet")
         self.btn_copy_error.setProperty("class", "danger")
         self.btn_copy_error.setEnabled(False)
         self.btn_copy_error.clicked.connect(self.copy_error_snippet)
         actions_box.addWidget(self.btn_copy_error)
 
-        self.btn_open_browser = QPushButton("🌐 Open in GitHub")
+        self.btn_open_browser = QPushButton("🌐 GitHub")
         self.btn_open_browser.setEnabled(False)
         self.btn_open_browser.clicked.connect(self.open_run_in_browser)
         actions_box.addWidget(self.btn_open_browser)
@@ -444,10 +601,12 @@ class BuildMonitorWindow(QMainWindow):
         self.txt_logs.setPlaceholderText("Logs and build output will appear here...")
         right_layout.addWidget(self.txt_logs)
 
-        # Progress bar at bottom of right panel
+        # Progress bar at bottom of right panel with live text percentage
         self.progress_bar = QProgressBar()
-        self.progress_bar.setTextVisible(False)
-        self.progress_bar.setMaximum(0)
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setFormat("%p% - Ready")
         self.progress_bar.hide()
         right_layout.addWidget(self.progress_bar)
 
@@ -463,22 +622,30 @@ class BuildMonitorWindow(QMainWindow):
         main_layout.addWidget(self.status_bar)
 
     def log(self, message: str, color: str = "#7ee787"):
-        """Appends formatted message to console."""
         timestamp = datetime.now().strftime("%H:%M:%S")
         self.txt_logs.append(f"<span style='color:#6b7280;'>[{timestamp}]</span> <span style='color:{color};'>{message}</span>")
         sb = self.txt_logs.verticalScrollBar()
         sb.setValue(sb.maximum())
 
-    def set_loading(self, is_loading: bool, status_text: str = ""):
-        """Controls loading animation and button states."""
+    def set_loading(self, is_loading: bool, status_text: str = "", progress_pct: int = -1):
         if is_loading:
             self.progress_bar.show()
+            if progress_pct >= 0:
+                self.progress_bar.setRange(0, 100)
+                self.progress_bar.setValue(progress_pct)
+                self.progress_bar.setFormat(f"%p% - {status_text}")
+            else:
+                self.progress_bar.setRange(0, 0)
+                self.progress_bar.setFormat(status_text or "Processing...")
+
             self.btn_refresh.setEnabled(False)
+            self.btn_mini_refresh.setEnabled(False)
             if status_text:
                 self.status_bar.setText(f"⏳ {status_text}")
         else:
             self.progress_bar.hide()
             self.btn_refresh.setEnabled(True)
+            self.btn_mini_refresh.setEnabled(True)
             if status_text:
                 self.status_bar.setText(f"✨ {status_text}")
 
@@ -486,8 +653,7 @@ class BuildMonitorWindow(QMainWindow):
     # ADB Operations
     # =========================================================================
     def refresh_adb_devices(self):
-        """Scans connected ADB devices."""
-        def _scan(emit_log):
+        def _scan(emit_log, emit_prog):
             emit_log("Scanning ADB devices...")
             res = subprocess.run(["adb", "devices"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             lines = res.stdout.strip().splitlines()[1:]
@@ -501,10 +667,9 @@ class BuildMonitorWindow(QMainWindow):
         self._start_worker("adb_scan", _scan)
 
     def connect_custom_adb_ip(self):
-        """Attempts to connect to target IP."""
         target = self.combo_devices.currentText().strip() or DEFAULT_PHONE_IP
 
-        def _connect(emit_log):
+        def _connect(emit_log, emit_prog):
             emit_log(f"Connecting to ADB endpoint: {target}...")
             res = subprocess.run(["adb", "connect", target], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             return {"output": res.stdout.strip()}
@@ -514,20 +679,20 @@ class BuildMonitorWindow(QMainWindow):
     # =========================================================================
     # GitHub Workflow Operations
     # =========================================================================
-    def fetch_workflow_runs(self):
-        """Fetches the latest runs list from GitHub Actions."""
-        self.set_loading(True, "Fetching recent workflow runs from GitHub...")
+    def fetch_workflow_runs(self, silent: bool = False):
+        if not silent:
+            self.set_loading(True, "Fetching recent workflow runs from GitHub...")
 
-        def _fetch(emit_log):
-            emit_log("Running 'gh run list'...")
+        def _fetch(emit_log, emit_prog):
+            if not silent:
+                emit_log("Running 'gh run list'...")
             fields = "status,conclusion,name,headBranch,databaseId,createdAt,updatedAt,url,workflowName"
             runs = run_gh_json(["run", "list", f"--json={fields}", "--limit=12"])
-            return {"runs": runs}
+            return {"runs": runs, "silent": silent}
 
         self._start_worker("fetch_runs", _fetch)
 
     def on_run_selected(self, item: QListWidgetItem):
-        """Handles selecting a run card."""
         run_data = item.data(Qt.UserRole)
         if not run_data:
             return
@@ -545,8 +710,10 @@ class BuildMonitorWindow(QMainWindow):
 
         if conclusion == "success" or status == "completed":
             self.btn_install_apk.setEnabled(True)
+            self.btn_download_desktop.setEnabled(True)
         else:
             self.btn_install_apk.setEnabled(False)
+            self.btn_download_desktop.setEnabled(False)
 
         if conclusion == "failure":
             self.btn_copy_error.setEnabled(True)
@@ -556,66 +723,150 @@ class BuildMonitorWindow(QMainWindow):
         self.fetch_run_jobs(run_id)
 
     def fetch_run_jobs(self, run_id: int):
-        """Fetches detailed sub-jobs for the selected run."""
-        def _fetch_jobs(emit_log):
+        def _fetch_jobs(emit_log, emit_prog):
             emit_log(f"Fetching job steps for Run #{run_id}...")
             details = run_gh_json(["run", "view", str(run_id), "--json=jobs,conclusion,status"])
             return {"details": details}
 
         self._start_worker("fetch_jobs", _fetch_jobs)
 
-    def download_and_install_apk(self):
-        """Downloads the APK artifact for the selected run and installs it via ADB."""
+    def _download_apk_core(self, run_id: int, tag: str, emit_log, emit_prog) -> Path:
+        """Helper to stream download APK directly to /home/henry/Desktop/ScrcpyAPK."""
+        DESKTOP_APK_DIR.mkdir(parents=True, exist_ok=True)
+        apk_path = None
+
+        if tag.startswith("v"):
+            try:
+                emit_log(f"Checking GitHub Release '{tag}' for prebuilt APK assets...")
+                emit_prog(10, "Fetching release info...")
+                rel_data = run_gh_json(["release", "view", tag, "--json=assets"])
+                assets = rel_data.get("assets", [])
+                apk_asset = next((a for a in assets if a.get("name", "").endswith(".apk")), None)
+
+                if apk_asset:
+                    apk_name = apk_asset["name"]
+                    apk_url = apk_asset["url"]
+                    apk_size = apk_asset.get("size", 0)
+                    dest_file = DESKTOP_APK_DIR / apk_name
+
+                    emit_log(f"Found Release APK: {apk_name} ({round(apk_size / (1024*1024), 2)} MB)")
+                    emit_log(f"Streaming direct download to {dest_file}...")
+
+                    req = urllib.request.Request(apk_url, headers={"User-Agent": "Mozilla/5.0"})
+                    with urllib.request.urlopen(req) as resp, open(dest_file, "wb") as f:
+                        total_bytes = int(resp.headers.get("Content-Length", apk_size))
+                        downloaded = 0
+                        chunk_size = 128 * 1024
+                        last_update_pct = -1
+
+                        while True:
+                            chunk = resp.read(chunk_size)
+                            if not chunk:
+                                break
+                            f.write(chunk)
+                            downloaded += len(chunk)
+
+                            if total_bytes > 0:
+                                pct = int((downloaded / total_bytes) * 70)
+                                if pct != last_update_pct and pct % 5 == 0:
+                                    last_update_pct = pct
+                                    mb_done = round(downloaded / (1024 * 1024), 1)
+                                    mb_total = round(total_bytes / (1024 * 1024), 1)
+                                    emit_prog(pct, f"Downloading: {mb_done}/{mb_total} MB ({pct}%)")
+                                    emit_log(f"Downloading APK: {mb_done}MB / {mb_total}MB ({int((downloaded/total_bytes)*100)}%)...")
+
+                    apk_path = dest_file
+            except Exception as e:
+                emit_log(f"Direct release download note: {e}. Falling back to gh run download...", "#fbbf24")
+
+        if not apk_path or not apk_path.exists():
+            emit_prog(30, "Downloading artifact via gh CLI...")
+            emit_log(f"Downloading 'android-apk' artifact via gh CLI...")
+            subprocess.run(
+                ["gh", "run", "download", str(run_id), "-n", "android-apk", "-D", str(DESKTOP_APK_DIR)],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=str(PROJECT_DIR)
+            )
+            apk_files = list(DESKTOP_APK_DIR.glob("**/*.apk"))
+            if not apk_files:
+                raise RuntimeError(f"No .apk file could be found in release or workflow artifacts!")
+            apk_path = apk_files[0]
+
+        emit_prog(75, f"APK Saved: {apk_path.name}")
+        emit_log(f"✅ APK ready in Desktop folder: {apk_path}", "#34d399")
+        return apk_path
+
+    def download_apk_only(self):
+        """Downloads the APK directly into /home/henry/Desktop/ScrcpyAPK without ADB."""
         if not self.selected_run:
             return
         run_id = self.selected_run.get("databaseId")
+        tag = self.selected_run.get("headBranch") or ""
+
+        self.set_loading(True, "Downloading APK to Desktop...", 0)
+
+        def _download_only(emit_log, emit_prog):
+            apk = self._download_apk_core(run_id, tag, emit_log, emit_prog)
+            emit_prog(100, "Download Complete!")
+            return {"apk_name": apk.name, "apk_path": str(apk)}
+
+        self._start_worker("download_only", _download_only)
+
+    def download_and_install_apk(self):
+        """Downloads the APK and installs via ADB."""
+        if not self.selected_run:
+            return
+        run_id = self.selected_run.get("databaseId")
+        tag = self.selected_run.get("headBranch") or ""
         target_device = self.combo_devices.currentText().strip() or DEFAULT_PHONE_IP
 
-        self.set_loading(True, f"Downloading APK for Run #{run_id}...")
-        self.log(f"Starting APK download and install pipeline for Run #{run_id} to device [{target_device}]...", "#38bdf8")
+        self.set_loading(True, "Starting APK download & install...", 0)
 
-        def _download_and_install(emit_log):
-            DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
-            target_dir = DOWNLOADS_DIR / f"run_{run_id}"
-            if target_dir.exists():
-                shutil.rmtree(target_dir, ignore_errors=True)
-            target_dir.mkdir(parents=True, exist_ok=True)
+        def _download_and_install(emit_log, emit_prog):
+            apk_path = self._download_apk_core(run_id, tag, emit_log, emit_prog)
 
-            emit_log(f"Downloading 'android-apk' artifact via gh CLI to {target_dir}...")
-            res = subprocess.run(
-                ["gh", "run", "download", str(run_id), "-n", "android-apk", "-D", str(target_dir)],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=str(PROJECT_DIR)
-            )
+            # Re-check ADB status before install
+            emit_prog(80, f"Checking ADB connection on {target_device}...")
+            devices_res = subprocess.run(["adb", "devices"], stdout=subprocess.PIPE, text=True)
+            if f"{target_device}\toffline" in devices_res.stdout:
+                emit_log(f"Device [{target_device}] reported offline. Re-connecting...", "#fbbf24")
+                subprocess.run(["adb", "disconnect", target_device], stdout=subprocess.PIPE, text=True)
+                subprocess.run(["adb", "connect", target_device], stdout=subprocess.PIPE, text=True)
 
-            apk_files = list(target_dir.glob("**/*.apk"))
-            if not apk_files:
-                raise RuntimeError(f"No .apk found in downloaded artifact! Output: {res.stdout} {res.stderr}")
+            emit_prog(85, f"Installing to {target_device}...")
+            emit_log(f"🚀 Pushing APK to device [{target_device}] via ADB...", "#38bdf8")
 
-            apk_path = apk_files[0]
-            emit_log(f"Found APK: {apk_path.name} ({round(apk_path.stat().st_size / (1024*1024), 2)} MB)")
-
-            emit_log(f"Installing APK to ADB device {target_device}...")
             cmd = ["adb"]
             if target_device:
                 cmd.extend(["-s", target_device])
-            cmd.extend(["install", "-r", str(apk_path)])
+            cmd.extend(["install", "-r", "-d", "-t", str(apk_path)])
 
-            install_res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            if "Success" not in install_res.stdout and install_res.returncode != 0:
-                raise RuntimeError(f"ADB install failed: {install_res.stderr or install_res.stdout}")
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            output_lines = []
+            for line in process.stdout:
+                line_str = line.strip()
+                if line_str:
+                    output_lines.append(line_str)
+                    emit_log(f"  [ADB] {line_str}", "#94a3b8")
+                    if "Performing Streamed Install" in line_str:
+                        emit_prog(90, "ADB Streaming...")
+            process.wait()
 
-            return {"apk_name": apk_path.name, "output": install_res.stdout.strip()}
+            full_adb_out = "\n".join(output_lines)
+            if "Success" not in full_adb_out and process.returncode != 0:
+                raise RuntimeError(f"ADB install failed:\n{full_adb_out}")
+
+            emit_prog(100, "Installation Complete!")
+            return {"apk_name": apk_path.name, "output": full_adb_out}
 
         self._start_worker("download_install", _download_and_install)
 
     def copy_error_snippet(self):
-        """Fetches failed logs and automatically copies the extracted error snippet to clipboard."""
         if not self.selected_run:
             return
         run_id = self.selected_run.get("databaseId")
         self.set_loading(True, f"Extracting failure snippet for Run #{run_id}...")
 
-        def _get_log(emit_log):
+        def _get_log(emit_log, emit_prog):
             emit_log(f"Fetching failed log for Run #{run_id}...")
             res = subprocess.run(
                 ["gh", "run", "view", str(run_id), "--log-failed"],
@@ -636,13 +887,12 @@ class BuildMonitorWindow(QMainWindow):
         self._start_worker("copy_error", _get_log)
 
     def fetch_full_log(self):
-        """Fetches full log into the console."""
         if not self.selected_run:
             return
         run_id = self.selected_run.get("databaseId")
         self.set_loading(True, f"Downloading full log for Run #{run_id}...")
 
-        def _fetch(emit_log):
+        def _fetch(emit_log, emit_prog):
             emit_log(f"Retrieving full log for Run #{run_id}...")
             res = subprocess.run(
                 ["gh", "run", "view", str(run_id), "--log"],
@@ -653,7 +903,6 @@ class BuildMonitorWindow(QMainWindow):
         self._start_worker("fetch_full_log", _fetch)
 
     def open_run_in_browser(self):
-        """Opens selected run on GitHub in the user's browser."""
         if self.selected_run and self.selected_run.get("url"):
             import webbrowser
             webbrowser.open(self.selected_run.get("url"))
@@ -667,9 +916,18 @@ class BuildMonitorWindow(QMainWindow):
 
         self.worker = CommandWorker(action_id, func, *args, **kwargs)
         self.worker.sig_log.connect(lambda msg: self.log(msg, "#94a3b8"))
+        self.worker.sig_progress.connect(self._handle_worker_progress)
         self.worker.sig_result.connect(self._handle_worker_result)
         self.worker.sig_error.connect(self._handle_worker_error)
         self.worker.start()
+
+    @Slot(int, str)
+    def _handle_worker_progress(self, percent: int, status_text: str):
+        self.progress_bar.show()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(percent)
+        self.progress_bar.setFormat(f"{percent}% - {status_text}")
+        self.status_bar.setText(f"⏳ {status_text}")
 
     @Slot(str, dict)
     def _handle_worker_result(self, action_id: str, payload: dict):
@@ -697,6 +955,7 @@ class BuildMonitorWindow(QMainWindow):
 
         elif action_id == "fetch_runs":
             runs = payload.get("runs", [])
+            silent = payload.get("silent", False)
             self.active_runs = runs
             self.list_runs.clear()
             self.lbl_run_count.setText(f"{len(runs)} runs")
@@ -724,9 +983,18 @@ class BuildMonitorWindow(QMainWindow):
                 self.list_runs.addItem(item)
 
             if runs:
-                self.list_runs.setCurrentRow(0)
-                self.on_run_selected(self.list_runs.item(0))
-                self.log(f"Loaded {len(runs)} latest workflow runs successfully!", "#34d399")
+                current_id = self.selected_run.get("databaseId") if self.selected_run else None
+                selected_idx = 0
+                if current_id:
+                    for i, r in enumerate(runs):
+                        if r.get("databaseId") == current_id:
+                            selected_idx = i
+                            break
+                
+                self.list_runs.setCurrentRow(selected_idx)
+                self.on_run_selected(self.list_runs.item(selected_idx))
+                if not silent:
+                    self.log(f"Loaded {len(runs)} latest workflow runs successfully!", "#34d399")
 
         elif action_id == "fetch_jobs":
             details = payload.get("details", {})
@@ -755,11 +1023,19 @@ class BuildMonitorWindow(QMainWindow):
             self.lbl_pc_job.setText(f"💻 PC Binary: {pc_status}")
             self.lbl_pc_job.setStyleSheet(f"color: {_color(pc_status)}; font-weight: bold;")
 
+        elif action_id == "download_only":
+            apk_name = payload.get("apk_name", "")
+            apk_path = payload.get("apk_path", "")
+            self.log(f"🎉 Saved APK to Desktop: {apk_path}", "#34d399")
+            self.status_bar.setText(f"💾 Saved {apk_name} to Desktop/ScrcpyAPK! ✨")
+            QMessageBox.information(self, "APK Downloaded 💾", f"APK was saved to:\n\n{apk_path}\n\nYou can access it directly from your phone at http://{self.local_ip}:{HTTP_PORT} or via SFTP/FTP!")
+
         elif action_id == "download_install":
             apk_name = payload.get("apk_name", "")
             out = payload.get("output", "")
             self.log(f"🎉 SUCCESS! APK '{apk_name}' was installed on your phone!\n{out}", "#34d399")
-            QMessageBox.information(self, "Installation Successful 🚀", f"APK '{apk_name}' was successfully installed on your device!")
+            self.status_bar.setText(f"🎉 Installed {apk_name} successfully! ✨")
+            QMessageBox.information(self, "Installation Successful 🚀", f"APK '{apk_name}' was successfully installed on your device!\n\nADB: {out}")
 
         elif action_id == "copy_error":
             snippet = payload.get("snippet", "")
@@ -793,27 +1069,30 @@ def main():
         window.show()
         
         mock_runs = [
-            {"databaseId": 33395164190, "headBranch": "v26.08.17", "status": "in_progress", "conclusion": "", "createdAt": "2026-08-31T13:06:40Z"},
-            {"databaseId": 33389423981, "headBranch": "v26.08.16", "status": "completed", "conclusion": "success", "createdAt": "2026-08-31T11:57:57Z"},
-            {"databaseId": 33388287417, "headBranch": "v26.08.15", "status": "completed", "conclusion": "failure", "createdAt": "2026-08-31T11:43:18Z"}
+            {"databaseId": 33398643891, "headBranch": "v26.08.19", "status": "completed", "conclusion": "success", "createdAt": "2026-08-31T13:44:43Z"}
         ]
         window._handle_worker_result("fetch_runs", {"runs": mock_runs})
         
-        window.lbl_selected_title.setText("Run #33395164190 (v26.08.17)")
-        window.lbl_selected_meta.setText("Status: IN_PROGRESS | Conclusion: RUNNING | Created: 2026-08-31 13:06:40")
-        window.lbl_android_job.setText("🤖 Android APK: IN_PROGRESS")
-        window.lbl_android_job.setStyleSheet("color: #fbbf24; font-weight: bold; font-size: 13px;")
+        window.lbl_selected_title.setText("Run #33398643891 (v26.08.19)")
+        window.lbl_selected_meta.setText("Status: COMPLETED | Conclusion: SUCCESS | Created: 2026-08-31 13:44:43")
+        window.lbl_android_job.setText("🤖 Android APK: SUCCESS")
+        window.lbl_android_job.setStyleSheet("color: #34d399; font-weight: bold; font-size: 13px;")
         window.lbl_pc_job.setText("💻 PC Binary: SUCCESS")
         window.lbl_pc_job.setStyleSheet("color: #34d399; font-weight: bold; font-size: 13px;")
         window.lbl_adb_status.setText("🟢 10.132.152.85:5555 Online")
         window.lbl_adb_status.setStyleSheet("color: #34d399; font-weight: bold;")
         window.btn_install_apk.setEnabled(True)
-        window.btn_copy_error.setEnabled(True)
+        window.btn_download_desktop.setEnabled(True)
+        window.btn_copy_error.setEnabled(False)
         window.btn_open_browser.setEnabled(True)
-        window.log("Connected to phone: 10.132.152.85:5555 (Samsung Galaxy)", "#34d399")
-        window.log("Cloud Build & Auto-Release triggered for tag: v26.08.17", "#60a5fa")
-        window.log("PC Nuitka Standalone & Portable build completed successfully!", "#34d399")
-        window.log("Android APK build in progress via GitHub Actions Cloud...", "#fbbf24")
+        window.chk_auto_refresh.setChecked(True)
+        
+        window.lbl_wifi_status.setText("🌐 Wi-Fi Server: http://10.132.152.231:8080")
+        window.lbl_wifi_status.setStyleSheet("color: #34d399; font-weight: bold;")
+        
+        window.log("🚀 Local Wi-Fi File Server running at: http://10.132.152.231:8080", "#34d399")
+        window.log("📁 Serving folder: /home/henry/Desktop/ScrcpyAPK", "#60a5fa")
+        window.log("✅ APK ready: scrcpyheartbeat-26.08.19-arm64-v8a-debug.apk (18.98 MB)", "#34d399")
         
         app.processEvents()
         window.repaint()
