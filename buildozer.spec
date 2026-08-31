@@ -4,8 +4,8 @@ package.name = scrcpyheartbeat
 package.domain = org.henry.scrcpy
 source.dir = android
 source.include_exts = py,png,jpg,kv,atlas
-version = 26.08.04
-android.numeric_version = 260804
+version = 26.08.18
+android.numeric_version = 260818
 requirements = python3,kivy==2.2.1,pyjnius
 orientation = portrait
 osx.python_version = 3
@@ -18,7 +18,8 @@ android.enable_androidx = True
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,ACCESS_WIFI_STATE,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERNAL_STORAGE,moe.shizuku.manager.permission.API_V23
 android.meta_data = moe.shizuku.client.V3_SUPPORT=true,com.thedjchi.shizuku.client.V3_SUPPORT=true
 android.api = 33
-android.minapi = 24
+android.minapi = 26
+android.ndk_api = 26
 android.ndk = 25b
 p4a.branch = v2024.01.21
 android.accept_sdk_license = True
