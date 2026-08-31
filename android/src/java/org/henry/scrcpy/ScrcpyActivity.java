@@ -1,7 +1,6 @@
 package org.henry.scrcpy;
 
 import android.content.Context;
-import android.os.Bundle;
 import android.util.Log;
 import org.kivy.android.PythonActivity;
 
@@ -11,7 +10,7 @@ public class ScrcpyActivity extends PythonActivity {
     @Override
     public Object getSystemService(String name) {
         if (Context.SENSOR_SERVICE.equals(name)) {
-            Log.w(TAG, "Blocked SENSOR_SERVICE to prevent Samsung JNI UTF-8 abort");
+            Log.w(TAG, "Blocked SENSOR_SERVICE on Samsung device to prevent JNI Modified UTF-8 crash");
             return null;
         }
         return super.getSystemService(name);
@@ -19,13 +18,10 @@ public class ScrcpyActivity extends PythonActivity {
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
-        // Do not call super to avoid PythonActivity's sensor lookup NPE
         try {
-            if (mSingleton != null) {
-                onNativeFocusChanged(hasFocus);
-            }
+            super.onWindowFocusChanged(hasFocus);
         } catch (Throwable t) {
-            Log.w(TAG, "Safe onWindowFocusChanged: " + t.getMessage());
+            Log.w(TAG, "Safely caught sensor NPE in onWindowFocusChanged: " + t.getMessage());
         }
     }
 
@@ -34,20 +30,34 @@ public class ScrcpyActivity extends PythonActivity {
         try {
             super.onResume();
         } catch (Throwable t) {
-            Log.w(TAG, "Safe onResume: " + t.getMessage());
+            Log.w(TAG, "Safely caught sensor NPE in onResume: " + t.getMessage());
         }
-        startSDLThreadIfNeeded();
     }
 
-    public static void startSDLThreadIfNeeded() {
+    @Override
+    protected void onPause() {
         try {
-            if (mSDLThread == null) {
-                Log.i(TAG, "Starting SDLThread directly from ScrcpyActivity...");
-                mSDLThread = new Thread(new SDLMain(), "SDLThread");
-                mSDLThread.start();
-            }
+            super.onPause();
         } catch (Throwable t) {
-            Log.w(TAG, "startSDLThreadIfNeeded: " + t.getMessage());
+            Log.w(TAG, "Safely caught sensor NPE in onPause: " + t.getMessage());
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        try {
+            super.onStop();
+        } catch (Throwable t) {
+            Log.w(TAG, "Safely caught sensor NPE in onStop: " + t.getMessage());
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        try {
+            super.onDestroy();
+        } catch (Throwable t) {
+            Log.w(TAG, "Safely caught sensor NPE in onDestroy: " + t.getMessage());
         }
     }
 }
