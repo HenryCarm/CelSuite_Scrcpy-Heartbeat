@@ -118,7 +118,7 @@ class LogsTab(QWidget):
                 border-radius: 6px;
             }}
             QPushButton:hover {{
-                background-color: {COLORS['bg_card_hover']};
+                background-color: {COLORS['bg_button_hover']};
             }}
         """)
         self._refresh_btn.clicked.connect(self._load_existing_logs)

@@ -144,18 +144,24 @@ class SubnetScanner(QObject):
                 scanned += 1
                 result = future.result()
 
-                if result is not None and found_ip is None:
-                    found_ip = result
-                    found_event.set()  # Signal other threads to stop
-                    log.info("Subnet scanner found device at %s", found_ip)
-                    self.device_found.emit(found_ip)
+                try:
+                    if result is not None and found_ip is None:
+                        found_ip = result
+                        found_event.set()  # Signal other threads to stop
+                        log.info("Subnet scanner found device at %s", found_ip)
+                        self.device_found.emit(found_ip)
 
-                # Report progress every 10 hosts
-                if scanned % 10 == 0:
-                    self.scan_progress.emit(scanned, total)
+                    # Report progress every 10 hosts
+                    if scanned % 10 == 0:
+                        self.scan_progress.emit(scanned, total)
+                except RuntimeError:
+                    break
 
         self._scanning = False
-        self.scan_complete.emit(found_ip)
+        try:
+            self.scan_complete.emit(found_ip)
+        except RuntimeError:
+            pass
 
         if found_ip:
             log.info("Subnet scan complete — found: %s", found_ip)

@@ -18,6 +18,7 @@ COLORS = {
     "bg_primary": "#0D0A14",      # Much darker main background
     "bg_secondary": "#130F1D",
     "bg_card": "#241D35",         # Much lighter card background
+    "bg_card_hover": "#2F2647",
     "bg_card_glass": "rgba(36, 29, 53, 180)",
     "bg_input": "#1B1629",
     "bg_button": "#2F2647",
