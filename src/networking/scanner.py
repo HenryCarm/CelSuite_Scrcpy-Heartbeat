@@ -109,6 +109,24 @@ class SubnetScanner(QObject):
             except (OSError, socket.timeout):
                 return None
 
+        # Step 1: Instant Gateway check (for Mobile Hotspot where phone is the default gateway)
+        try:
+            import subprocess
+            gw_res = subprocess.run(["ip", "route"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            for line in gw_res.stdout.splitlines():
+                if line.startswith("default via"):
+                    gw_ip = line.split()[2]
+                    if gw_ip.startswith(base) and probe(gw_ip):
+                        found_ip = gw_ip
+                        found_event.set()
+                        log.info("Subnet scanner instantly found Hotspot Phone at gateway %s", found_ip)
+                        self.device_found.emit(found_ip)
+                        self._scanning = False
+                        self.scan_complete.emit(found_ip)
+                        return
+        except Exception as e:
+            log.debug("Gateway check skipped: %s", e)
+
         scanned = 0
         with ThreadPoolExecutor(max_workers=SCANNER_MAX_WORKERS) as pool:
             # Skip our own IP
