@@ -2,12 +2,9 @@ package org.henry.scrcpy;
 
 import android.hardware.Sensor;
 import android.hardware.SensorAdditionalInfo;
-import android.hardware.SensorDirectChannel;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.hardware.HardwareBuffer;
 import android.os.Handler;
-import android.os.MemoryFile;
 
 import java.util.Collections;
 import java.util.List;
@@ -65,19 +62,5 @@ public class DummySensorManager extends SensorManager {
     @Override
     protected boolean setOperationParameterImpl(SensorAdditionalInfo parameter) {
         return false;
-    }
-
-    @Override
-    protected SensorDirectChannel createDirectChannelImpl(MemoryFile memoryFile, HardwareBuffer hardwareBuffer) {
-        return null;
-    }
-
-    @Override
-    protected void destroyDirectChannelImpl(SensorDirectChannel channel) {
-    }
-
-    @Override
-    protected int configureDirectChannelImpl(SensorDirectChannel channel, Sensor sensor, int rateLevel) {
-        return 0;
     }
 }
