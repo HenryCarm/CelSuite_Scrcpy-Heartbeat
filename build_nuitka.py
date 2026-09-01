@@ -15,7 +15,7 @@ VENV_PYTHON = Path("/home/henry/Documents/Projects/Python/venv/bin/python")
 MAIN_SCRIPT = PROJECT_DIR / "main.py"
 ICON_FILE   = PROJECT_DIR / "icon.png"
 DIST_DIR    = PROJECT_DIR / "dist"
-APP_NAME    = "Scrcpy Heartbeat"
+APP_NAME    = "CelStudio Scrcpy Heartbeat"
 
 EXCLUDE_MODULES = [
     "tkinter", "unittest", "pydoc", "doctest", "email", "http", "xmlrpc",

@@ -11,10 +11,14 @@ import os
 import sys
 
 # ── Application Metadata ──────────────────────────────────────────────────────
-APP_NAME = "Scrcpy Heartbeat"
-APP_VERSION = "268.03.17"
+APP_NAME = "CelStudio Scrcpy Heartbeat"
+APP_VERSION = "268.31.20"
 APP_AUTHOR = "Henry"
 APP_DOMAIN = "org.henry.scrcpy"
+
+# ── CelStudio Assets ─────────────────────────────────────────────────────────
+DEFAULT_WALLPAPER = "/home/henry/Documents/Projects/Python/.png/CelWeave Light Green.jpeg"
+DEFAULT_ICON = "/home/henry/Documents/Projects/Python/.png/Cel Logo Scrcpy.jpeg"
 
 # ── Path Resolution ───────────────────────────────────────────────────────────
 # When frozen (Nuitka / PyInstaller), sys.argv[0] points to the binary.

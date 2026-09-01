@@ -79,7 +79,7 @@ class LocalHttpServerThread(threading.Thread):
 
 class CommandWorker(QThread):
     """Executes background work with live log and progress signals."""
-    sig_log = Signal(str)
+    sig_log = Signal(str, str)
     sig_progress = Signal(int, str)
     sig_result = Signal(str, dict)
     sig_error = Signal(str, str)
@@ -92,8 +92,11 @@ class CommandWorker(QThread):
         self.kwargs = kwargs
 
     def run(self):
+        def _emit_log_wrapper(msg, color="#94a3b8"):
+            self.sig_log.emit(msg, color)
+
         try:
-            res = self.func(self.sig_log.emit, self.sig_progress.emit, *self.args, **self.kwargs)
+            res = self.func(_emit_log_wrapper, self.sig_progress.emit, *self.args, **self.kwargs)
             self.sig_result.emit(self.action_id, res if isinstance(res, dict) else {"data": res})
         except Exception as e:
             self.sig_error.emit(self.action_id, str(e))
@@ -929,7 +932,7 @@ class BuildMonitorWindow(QMainWindow):
             self.worker.wait()
 
         self.worker = CommandWorker(action_id, func, *args, **kwargs)
-        self.worker.sig_log.connect(lambda msg: self.log(msg, "#94a3b8"))
+        self.worker.sig_log.connect(self.log)
         self.worker.sig_progress.connect(self._handle_worker_progress)
         self.worker.sig_result.connect(self._handle_worker_result)
         self.worker.sig_error.connect(self._handle_worker_error)

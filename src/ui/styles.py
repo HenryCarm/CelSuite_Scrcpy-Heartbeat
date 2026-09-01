@@ -1,28 +1,25 @@
 """
-Centralized QSS stylesheet for ScrcpyUltimateLink.
+Centralized QSS stylesheet for CelStudio Scrcpy Heartbeat.
 
-All widget styling is defined here so the entire application has a
-consistent look. Widgets reference styles via ``setObjectName()``
-and the global stylesheet applies automatically.
-
-Color Palette — "Royal Nebula"
+Implements the CelStudio Liquid Glass UI standard with translucent
+rgba() glassmorphism, glowing borders, and adjustable opacity.
 """
 
 from __future__ import annotations
 
-# ── Color Palette ─────────────────────────────────────────────────────────────
+# ── Base Palette & Constants ──────────────────────────────────────────────────
 
 COLORS = {
-    # Backgrounds — deep obsidian layers
-    "bg_deep": "#08060D",
-    "bg_primary": "#0D0A14",      # Much darker main background
-    "bg_secondary": "#130F1D",
-    "bg_card": "#241D35",         # Much lighter card background
-    "bg_card_hover": "#2F2647",
-    "bg_card_glass": "rgba(36, 29, 53, 180)",
-    "bg_input": "#1B1629",
-    "bg_button": "#2F2647",
-    "bg_button_hover": "#3F345D",
+    # Backgrounds — deep obsidian & liquid glass defaults
+    "bg_deep": "rgba(8, 6, 13, 0.85)",
+    "bg_primary": "transparent",
+    "bg_secondary": "transparent",
+    "bg_card": "rgba(34, 27, 50, 0.65)",
+    "bg_card_hover": "rgba(48, 38, 70, 0.80)",
+    "bg_card_glass": "rgba(34, 27, 50, 0.55)",
+    "bg_input": "rgba(22, 17, 33, 0.75)",
+    "bg_button": "rgba(47, 38, 71, 0.70)",
+    "bg_button_hover": "rgba(68, 55, 102, 0.85)",
 
     # Accents — Royal Purple / Indigo / Violet
     "accent": "#7C3AED",
@@ -31,16 +28,16 @@ COLORS = {
     "accent_glow": "#8B5CF6",
     "accent_dim": "#6D28D9",
 
-    # Borders
-    "border": "#2a2a52",
+    # Borders — subtle glowing glass edge
+    "border": "rgba(139, 92, 246, 0.28)",
     "border_accent": "#7C3AED",
-    "border_glow": "rgba(124, 58, 237, 80)",
+    "border_glow": "rgba(168, 85, 247, 0.50)",
 
     # Text
     "text": "#F0F0F5",
     "text_dim": "#9CA3AF",
     "text_on_accent": "#FFFFFF",
-    "text_dark": "#0a0a14",
+    "text_dark": "#0A0A14",
 
     # Status
     "success": "#10B981",
@@ -48,21 +45,40 @@ COLORS = {
     "error": "#EF4444",
 
     # Components
-    "tab_inactive": "#151528",
-    "tab_active": "#1a1a35",
-    "progress_bg": "#1a1a2e",
+    "tab_inactive": "rgba(21, 17, 32, 0.60)",
+    "tab_active": "rgba(38, 30, 58, 0.85)",
+    "progress_bg": "rgba(26, 21, 40, 0.80)",
     "progress_fill": "#7C3AED",
-    "scrollbar_bg": "#0f0f1e",
-    "scrollbar_handle": "#2a2a52",
+    "scrollbar_bg": "transparent",
+    "scrollbar_handle": "rgba(124, 58, 237, 0.40)",
 }
 
-# ── Global Stylesheet ─────────────────────────────────────────────────────────
 
-STYLESHEET = f"""
-/* ── Base ──────────────────────────────────────────────────────────── */
+def build_stylesheet(glass_opacity: float = 0.65) -> str:
+    """
+    Generate dynamic CelStudio Liquid Glass QSS stylesheet.
+    glass_opacity: float between 0.10 and 1.0 (default: 0.65)
+    """
+    alpha = max(0.10, min(1.0, glass_opacity))
+    card_alpha = round(alpha, 2)
+    card_hover_alpha = round(min(1.0, alpha + 0.18), 2)
+    input_alpha = round(min(1.0, alpha + 0.12), 2)
+    btn_alpha = round(alpha, 2)
+    btn_hover_alpha = round(min(1.0, alpha + 0.20), 2)
+    sidebar_alpha = round(min(1.0, alpha + 0.15), 2)
+
+    bg_card = f"rgba(30, 24, 46, {card_alpha})"
+    bg_card_hover = f"rgba(46, 36, 68, {card_hover_alpha})"
+    bg_input = f"rgba(18, 14, 28, {input_alpha})"
+    bg_button = f"rgba(44, 35, 66, {btn_alpha})"
+    bg_button_hover = f"rgba(65, 52, 98, {btn_hover_alpha})"
+    bg_sidebar = f"rgba(13, 10, 20, {sidebar_alpha})"
+
+    return f"""
+/* ── CelStudio Liquid Glass Theme ────────────────────────────────────────── */
 
 QMainWindow {{
-    background-color: {COLORS["bg_primary"]};
+    background-color: transparent;
 }}
 
 QWidget {{
@@ -71,45 +87,68 @@ QWidget {{
     color: {COLORS["text"]};
 }}
 
-/* ── Tab Widget ────────────────────────────────────────────────────── */
+QWidget#central-wallpaper-widget {{
+    background-color: transparent;
+}}
+
+QWidget#sidebar-container {{
+    background-color: {bg_sidebar};
+    border-right: 1px solid {COLORS["border"]};
+}}
+
+QStackedWidget#content-stack {{
+    background-color: transparent;
+}}
+
+QScrollArea {{
+    background: transparent;
+    border: none;
+}}
+
+QScrollArea > QWidget > QWidget {{
+    background: transparent;
+}}
+
+/* ── Tab Widget ────────────────────────────────────────────────────────── */
 
 QTabWidget::pane {{
-    background-color: {COLORS["bg_secondary"]};
+    background-color: transparent;
     border: none;
     border-top: 2px solid {COLORS["border"]};
 }}
 
 QTabBar {{
-    background: {COLORS["bg_primary"]};
+    background: transparent;
     qproperty-drawBase: 0;
 }}
 
 QTabBar::tab {{
-    background: {COLORS["tab_inactive"]};
+    background: {bg_button};
     color: {COLORS["text_dim"]};
-    padding: 12px 28px;
+    padding: 10px 24px;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
-    margin-right: 3px;
+    margin-right: 4px;
     font-size: 13px;
     font-weight: 500;
-    border-bottom: 3px solid transparent;
+    border: 1px solid {COLORS["border"]};
+    border-bottom: none;
 }}
 
 QTabBar::tab:selected {{
-    background: {COLORS["tab_active"]};
+    background: {bg_card_hover};
     color: {COLORS["accent_light"]};
     font-weight: bold;
     border-bottom: 3px solid {COLORS["accent"]};
 }}
 
 QTabBar::tab:hover:!selected {{
-    background: {COLORS["bg_card"]};
+    background: {bg_button_hover};
     color: {COLORS["text"]};
     border-bottom: 3px solid {COLORS["accent_glow"]};
 }}
 
-/* ── Labels ────────────────────────────────────────────────────────── */
+/* ── Labels ────────────────────────────────────────────────────────────── */
 
 QLabel {{
     color: {COLORS["text"]};
@@ -117,7 +156,7 @@ QLabel {{
 }}
 
 QLabel#title {{
-    font-size: 26px;
+    font-size: 24px;
     font-weight: bold;
     color: {COLORS["accent_light"]};
     letter-spacing: 0.5px;
@@ -168,18 +207,18 @@ QLabel#stat-label {{
 }}
 
 QLabel#hero-title {{
-    font-size: 32px;
+    font-size: 30px;
     font-weight: bold;
     color: {COLORS["accent_light"]};
 }}
 
-/* ── Buttons ───────────────────────────────────────────────────────── */
+/* ── Buttons ───────────────────────────────────────────────────────────── */
 
 QPushButton {{
-    background-color: {COLORS["bg_button"]};
+    background-color: {bg_button};
     color: {COLORS["text"]};
     border: 1px solid {COLORS["border"]};
-    border-radius: 16px;
+    border-radius: 12px;
     padding: 8px 18px;
     font-size: 13px;
     font-weight: bold;
@@ -187,9 +226,9 @@ QPushButton {{
 }}
 
 QPushButton:hover {{
-    background-color: {COLORS["bg_button_hover"]};
-    border-color: {COLORS["accent"]};
-    color: {COLORS["text"]};
+    background-color: {bg_button_hover};
+    border-color: {COLORS["border_glow"]};
+    color: #FFFFFF;
 }}
 
 QPushButton:pressed {{
@@ -198,18 +237,18 @@ QPushButton:pressed {{
 }}
 
 QPushButton:disabled {{
-    background-color: {COLORS["bg_deep"]};
-    color: #444455;
-    border-color: #222244;
+    background-color: rgba(15, 12, 22, 0.40);
+    color: #555566;
+    border-color: rgba(40, 35, 60, 0.30);
 }}
 
 QPushButton#action-primary {{
     background-color: {COLORS["accent"]};
     color: {COLORS["text_on_accent"]};
-    border: none;
+    border: 1px solid {COLORS["accent_light"]};
     font-size: 14px;
     padding: 10px 24px;
-    border-radius: 20px;
+    border-radius: 18px;
     min-height: 40px;
 }}
 
@@ -236,13 +275,13 @@ QPushButton#control-btn {{
     padding: 8px 14px;
     font-size: 12px;
     border-radius: 8px;
-    background-color: {COLORS["bg_card"]};
+    background-color: {bg_card};
     border: 1px solid {COLORS["border"]};
 }}
 
 QPushButton#control-btn:hover {{
-    background-color: {COLORS["bg_button"]};
-    border-color: {COLORS["accent_glow"]};
+    background-color: {bg_button_hover};
+    border-color: {COLORS["border_glow"]};
 }}
 
 QPushButton#control-btn:pressed {{
@@ -250,10 +289,10 @@ QPushButton#control-btn:pressed {{
     color: {COLORS["text_on_accent"]};
 }}
 
-/* ── Input Widgets ─────────────────────────────────────────────────── */
+/* ── Input Widgets ─────────────────────────────────────────────────────── */
 
 QLineEdit, QSpinBox, QComboBox {{
-    background-color: {COLORS["bg_input"]};
+    background-color: {bg_input};
     border: 1px solid {COLORS["border"]};
     border-radius: 8px;
     padding: 8px 12px;
@@ -265,7 +304,7 @@ QLineEdit, QSpinBox, QComboBox {{
 }}
 
 QLineEdit:focus, QSpinBox:focus, QComboBox:focus {{
-    border-color: {COLORS["accent"]};
+    border-color: {COLORS["accent_light"]};
     border-width: 2px;
 }}
 
@@ -275,19 +314,19 @@ QComboBox::drop-down {{
 }}
 
 QComboBox QAbstractItemView {{
-    background-color: {COLORS["bg_card"]};
+    background-color: rgba(22, 17, 33, 0.95);
     color: {COLORS["text"]};
     selection-background-color: {COLORS["accent"]};
     selection-color: {COLORS["text_on_accent"]};
-    border: 1px solid {COLORS["border"]};
+    border: 1px solid {COLORS["border_glow"]};
     border-radius: 8px;
     outline: none;
 }}
 
-/* ── Text Edit (Log Panel) ─────────────────────────────────────────── */
+/* ── Text Edit (Log Panel) ─────────────────────────────────────────────── */
 
-QTextEdit {{
-    background-color: {COLORS["bg_input"]};
+QTextEdit, QPlainTextEdit {{
+    background-color: {bg_input};
     border: 1px solid {COLORS["border"]};
     border-radius: 10px;
     padding: 10px;
@@ -298,7 +337,7 @@ QTextEdit {{
     selection-color: {COLORS["text_on_accent"]};
 }}
 
-/* ── Check Box ─────────────────────────────────────────────────────── */
+/* ── Check Box & Sliders ──────────────────────────────────────────────── */
 
 QCheckBox {{
     color: {COLORS["text"]};
@@ -311,7 +350,7 @@ QCheckBox::indicator {{
     height: 20px;
     border: 2px solid {COLORS["accent"]};
     border-radius: 5px;
-    background: {COLORS["bg_input"]};
+    background: {bg_input};
 }}
 
 QCheckBox::indicator:checked {{
@@ -323,36 +362,46 @@ QCheckBox::indicator:hover {{
     border-color: {COLORS["accent_light"]};
 }}
 
-/* ── Group Box ─────────────────────────────────────────────────────── */
-
-QGroupBox {{
-    color: {COLORS["accent_light"]};
-    font-weight: bold;
-    font-size: 13px;
+QSlider::groove:horizontal {{
+    height: 8px;
+    background: {bg_input};
+    border-radius: 4px;
     border: 1px solid {COLORS["border"]};
-    border-radius: 16px;
-    margin-top: 16px;
-    padding: 24px 16px 16px 16px;
-    background-color: {COLORS["bg_card"]};
 }}
 
-QGroupBox::title {{
-    subcontrol-origin: margin;
-    left: 16px;
-    padding: 0 8px;
-    color: {COLORS["accent_light"]};
+QSlider::sub-page:horizontal {{
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {COLORS["accent_indigo"]}, stop:1 {COLORS["accent_light"]});
+    border-radius: 4px;
 }}
 
-/* ── Section Card & Collapsible Card (Custom Containers) ───────────── */
+QSlider::handle:horizontal {{
+    background: #FFFFFF;
+    border: 2px solid {COLORS["accent"]};
+    width: 18px;
+    height: 18px;
+    margin: -5px 0;
+    border-radius: 9px;
+}}
+
+QSlider::handle:horizontal:hover {{
+    background: {COLORS["accent_light"]};
+    border-color: #FFFFFF;
+}}
+
+/* ── Liquid Glass Cards ────────────────────────────────────────────────── */
 
 QFrame#section-card, QFrame#collapsible-card, QFrame#hero-card {{
-    background-color: {COLORS["bg_card"]};
+    background-color: {bg_card};
     border: 1px solid {COLORS["border"]};
     border-radius: 16px;
+}}
+
+QFrame#section-card:hover, QFrame#collapsible-card:hover {{
+    border-color: {COLORS["border_glow"]};
 }}
 
 QFrame#hero-card {{
-    background-color: {COLORS["bg_card"]};
+    background-color: {bg_card};
     border: 1px solid {COLORS["border_accent"]};
     border-radius: 20px;
     padding: 12px;
@@ -380,10 +429,6 @@ QPushButton#collapsible-header {{
     padding: 4px 0px;
 }}
 
-QPushButton#collapsible-header:hover {{
-    background: transparent;
-}}
-
 QLabel#collapsible-arrow {{
     color: {COLORS["accent_light"]};
     font-size: 14px;
@@ -394,7 +439,28 @@ QFrame#section-separator {{
     background-color: {COLORS["border"]};
 }}
 
-/* ── Progress Bar ──────────────────────────────────────────────────── */
+/* ── Stat Card ─────────────────────────────────────────────────────────── */
+
+QFrame#stat-card {{
+    background-color: {bg_card};
+    border: 1px solid {COLORS["border"]};
+    border-radius: 12px;
+    padding: 12px;
+}}
+
+QFrame#stat-card:hover {{
+    background-color: {bg_card_hover};
+    border-color: {COLORS["border_glow"]};
+}}
+
+QFrame#stat-card-glow {{
+    background-color: {bg_card_hover};
+    border: 1px solid {COLORS["accent_light"]};
+    border-radius: 12px;
+    padding: 12px;
+}}
+
+/* ── Progress Bar ──────────────────────────────────────────────────────── */
 
 QProgressBar {{
     border: 1px solid {COLORS["border"]};
@@ -403,7 +469,7 @@ QProgressBar {{
     color: {COLORS["text_on_accent"]};
     font-weight: bold;
     height: 24px;
-    background-color: {COLORS["progress_bg"]};
+    background-color: {bg_input};
     font-size: 11px;
 }}
 
@@ -412,10 +478,10 @@ QProgressBar::chunk {{
     border-radius: 7px;
 }}
 
-/* ── List Widget ───────────────────────────────────────────────────── */
+/* ── Sidebar & List Widget ─────────────────────────────────────────────── */
 
 QListWidget {{
-    background-color: {COLORS["bg_input"]};
+    background-color: {bg_input};
     color: {COLORS["text"]};
     border: 1px solid {COLORS["border"]};
     border-radius: 10px;
@@ -429,47 +495,42 @@ QListWidget#sidebar {{
     border: none;
 }}
 
-QListWidget::item {{
-    padding: 14px 16px;
-    border-radius: 8px;
-    margin: 4px 8px;
-    font-weight: 500;
+QListWidget#sidebar::item {{
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin: 3px 6px;
+    font-weight: 600;
+    color: {COLORS["text_dim"]};
 }}
 
-QListWidget::item:selected {{
+QListWidget#sidebar::item:selected {{
     background-color: {COLORS["accent"]};
     color: {COLORS["text_on_accent"]};
-    border: none;
+    border: 1px solid {COLORS["accent_light"]};
 }}
 
-QListWidget::item:hover:!selected {{
-    background-color: {COLORS["bg_card"]};
+QListWidget#sidebar::item:hover:!selected {{
+    background-color: {bg_button};
+    color: {COLORS["text"]};
 }}
 
-/* ── Scroll Area ───────────────────────────────────────────────────── */
-
-QScrollArea {{
-    border: none;
-    background: transparent;
-}}
-
-/* ── Scrollbar ─────────────────────────────────────────────────────── */
+/* ── Scrollbars ────────────────────────────────────────────────────────── */
 
 QScrollBar:vertical {{
-    background: {COLORS["scrollbar_bg"]};
+    background: transparent;
     width: 8px;
     border-radius: 4px;
     margin: 2px;
 }}
 
 QScrollBar::handle:vertical {{
-    background: {COLORS["scrollbar_handle"]};
+    background: rgba(139, 92, 246, 0.35);
     border-radius: 4px;
-    min-height: 40px;
+    min-height: 36px;
 }}
 
 QScrollBar::handle:vertical:hover {{
-    background: {COLORS["accent_glow"]};
+    background: {COLORS["accent_light"]};
 }}
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
@@ -477,121 +538,49 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
 }}
 
 QScrollBar:horizontal {{
-    background: {COLORS["scrollbar_bg"]};
+    background: transparent;
     height: 8px;
     border-radius: 4px;
     margin: 2px;
 }}
 
 QScrollBar::handle:horizontal {{
-    background: {COLORS["scrollbar_handle"]};
+    background: rgba(139, 92, 246, 0.35);
     border-radius: 4px;
-    min-width: 40px;
+    min-width: 36px;
 }}
 
 QScrollBar::handle:horizontal:hover {{
-    background: {COLORS["accent_glow"]};
+    background: {COLORS["accent_light"]};
 }}
 
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
     width: 0;
 }}
 
-/* ── Tooltip ───────────────────────────────────────────────────────── */
+/* ── Tooltips & Drop Zone ──────────────────────────────────────────────── */
 
 QToolTip {{
-    background-color: {COLORS["bg_card"]};
+    background-color: rgba(26, 20, 38, 0.95);
     color: {COLORS["text"]};
-    border: 1px solid {COLORS["accent"]};
+    border: 1px solid {COLORS["accent_light"]};
     border-radius: 6px;
     padding: 6px 10px;
     font-size: 12px;
 }}
 
-/* ── Status Bar ────────────────────────────────────────────────────── */
-
-QStatusBar {{
-    background-color: {COLORS["bg_deep"]};
-    color: {COLORS["text_dim"]};
-    font-size: 11px;
-    border-top: 1px solid {COLORS["border"]};
-    min-height: 28px;
-}}
-
-QStatusBar::item {{
-    border: none;
-}}
-
-/* ── Menu Bar ──────────────────────────────────────────────────────── */
-
-QMenuBar {{
-    background-color: {COLORS["bg_deep"]};
-    color: {COLORS["text"]};
-    border-bottom: 1px solid {COLORS["border"]};
-    padding: 2px 0;
-}}
-
-QMenuBar::item {{
-    padding: 6px 14px;
-    border-radius: 6px;
-}}
-
-QMenuBar::item:selected {{
-    background-color: {COLORS["bg_card"]};
-    color: {COLORS["accent_light"]};
-}}
-
-QMenu {{
-    background-color: {COLORS["bg_card"]};
-    color: {COLORS["text"]};
-    border: 1px solid {COLORS["border"]};
-    border-radius: 8px;
-    padding: 6px;
-}}
-
-QMenu::item {{
-    padding: 8px 28px;
-    border-radius: 6px;
-}}
-
-QMenu::item:selected {{
-    background-color: {COLORS["accent"]};
-    color: {COLORS["text_on_accent"]};
-}}
-
-QMenu::separator {{
-    height: 1px;
-    background: {COLORS["border"]};
-    margin: 4px 10px;
-}}
-
-/* ── Drop Zone (File Transfer) ─────────────────────────────────────── */
-
 QFrame#drop-zone {{
     border: 2px dashed {COLORS["accent_glow"]};
     border-radius: 14px;
-    background-color: {COLORS["bg_card"]};
+    background-color: {bg_card};
 }}
 
 QFrame#drop-zone-active {{
-    border: 2px solid {COLORS["accent"]};
-    background-color: {COLORS["bg_button"]};
+    border: 2px solid {COLORS["accent_light"]};
+    background-color: {bg_button_hover};
     border-radius: 14px;
 }}
-
-/* ── Stat Card ─────────────────────────────────────────────────────── */
-
-QFrame#stat-card {{
-    background-color: {COLORS["bg_card"]};
-    border: 1px solid {COLORS["border"]};
-    border-radius: 12px;
-    padding: 12px;
-}}
-
-QFrame#stat-card-glow {{
-    background-color: {COLORS["bg_card"]};
-    border: 1px solid {COLORS["accent"]};
-    border-radius: 12px;
-    padding: 12px;
-}}
 """
+
+
+STYLESHEET = build_stylesheet(0.65)
