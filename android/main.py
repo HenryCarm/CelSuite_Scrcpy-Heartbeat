@@ -36,28 +36,28 @@ if 'ANDROID_ARGUMENT' not in os.environ and 'PYTHON_SERVICE_ARGUMENT' not in os.
 # Port configuration
 PORT_TCP_TRANSFER = 5558
 
-# Royal Nebula Color Palette
-DARK_BG = (0.04, 0.04, 0.08, 1)
-PRIMARY_BG = (0.06, 0.06, 0.12, 1)
-SECONDARY_BG = (0.08, 0.08, 0.16, 1)
-CARD_BG = (0.10, 0.10, 0.21, 1)
-INPUT_BG = (0.12, 0.12, 0.24, 1)
-BUTTON_BG = (0.15, 0.15, 0.31, 1)
+# CelStudio Emerald Green Liquid Glass Palette
+DARK_BG = (0.04, 0.08, 0.06, 1)
+PRIMARY_BG = (0.05, 0.11, 0.08, 1)
+SECONDARY_BG = (0.07, 0.14, 0.10, 1)
+CARD_BG = (0.08, 0.18, 0.13, 0.75)
+INPUT_BG = (0.05, 0.12, 0.08, 0.85)
+BUTTON_BG = (0.08, 0.19, 0.13, 0.80)
 
-ACCENT_PRIMARY = (0.486, 0.227, 0.929, 1)
-ACCENT_SECONDARY = (0.659, 0.333, 0.969, 1)
-ACCENT_TERTIARY = (0.388, 0.400, 0.945, 1)
-ACCENT_GLOW = (0.545, 0.361, 0.965, 1)
+ACCENT_PRIMARY = (0.063, 0.725, 0.506, 1)     # #10B981 Emerald
+ACCENT_SECONDARY = (0.204, 0.827, 0.600, 1)   # #34D399 Light Mint
+ACCENT_TERTIARY = (0.078, 0.722, 0.651, 1)    # #14B8A6 Teal
+ACCENT_GLOW = (0.431, 0.906, 0.718, 1)        # #6EE7B7 Neon Glow
 
-TEXT_PRIMARY = (0.94, 0.94, 0.96, 1)
-TEXT_SECONDARY = (0.612, 0.639, 0.686, 1)
-TEXT_ON_ACCENT = (1, 1, 1, 1)
+TEXT_PRIMARY = (0.94, 0.98, 0.95, 1)
+TEXT_SECONDARY = (0.60, 0.72, 0.65, 1)
+TEXT_ON_ACCENT = (0.02, 0.10, 0.06, 1)
 
 SUCCESS = (0.063, 0.725, 0.506, 1)
 WARNING = (0.961, 0.620, 0.043, 1)
 ERROR = (0.937, 0.267, 0.267, 1)
 
-BORDER_SUBTLE = (0.165, 0.165, 0.322, 1)
+BORDER_SUBTLE = (0.063, 0.725, 0.506, 0.35)
 
 def get_storage_dirs():
     """Determines the correct internal and external storage directories for the app."""
@@ -575,7 +575,7 @@ class MainScreen(Screen):
         
         # ── 1. Top Header Bar ───────────────────────────────────────────
         top_bar = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(40), spacing=dp(8))
-        self.label = Label(text="Scrcpy Heartbeat :)", font_size=sp(22), bold=True, color=ACCENT_PRIMARY, size_hint_x=1.0, halign='left', valign='middle')
+        self.label = Label(text="CelStudio Scrcpy Heartbeat :)", font_size=sp(20), bold=True, color=ACCENT_PRIMARY, size_hint_x=1.0, halign='left', valign='middle')
         self.label.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
         top_bar.add_widget(self.label)
         content.add_widget(top_bar)

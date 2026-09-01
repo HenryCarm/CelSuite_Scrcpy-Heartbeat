@@ -2,7 +2,7 @@
 Centralized QSS stylesheet for CelStudio Scrcpy Heartbeat.
 
 Implements the CelStudio Liquid Glass UI standard with translucent
-rgba() glassmorphism, glowing borders, and adjustable opacity.
+rgba() glassmorphism, glowing emerald green borders, and adjustable opacity.
 """
 
 from __future__ import annotations
@@ -10,34 +10,34 @@ from __future__ import annotations
 # ── Base Palette & Constants ──────────────────────────────────────────────────
 
 COLORS = {
-    # Backgrounds — deep obsidian & liquid glass defaults
-    "bg_deep": "rgba(8, 6, 13, 0.85)",
+    # Backgrounds — deep emerald obsidian & liquid glass defaults
+    "bg_deep": "rgba(6, 12, 8, 0.85)",
     "bg_primary": "transparent",
     "bg_secondary": "transparent",
-    "bg_card": "rgba(34, 27, 50, 0.65)",
-    "bg_card_hover": "rgba(48, 38, 70, 0.80)",
-    "bg_card_glass": "rgba(34, 27, 50, 0.55)",
-    "bg_input": "rgba(22, 17, 33, 0.75)",
-    "bg_button": "rgba(47, 38, 71, 0.70)",
-    "bg_button_hover": "rgba(68, 55, 102, 0.85)",
+    "bg_card": "rgba(18, 34, 25, 0.65)",
+    "bg_card_hover": "rgba(26, 50, 36, 0.80)",
+    "bg_card_glass": "rgba(18, 34, 25, 0.55)",
+    "bg_input": "rgba(12, 22, 16, 0.75)",
+    "bg_button": "rgba(22, 42, 30, 0.70)",
+    "bg_button_hover": "rgba(34, 64, 46, 0.85)",
 
-    # Accents — Royal Purple / Indigo / Violet
-    "accent": "#7C3AED",
-    "accent_light": "#A855F7",
-    "accent_indigo": "#6366F1",
-    "accent_glow": "#8B5CF6",
-    "accent_dim": "#6D28D9",
+    # Accents — Cel Emerald / Mint / Neon Sage
+    "accent": "#10B981",          # Emerald Green (matching CelWeave Light Green)
+    "accent_light": "#34D399",    # Mint Glow
+    "accent_indigo": "#059669",   # Deep Emerald
+    "accent_glow": "#6EE7B7",     # Bright Neon Mint
+    "accent_dim": "#047857",      # Dark Emerald
 
-    # Borders — subtle glowing glass edge
-    "border": "rgba(139, 92, 246, 0.28)",
-    "border_accent": "#7C3AED",
-    "border_glow": "rgba(168, 85, 247, 0.50)",
+    # Borders — subtle glowing emerald glass edge
+    "border": "rgba(16, 185, 129, 0.30)",
+    "border_accent": "#10B981",
+    "border_glow": "rgba(52, 211, 153, 0.55)",
 
     # Text
-    "text": "#F0F0F5",
-    "text_dim": "#9CA3AF",
+    "text": "#F0FDF4",
+    "text_dim": "#94A3B8",
     "text_on_accent": "#FFFFFF",
-    "text_dark": "#0A0A14",
+    "text_dark": "#061A11",
 
     # Status
     "success": "#10B981",
@@ -45,18 +45,18 @@ COLORS = {
     "error": "#EF4444",
 
     # Components
-    "tab_inactive": "rgba(21, 17, 32, 0.60)",
-    "tab_active": "rgba(38, 30, 58, 0.85)",
-    "progress_bg": "rgba(26, 21, 40, 0.80)",
-    "progress_fill": "#7C3AED",
+    "tab_inactive": "rgba(14, 26, 19, 0.60)",
+    "tab_active": "rgba(24, 48, 34, 0.85)",
+    "progress_bg": "rgba(12, 22, 16, 0.80)",
+    "progress_fill": "#10B981",
     "scrollbar_bg": "transparent",
-    "scrollbar_handle": "rgba(124, 58, 237, 0.40)",
+    "scrollbar_handle": "rgba(16, 185, 129, 0.40)",
 }
 
 
 def build_stylesheet(glass_opacity: float = 0.65) -> str:
     """
-    Generate dynamic CelStudio Liquid Glass QSS stylesheet.
+    Generate dynamic CelStudio Emerald Green Liquid Glass QSS stylesheet.
     glass_opacity: float between 0.10 and 1.0 (default: 0.65)
     """
     alpha = max(0.10, min(1.0, glass_opacity))
@@ -67,15 +67,15 @@ def build_stylesheet(glass_opacity: float = 0.65) -> str:
     btn_hover_alpha = round(min(1.0, alpha + 0.20), 2)
     sidebar_alpha = round(min(1.0, alpha + 0.15), 2)
 
-    bg_card = f"rgba(30, 24, 46, {card_alpha})"
-    bg_card_hover = f"rgba(46, 36, 68, {card_hover_alpha})"
-    bg_input = f"rgba(18, 14, 28, {input_alpha})"
-    bg_button = f"rgba(44, 35, 66, {btn_alpha})"
-    bg_button_hover = f"rgba(65, 52, 98, {btn_hover_alpha})"
-    bg_sidebar = f"rgba(13, 10, 20, {sidebar_alpha})"
+    bg_card = f"rgba(16, 32, 22, {card_alpha})"
+    bg_card_hover = f"rgba(24, 48, 34, {card_hover_alpha})"
+    bg_input = f"rgba(10, 20, 14, {input_alpha})"
+    bg_button = f"rgba(20, 38, 28, {btn_alpha})"
+    bg_button_hover = f"rgba(32, 60, 44, {btn_hover_alpha})"
+    bg_sidebar = f"rgba(8, 16, 11, {sidebar_alpha})"
 
     return f"""
-/* ── CelStudio Liquid Glass Theme ────────────────────────────────────────── */
+/* ── CelStudio Emerald Green Liquid Glass Theme ──────────────────────────── */
 
 QMainWindow {{
     background-color: transparent;
@@ -237,9 +237,9 @@ QPushButton:pressed {{
 }}
 
 QPushButton:disabled {{
-    background-color: rgba(15, 12, 22, 0.40);
-    color: #555566;
-    border-color: rgba(40, 35, 60, 0.30);
+    background-color: rgba(10, 20, 14, 0.40);
+    color: #4A5568;
+    border-color: rgba(20, 40, 30, 0.30);
 }}
 
 QPushButton#action-primary {{
@@ -254,10 +254,12 @@ QPushButton#action-primary {{
 
 QPushButton#action-primary:hover {{
     background-color: {COLORS["accent_light"]};
+    color: {COLORS["text_dark"]};
 }}
 
 QPushButton#action-primary:pressed {{
     background-color: {COLORS["accent_dim"]};
+    color: #FFFFFF;
 }}
 
 QPushButton#action-danger {{
@@ -300,7 +302,7 @@ QLineEdit, QSpinBox, QComboBox {{
     font-size: 13px;
     min-height: 22px;
     selection-background-color: {COLORS["accent"]};
-    selection-color: {COLORS["text_on_accent"]};
+    selection-color: {COLORS["text_dark"]};
 }}
 
 QLineEdit:focus, QSpinBox:focus, QComboBox:focus {{
@@ -314,10 +316,10 @@ QComboBox::drop-down {{
 }}
 
 QComboBox QAbstractItemView {{
-    background-color: rgba(22, 17, 33, 0.95);
+    background-color: rgba(14, 28, 20, 0.95);
     color: {COLORS["text"]};
     selection-background-color: {COLORS["accent"]};
-    selection-color: {COLORS["text_on_accent"]};
+    selection-color: {COLORS["text_dark"]};
     border: 1px solid {COLORS["border_glow"]};
     border-radius: 8px;
     outline: none;
@@ -334,7 +336,7 @@ QTextEdit, QPlainTextEdit {{
     font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", "Consolas", monospace;
     font-size: 11px;
     selection-background-color: {COLORS["accent"]};
-    selection-color: {COLORS["text_on_accent"]};
+    selection-color: {COLORS["text_dark"]};
 }}
 
 /* ── Check Box & Sliders ──────────────────────────────────────────────── */
@@ -409,7 +411,7 @@ QFrame#hero-card {{
 
 QPushButton#hero-button {{
     background-color: {COLORS["accent"]};
-    color: {COLORS["text_on_accent"]};
+    color: {COLORS["text_dark"]};
     border: none;
     font-size: 16px;
     font-weight: bold;
@@ -466,7 +468,7 @@ QProgressBar {{
     border: 1px solid {COLORS["border"]};
     border-radius: 8px;
     text-align: center;
-    color: {COLORS["text_on_accent"]};
+    color: {COLORS["text_dark"]};
     font-weight: bold;
     height: 24px;
     background-color: {bg_input};
@@ -505,8 +507,9 @@ QListWidget#sidebar::item {{
 
 QListWidget#sidebar::item:selected {{
     background-color: {COLORS["accent"]};
-    color: {COLORS["text_on_accent"]};
+    color: {COLORS["text_dark"]};
     border: 1px solid {COLORS["accent_light"]};
+    font-weight: bold;
 }}
 
 QListWidget#sidebar::item:hover:!selected {{
@@ -524,7 +527,7 @@ QScrollBar:vertical {{
 }}
 
 QScrollBar::handle:vertical {{
-    background: rgba(139, 92, 246, 0.35);
+    background: rgba(16, 185, 129, 0.35);
     border-radius: 4px;
     min-height: 36px;
 }}
@@ -545,7 +548,7 @@ QScrollBar:horizontal {{
 }}
 
 QScrollBar::handle:horizontal {{
-    background: rgba(139, 92, 246, 0.35);
+    background: rgba(16, 185, 129, 0.35);
     border-radius: 4px;
     min-width: 36px;
 }}
@@ -561,7 +564,7 @@ QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
 /* ── Tooltips & Drop Zone ──────────────────────────────────────────────── */
 
 QToolTip {{
-    background-color: rgba(26, 20, 38, 0.95);
+    background-color: rgba(12, 24, 18, 0.95);
     color: {COLORS["text"]};
     border: 1px solid {COLORS["accent_light"]};
     border-radius: 6px;

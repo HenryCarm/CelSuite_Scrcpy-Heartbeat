@@ -292,6 +292,20 @@ class MainWindow(QMainWindow):
 
     # ── Window Events ─────────────────────────────────────────────────────
 
+    def resizeEvent(self, event) -> None:
+        """Dynamically save window size whenever resized."""
+        super().resizeEvent(event)
+        if not self.isMaximized() and not self.isMinimized():
+            self._config["window_width"] = self.width()
+            self._config["window_height"] = self.height()
+
+    def moveEvent(self, event) -> None:
+        """Dynamically save window position whenever moved."""
+        super().moveEvent(event)
+        if not self.isMaximized() and not self.isMinimized():
+            self._config["window_x"] = self.x()
+            self._config["window_y"] = self.y()
+
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle window close — confirm if connected, save geometry."""
         if self._mirror_tab.is_connected:
