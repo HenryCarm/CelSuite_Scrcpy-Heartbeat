@@ -33,6 +33,14 @@ _device_cache_ttl: float = 2.0  # seconds
 _device_cache_lock = threading.Lock()
 
 
+import sys
+
+# Windows process creation flags to suppress black console popup windows
+_SUBPROCESS_FLAGS: dict[str, Any] = {}
+if sys.platform == "win32":
+    _SUBPROCESS_FLAGS["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+
+
 def _clear_device_cache() -> None:
     """Invalidate the device cache."""
     global _device_cache_time
@@ -43,14 +51,68 @@ def _clear_device_cache() -> None:
 # ── Binary Detection ──────────────────────────────────────────────────────────
 
 def find_adb_binary(config: AppConfig) -> str:
-    """Return the path to the ADB binary, checking config then PATH."""
+    """Return the path to the ADB binary, checking config, APP_DIR, PATH, and Windows paths."""
     configured = config.get("adb_bin", "adb")
     if configured and configured != "adb" and shutil.which(configured):
         return configured
-    found = shutil.which("adb")
+
+    # 1. Check next to executable / APP_DIR (for portable Windows releases)
+    from src.constants import APP_DIR
+    for name in ("adb.exe", "adb"):
+        local_bin = os.path.join(APP_DIR, name)
+        if os.path.isfile(local_bin):
+            return local_bin
+
+    # 2. Check system PATH
+    found = shutil.which("adb") or shutil.which("adb.exe")
     if found:
         return found
-    return "adb"  # Let it fail at runtime with a clear error
+
+    # 3. Check common Windows install directories
+    if sys.platform == "win32":
+        win_candidates = [
+            r"C:\platform-tools\adb.exe",
+            r"C:\scrcpy\adb.exe",
+            os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"),
+            os.path.expandvars(r"%PROGRAMFILES%\Android\platform-tools\adb.exe"),
+        ]
+        for path in win_candidates:
+            if os.path.isfile(path):
+                return path
+
+    return "adb"
+
+
+def find_scrcpy_binary(config: AppConfig) -> str:
+    """Return the path to the scrcpy binary, checking config, APP_DIR, PATH, and Windows paths."""
+    configured = config.get("scrcpy_bin", "scrcpy")
+    if configured and configured != "scrcpy" and shutil.which(configured):
+        return configured
+
+    # 1. Check next to executable / APP_DIR
+    from src.constants import APP_DIR
+    for name in ("scrcpy.exe", "scrcpy"):
+        local_bin = os.path.join(APP_DIR, name)
+        if os.path.isfile(local_bin):
+            return local_bin
+
+    # 2. Check system PATH
+    found = shutil.which("scrcpy") or shutil.which("scrcpy.exe")
+    if found:
+        return found
+
+    # 3. Check common Windows install directories
+    if sys.platform == "win32":
+        win_candidates = [
+            r"C:\scrcpy\scrcpy.exe",
+            r"C:\Program Files\scrcpy\scrcpy.exe",
+            os.path.expandvars(r"%LOCALAPPDATA%\Programs\scrcpy\scrcpy.exe"),
+        ]
+        for path in win_candidates:
+            if os.path.isfile(path):
+                return path
+
+    return "scrcpy"
 
 
 def is_adb_available(config: AppConfig) -> bool:
@@ -328,69 +390,118 @@ def get_hardware_info(
     adb_port: int = DEFAULT_ADB_PORT,
 ) -> dict[str, Any]:
     """
-    Query live device specs in a single batched ADB shell command.
+    Query live device specs in a single batched ADB shell command with raw logging.
 
     Returns a dict with keys: model, android_version, battery_level,
     charging, temperature, resolution, error (if any).
     """
     if not phone_ip:
-        phone_ip, _ = get_connected_phone(config)
+        phone_ip, port = get_connected_phone(config)
+        if port:
+            adb_port = port
     if not phone_ip:
+        log.warning("[Hardware Telemetry] Cannot fetch info: No device connected.")
         return {"error": "No device connected"}
 
     adb = find_adb_binary(config)
-    target = f"{phone_ip}:{adb_port}"
+    
+    # Avoid double-port formatting bug (e.g. "192.168.0.100:5555:5555")
+    if ":" in phone_ip:
+        target = phone_ip
+    else:
+        target = f"{phone_ip}:{adb_port}"
+
     info: dict[str, Any] = {"ip": phone_ip, "port": adb_port}
 
-    # Batch multiple queries into one shell call for efficiency
-    batch_cmd = "getprop ro.product.model; getprop ro.build.version.release; dumpsys battery; wm size"
+    # Delimited batch query to reliably parse each field regardless of device quirks
+    batch_cmd = (
+        "echo '===MODEL==='; getprop ro.product.model; "
+        "echo '===ANDROID==='; getprop ro.build.version.release; "
+        "echo '===BATTERY==='; dumpsys battery 2>/dev/null || cat /sys/class/power_supply/battery/capacity 2>/dev/null; "
+        "echo '===SIZE==='; wm size 2>/dev/null"
+    )
 
     try:
         result = subprocess.run(
             [adb, "-s", target, "shell", batch_cmd],
             capture_output=True, text=True,
-            timeout=ADB_COMMAND_TIMEOUT_SEC + 2,
+            timeout=ADB_COMMAND_TIMEOUT_SEC + 3,
         )
+
+        output = result.stdout.strip()
+        stderr = result.stderr.strip()
+
+        # RAW LOGGING AS REQUESTED BY USER
+        if output:
+            log.info("[Hardware Telemetry Raw Response for %s]:\n%s", target, output)
+        if stderr:
+            log.warning("[Hardware Telemetry Stderr for %s]: %s", target, stderr)
+
         if result.returncode != 0:
-            info["error"] = "ADB command failed"
+            err_msg = f"ADB command exit {result.returncode}: {stderr or output or 'Unknown error'}"
+            log.error("[Hardware Telemetry Failed]: %s", err_msg)
+            info["error"] = err_msg
             return info
 
-        output = result.stdout
-        lines = [l.strip() for l in output.splitlines() if l.strip()]
-
-        if lines:
-            info["model"] = lines[0]
-        if len(lines) > 1:
-            info["android_version"] = f"Android {lines[1]}"
-
         import re
+
+        # 1. Model
+        model_m = re.search(r"===MODEL===\s*\n([^\n=]+)", output)
+        if model_m and model_m.group(1).strip():
+            info["model"] = model_m.group(1).strip()
+        else:
+            info["model"] = "Android Device"
+
+        # 2. Android Version
+        ver_m = re.search(r"===ANDROID===\s*\n([^\n=]+)", output)
+        if ver_m and ver_m.group(1).strip():
+            info["android_version"] = f"Android {ver_m.group(1).strip()}"
+
+        # 3. Battery Level
         lvl = re.search(r"level:\s*(\d+)", output)
         if lvl:
             info["battery_level"] = f"{lvl.group(1)}%"
+        else:
+            # Fallback for raw capacity numbers
+            cap_m = re.search(r"===BATTERY===\s*\n(\d{1,3})\b", output)
+            if cap_m:
+                info["battery_level"] = f"{cap_m.group(1)}%"
+            else:
+                info["battery_level"] = "N/A"
 
+        # 4. Charging Status
         st = re.search(r"status:\s*(\d+)", output)
         if st and st.group(1) in ("2", "5"):
+            info["charging"] = "Charging"
+        elif "charging" in output.lower() and "discharging" not in output.lower():
             info["charging"] = "Charging"
         else:
             info["charging"] = "Discharging"
 
+        # 5. Temperature
         temp = re.search(r"temperature:\s*(\d+)", output)
         if temp:
             try:
                 info["temperature"] = f"{int(temp.group(1)) / 10.0:.1f}\u00b0C"
             except ValueError:
-                pass
+                info["temperature"] = "\u2014"
+        else:
+            info["temperature"] = "\u2014"
 
+        # 6. Screen Resolution
         res = re.search(r"Physical size:\s*(\d+x\d+)", output)
         if res:
             info["resolution"] = res.group(1)
 
     except FileNotFoundError:
-        info["error"] = "ADB not found"
+        info["error"] = "ADB binary not found"
+        log.error("[Hardware Telemetry] %s", info["error"])
     except subprocess.TimeoutExpired:
-        info["error"] = "ADB timeout"
+        info["error"] = f"ADB timeout while contacting {target}"
+        log.error("[Hardware Telemetry] %s", info["error"])
     except subprocess.SubprocessError as exc:
         info["error"] = str(exc)
+        log.error("[Hardware Telemetry] Exception: %s", exc)
 
     return info
 
@@ -472,7 +583,7 @@ def launch_scrcpy(
     })
 
     # Build scrcpy command
-    scrcpy_bin = config.get("scrcpy_bin", "scrcpy")
+    scrcpy_bin = find_scrcpy_binary(config)
     cmd = [
         scrcpy_bin,
         "--audio-source=playback",
@@ -487,6 +598,7 @@ def launch_scrcpy(
         try:
             _scrcpy_process = subprocess.Popen(
                 cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                **_SUBPROCESS_FLAGS,
             )
             return True, f"scrcpy launched (PID {_scrcpy_process.pid})"
         except FileNotFoundError:

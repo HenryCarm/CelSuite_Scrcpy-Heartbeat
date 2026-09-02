@@ -11,14 +11,19 @@ import os
 import sys
 
 # ── Application Metadata ──────────────────────────────────────────────────────
-APP_NAME = "CelStudio Scrcpy Heartbeat"
-APP_VERSION = "268.31.20"
+APP_NAME = "CelSuite - Scrcpy Heartbeat"
+APP_VERSION = "269.2.0"
 APP_AUTHOR = "Henry"
 APP_DOMAIN = "org.henry.scrcpy"
 
 # ── CelStudio Assets ─────────────────────────────────────────────────────────
-DEFAULT_WALLPAPER = "/home/henry/Documents/Projects/Python/.png/CelWeave Light Green.jpeg"
-DEFAULT_ICON = "/home/henry/Documents/Projects/Python/.png/Cel Logo Scrcpy.jpeg"
+_local_wp = os.path.join(APP_DIR, "wallpaper.jpg")
+_linux_wp = "/home/henry/Documents/Projects/Python/.png/CelWeave Light Green.jpeg"
+DEFAULT_WALLPAPER = _linux_wp if os.path.exists(_linux_wp) else _local_wp
+
+_local_icon = os.path.join(APP_DIR, "icon.png")
+_linux_icon = "/home/henry/Documents/Projects/Python/Scrcpy Heartbeat/icon.png"
+DEFAULT_ICON = _linux_icon if os.path.exists(_linux_icon) else _local_icon
 
 # ── Path Resolution ───────────────────────────────────────────────────────────
 # When frozen (Nuitka / PyInstaller), sys.argv[0] points to the binary.

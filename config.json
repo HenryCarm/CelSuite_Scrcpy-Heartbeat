@@ -12,12 +12,12 @@
   "scrcpy_preset": "Balanced (Default)",
   "auto_clip_sync": false,
   "wallpaper_path": "/home/henry/Documents/Projects/Python/.png/CelWeave Light Green.jpeg",
-  "glass_opacity": 0.65,
-  "wallpaper_tint_opacity": 0.7,
+  "glass_opacity": 0.33,
+  "wallpaper_tint_opacity": 0.33,
   "last_phone_ip": "",
   "last_phone_port": 5555,
   "window_width": 1192,
   "window_height": 688,
-  "window_x": 116,
-  "window_y": 61
+  "window_x": 98,
+  "window_y": 21
 }

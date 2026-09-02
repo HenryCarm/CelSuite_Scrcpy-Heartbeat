@@ -50,8 +50,8 @@ _DEFAULTS: dict[str, Any] = {
     "auto_clip_sync": False,
     # CelStudio Liquid Glass & Wallpaper Engine
     "wallpaper_path": "/home/henry/Documents/Projects/Python/.png/CelWeave Light Green.jpeg",
-    "glass_opacity": 0.65,
-    "wallpaper_tint_opacity": 0.70,
+    "glass_opacity": 0.33,
+    "wallpaper_tint_opacity": 0.33,
     # Saved state
     "last_phone_ip": "",
     "last_phone_port": DEFAULT_ADB_PORT,

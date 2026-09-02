@@ -63,11 +63,14 @@ class CelWallpaperWidget(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._cached_pixmap: QPixmap | None = None
         self._cached_path: str = ""
+        self._cached_scaled: QPixmap | None = None
+        self._cached_size: QSize = QSize()
 
     def _get_pixmap(self) -> QPixmap | None:
         path = self._config.get("wallpaper_path", DEFAULT_WALLPAPER)
         if path != self._cached_path or self._cached_pixmap is None:
             self._cached_path = path
+            self._cached_scaled = None
             if os.path.exists(path):
                 self._cached_pixmap = QPixmap(path)
             else:
@@ -76,28 +79,29 @@ class CelWallpaperWidget(QWidget):
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
 
         # 1. Base dark background
-        painter.fillRect(self.rect(), QColor("#0A0812"))
+        painter.fillRect(self.rect(), QColor("#08120B"))
 
-        # 2. Render Wallpaper
+        # 2. Render Cached Scaled Wallpaper (Optimized to save GPU/CPU cycles)
         pix = self._get_pixmap()
         if pix and not pix.isNull():
-            scaled = pix.scaled(
-                self.size(),
-                Qt.AspectRatioMode.KeepAspectRatioByExpanding,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-            # Center crop
-            x = (self.width() - scaled.width()) // 2
-            y = (self.height() - scaled.height()) // 2
-            painter.drawPixmap(x, y, scaled)
+            if self._cached_scaled is None or self._cached_size != self.size():
+                self._cached_size = self.size()
+                self._cached_scaled = pix.scaled(
+                    self.size(),
+                    Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            if self._cached_scaled:
+                x = (self.width() - self._cached_scaled.width()) // 2
+                y = (self.height() - self._cached_scaled.height()) // 2
+                painter.drawPixmap(x, y, self._cached_scaled)
 
         # 3. Dark Overlay Tint to protect text contrast
         tint_opacity = float(self._config.get("wallpaper_tint_opacity", 0.70))
         tint_alpha = int(max(0.0, min(1.0, tint_opacity)) * 255)
+        painter.fillRect(self.rect(), QColor(6, 16, 10, tint_alpha))
         painter.fillRect(self.rect(), QColor(10, 8, 18, tint_alpha))
 
 
@@ -185,13 +189,23 @@ class MainWindow(QMainWindow):
         # App Title in Sidebar
         title_box = QHBoxLayout()
         title_box.setContentsMargins(6, 0, 6, 4)
+        title_box.setSpacing(8)
         
-        logo_icon = QLabel("⚡")
-        logo_icon.setStyleSheet("font-size: 16px;")
+        logo_icon = QLabel()
+        logo_icon.setFixedSize(24, 24)
+        icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "icon.png")
+        if os.path.exists(icon_path):
+            pix = QPixmap(icon_path)
+            if not pix.isNull():
+                logo_icon.setPixmap(pix.scaled(24, 24, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            else:
+                logo_icon.setText("✨")
+        else:
+            logo_icon.setText("✨")
         title_box.addWidget(logo_icon)
 
         title_lbl = QLabel(APP_NAME)
-        title_lbl.setStyleSheet("color: #F0F0F5; font-size: 12px; font-weight: bold; letter-spacing: 0.2px;")
+        title_lbl.setStyleSheet("color: #F0FDF4; font-size: 12px; font-weight: bold; letter-spacing: 0.2px;")
         title_box.addWidget(title_lbl)
         title_box.addStretch()
         sidebar_layout.addLayout(title_box)

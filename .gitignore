@@ -52,4 +52,8 @@ ScrcpyLink.log
 # Proof images / temp
 *.png
 !icon.png
+!android/*.png
+!android_face.png
 *.jpg
+!android/*.jpg
+!wallpaper_mobile.jpg

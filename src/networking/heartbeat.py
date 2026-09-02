@@ -252,15 +252,31 @@ class HeartbeatListener(QObject):
 # ── Utilities ─────────────────────────────────────────────────────────────────
 
 def _get_local_ip() -> str:
-    """Get the local IP address of this machine."""
+    """Get the local IP address with offline/hotspot fallback (Windows & Linux)."""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()
-        return ip
-    except OSError as exc:
-        return f"unknown ({exc})"
+        if ip and not ip.startswith("127."):
+            return ip
+    except OSError:
+        pass
+
+    # Offline / Local LAN fallback (crucial for Windows offline or hotspot setups)
+    try:
+        host_name = socket.gethostname()
+        ip = socket.gethostbyname(host_name)
+        if ip and not ip.startswith("127."):
+            return ip
+        for info in socket.getaddrinfo(host_name, None, socket.AF_INET):
+            cand = info[4][0]
+            if cand and not cand.startswith("127."):
+                return cand
+    except OSError:
+        pass
+
+    return "127.0.0.1"
 
 
 def _get_subnet_broadcast(ip: str) -> Optional[str]:

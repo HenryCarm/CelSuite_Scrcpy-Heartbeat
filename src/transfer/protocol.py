@@ -105,8 +105,8 @@ def parse_get_header(raw: str) -> Optional[str]:
 
 # ── Validation ────────────────────────────────────────────────────────────────
 
-# Characters not allowed in filenames (prevent path traversal)
-_UNSAFE_PATTERN = re.compile(r'[/\\:\x00]')
+# Characters not allowed in filenames (Windows, Linux, Android safe)
+_UNSAFE_PATTERN = re.compile(r'[/\\:\x00<>"|?*]')
 
 
 def sanitize_filename(filename: str) -> str:

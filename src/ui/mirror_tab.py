@@ -283,11 +283,12 @@ class MirrorTab(QWidget):
         main_layout.addWidget(tools_card)
 
         # ── 4. COLLAPSIBLE HARDWARE TELEMETRY ─────────────────────────
-        telemetry_card = CollapsibleCard("📊 Live Hardware Telemetry (CPU, RAM, Latency)", expanded=False)
+        self._telemetry_card = CollapsibleCard("📊 Live Hardware Telemetry (CPU, RAM, Latency)", expanded=False)
         self._dashboard = DashboardWidget()
         self._dashboard.refresh_btn.clicked.connect(self._refresh_dashboard)
-        telemetry_card.addWidget(self._dashboard)
-        main_layout.addWidget(telemetry_card)
+        self._telemetry_card._toggle_button.clicked.connect(self._on_telemetry_toggled)
+        self._telemetry_card.addWidget(self._dashboard)
+        main_layout.addWidget(self._telemetry_card)
 
         # Log panel at bottom
         self._log_panel = LogPanel()
@@ -408,6 +409,10 @@ class MirrorTab(QWidget):
         self._auto_btn.setEnabled(False)
         self._saved_btn.setEnabled(False)
         self._scan_btn.setEnabled(False)
+        
+        # Stop broadcaster when connected to save battery and network bandwidth
+        self._broadcaster.stop()
+        
         self._start_dashboard_timer()
         self._start_duration_timer()
         self.connection_state_changed.emit(ConnectionState.MIRRORING)
@@ -432,21 +437,32 @@ class MirrorTab(QWidget):
         # Legacy method; status is now handled by MainWindow
         pass
 
-    # ── Dashboard ─────────────────────────────────────────────────────────
+    # ── Dashboard & Battery Optimizations ─────────────────────────────────
+
+    def _on_telemetry_toggled(self) -> None:
+        """Fetch metrics immediately when user expands the telemetry card."""
+        if hasattr(self, "_telemetry_card") and self._telemetry_card._is_expanded:
+            self._refresh_dashboard()
 
     def _start_dashboard_timer(self) -> None:
+        """Gentle 60s dashboard timer to conserve phone and PC battery."""
         if self._dashboard_timer is None:
             self._dashboard_timer = QTimer()
-            self._dashboard_timer.timeout.connect(self._refresh_dashboard)
-        self._dashboard_timer.start(int(DASHBOARD_REFRESH_SEC * 1000))
+            self._dashboard_timer.timeout.connect(self._on_dashboard_timer_tick)
+        self._dashboard_timer.start(60000)  # 60s instead of aggressive 5s
         self._refresh_dashboard()  # immediate first refresh
+
+    def _on_dashboard_timer_tick(self) -> None:
+        """Only query hardware over ADB if the telemetry card is actively open."""
+        if self._connected and hasattr(self, "_telemetry_card") and self._telemetry_card._is_expanded:
+            self._refresh_dashboard()
 
     def _stop_dashboard_timer(self) -> None:
         if self._dashboard_timer:
             self._dashboard_timer.stop()
 
     def _refresh_dashboard(self) -> None:
-        """Refresh hardware info."""
+        """Refresh hardware info with logging."""
         phone_ip = self._phone_ip
         adb_port = getattr(self, "_adb_port", DEFAULT_ADB_PORT)
         if not phone_ip:
@@ -457,7 +473,10 @@ class MirrorTab(QWidget):
                     self._adb_port = port
                     adb_port = port
         if not phone_ip:
+            log.info("[Hardware Dashboard] Not connected — refresh skipped.")
             return
+
+        log.info("[Hardware Dashboard] Querying device metrics for %s:%s...", phone_ip, adb_port)
 
         def worker() -> None:
             info = adb.get_hardware_info(

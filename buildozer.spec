@@ -1,11 +1,11 @@
 [app]
-title = CelStudio Scrcpy Heartbeat
+title = CelS - Scrcpy Heartbeat
 package.name = scrcpyheartbeat
 package.domain = org.henry.scrcpy
 source.dir = android
-source.include_exts = py,png,jpg,kv,atlas
-version = 268.31.20
-android.numeric_version = 2683120
+source.include_exts = py,png,jpg,kv,atlas,jpeg
+version = 269.2.0
+android.numeric_version = 2690200
 requirements = python3,kivy==2.2.1,pyjnius
 orientation = portrait
 osx.python_version = 3

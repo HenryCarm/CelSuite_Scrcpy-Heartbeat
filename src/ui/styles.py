@@ -54,10 +54,10 @@ COLORS = {
 }
 
 
-def build_stylesheet(glass_opacity: float = 0.65) -> str:
+def build_stylesheet(glass_opacity: float = 0.33) -> str:
     """
     Generate dynamic CelStudio Emerald Green Liquid Glass QSS stylesheet.
-    glass_opacity: float between 0.10 and 1.0 (default: 0.65)
+    glass_opacity: float between 0.10 and 1.0 (default: 0.33)
     """
     alpha = max(0.10, min(1.0, glass_opacity))
     card_alpha = round(alpha, 2)

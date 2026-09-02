@@ -53,8 +53,16 @@ def main() -> int:
 
     # 4. Create Qt application
     from PySide6.QtWidgets import QApplication
+    from PySide6.QtGui import QIcon
+    import os
+
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
+
+    # Master HD Icon for taskbar, panel, and Alt-Tab
+    icon_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "icon.png")
+    if os.path.exists(icon_file):
+        app.setWindowIcon(QIcon(icon_file))
 
     # 5. Create and show main window
     from src.ui.main_window import MainWindow

@@ -23,6 +23,8 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.widget import Widget
 from kivy.uix.scrollview import ScrollView
+from kivy.uix.image import Image
+from kivy.uix.slider import Slider
 from kivy.clock import Clock
 from kivy.graphics import Color, Rectangle, RoundedRectangle, Line, Ellipse, Scale, PushMatrix, PopMatrix
 from kivy.metrics import dp, sp
@@ -31,33 +33,10 @@ from kivy.animation import Animation
 from kivy.properties import NumericProperty
 
 if 'ANDROID_ARGUMENT' not in os.environ and 'PYTHON_SERVICE_ARGUMENT' not in os.environ:
-    Window.size = (380, 680)
+    Window.size = (400, 720)
 
 # Port configuration
 PORT_TCP_TRANSFER = 5558
-
-# CelStudio Emerald Green Liquid Glass Palette
-DARK_BG = (0.04, 0.08, 0.06, 1)
-PRIMARY_BG = (0.05, 0.11, 0.08, 1)
-SECONDARY_BG = (0.07, 0.14, 0.10, 1)
-CARD_BG = (0.08, 0.18, 0.13, 0.75)
-INPUT_BG = (0.05, 0.12, 0.08, 0.85)
-BUTTON_BG = (0.08, 0.19, 0.13, 0.80)
-
-ACCENT_PRIMARY = (0.063, 0.725, 0.506, 1)     # #10B981 Emerald
-ACCENT_SECONDARY = (0.204, 0.827, 0.600, 1)   # #34D399 Light Mint
-ACCENT_TERTIARY = (0.078, 0.722, 0.651, 1)    # #14B8A6 Teal
-ACCENT_GLOW = (0.431, 0.906, 0.718, 1)        # #6EE7B7 Neon Glow
-
-TEXT_PRIMARY = (0.94, 0.98, 0.95, 1)
-TEXT_SECONDARY = (0.60, 0.72, 0.65, 1)
-TEXT_ON_ACCENT = (0.02, 0.10, 0.06, 1)
-
-SUCCESS = (0.063, 0.725, 0.506, 1)
-WARNING = (0.961, 0.620, 0.043, 1)
-ERROR = (0.937, 0.267, 0.267, 1)
-
-BORDER_SUBTLE = (0.063, 0.725, 0.506, 0.35)
 
 def get_storage_dirs():
     """Determines the correct internal and external storage directories for the app."""
@@ -109,7 +88,10 @@ def load_config():
         "discovery_port": 5557,
         "adb_port": 5555,
         "logging_enabled": True,
-        "use_system_font": True
+        "use_system_font": True,
+        "glass_opacity": 0.33,
+        "wallpaper_tint_opacity": 0.33,
+        "wallpaper_fit": "Stretch",
     }
     try:
         if os.path.exists(CONFIG_FILE):
@@ -133,6 +115,32 @@ def save_config(config):
         print(f"Config save failed: {e}")
 
 config = load_config()
+
+# CelStudio Emerald Green Liquid Glass Palette (33% default opacity)
+GLASS_OPACITY = float(config.get("glass_opacity", 0.33))
+WALLPAPER_TINT = float(config.get("wallpaper_tint_opacity", 0.33))
+
+DARK_BG = (0.04, 0.08, 0.06, 1)
+PRIMARY_BG = (0.05, 0.11, 0.08, 1)
+SECONDARY_BG = (0.07, 0.14, 0.10, 1)
+CARD_BG = (0.07, 0.16, 0.11, GLASS_OPACITY)
+INPUT_BG = (0.05, 0.12, 0.08, 0.50)
+BUTTON_BG = (0.08, 0.20, 0.13, GLASS_OPACITY)
+
+ACCENT_PRIMARY = (0.063, 0.725, 0.506, 1)     # #10B981 Emerald
+ACCENT_SECONDARY = (0.204, 0.827, 0.600, 1)   # #34D399 Light Mint
+ACCENT_TERTIARY = (0.078, 0.722, 0.651, 1)    # #14B8A6 Teal
+ACCENT_GLOW = (0.431, 0.906, 0.718, 1)        # #6EE7B7 Neon Glow
+
+TEXT_PRIMARY = (0.94, 0.98, 0.95, 1)
+TEXT_SECONDARY = (0.60, 0.72, 0.65, 1)
+TEXT_ON_ACCENT = (0.02, 0.10, 0.06, 1)
+
+SUCCESS = (0.063, 0.725, 0.506, 1)
+WARNING = (0.961, 0.620, 0.043, 1)
+ERROR = (0.937, 0.267, 0.267, 1)
+
+BORDER_SUBTLE = (0.063, 0.725, 0.506, 0.40)
 
 LOG_MAX_BYTES = 50 * 1024
 def app_log(msg):
@@ -560,9 +568,29 @@ class MainScreen(Screen):
         
         from kivy.uix.floatlayout import FloatLayout
         float_lay = FloatLayout()
+        
+        wp_path = 'wallpaper_mobile.jpg'
+        if not os.path.exists(wp_path):
+            wp_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wallpaper_mobile.jpg')
+        if not os.path.exists(wp_path):
+            wp_path = 'wallpaper.jpg'
+        if not os.path.exists(wp_path):
+            wp_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wallpaper.jpg')
+
         with float_lay.canvas.before:
-            Color(*DARK_BG)
-            self.bg_rect = Rectangle()
+            Color(0.03, 0.07, 0.05, 1)
+            self.base_rect = Rectangle()
+            
+            if os.path.exists(wp_path):
+                Color(1, 1, 1, 1)
+                self.wp_rect = Rectangle(source=wp_path)
+            else:
+                self.wp_rect = None
+                
+            tint_val = float(config.get("wallpaper_tint_opacity", 0.33))
+            self.tint_color_inst = Color(0.02, 0.06, 0.04, tint_val)
+            self.tint_rect = Rectangle()
+            
         float_lay.bind(pos=self._update_bg, size=self._update_bg)
         
         self.particle_bg = ParticleBackground(size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
@@ -573,32 +601,40 @@ class MainScreen(Screen):
         content = BoxLayout(orientation='vertical', padding=dp(16), spacing=dp(14), size_hint_y=None)
         content.bind(minimum_height=content.setter('height'))
         
-        # ── 1. Top Header Bar ───────────────────────────────────────────
-        top_bar = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(40), spacing=dp(8))
-        self.label = Label(text="CelStudio Scrcpy Heartbeat :)", font_size=sp(20), bold=True, color=ACCENT_PRIMARY, size_hint_x=1.0, halign='left', valign='middle')
+        # ── 1. Top Header Bar (Android Face + In-app Title) ─────────────
+        top_bar = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(36), spacing=dp(6))
+        
+        face_path = 'android_face.png'
+        if not os.path.exists(face_path):
+            face_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'android_face.png')
+        if os.path.exists(face_path):
+            face_img = Image(source=face_path, size_hint=(None, 1), width=dp(30), allow_stretch=True, keep_ratio=True)
+            top_bar.add_widget(face_img)
+
+        self.label = Label(text="CelSuite - Scrcpy Heartbeat :)", font_size=sp(15), bold=True, color=ACCENT_PRIMARY, size_hint_x=1.0, halign='left', valign='middle')
         self.label.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
         top_bar.add_widget(self.label)
         content.add_widget(top_bar)
         
         # ── 2. Central Hero Connection Card ─────────────────────────────
-        hero_card = RoundedCard(orientation='vertical', size_hint_y=None, height=dp(220), padding=dp(16), spacing=dp(10))
+        hero_card = RoundedCard(orientation='vertical', size_hint_y=None, height=dp(210), padding=dp(14), spacing=dp(8))
         
         # PC IP status badge inside hero card on top
         self.pc_ip_input = TextInput(
             text="Discovering PC...", readonly=True, halign='center',
             font_size=sp(13), background_color=INPUT_BG, foreground_color=TEXT_PRIMARY,
-            size_hint_y=None, height=dp(38)
+            size_hint_y=None, height=dp(36)
         )
         hero_card.add_widget(self.pc_ip_input)
 
-        status_row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(45), spacing=dp(10))
+        status_row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(40), spacing=dp(8))
         self.pulse = PulseIndicator()
-        self.status_label = Label(text="Listening for PC broadcast...", font_size=sp(13), color=TEXT_SECONDARY, halign='left', valign='middle')
+        self.status_label = Label(text="Listening for PC broadcast...", font_size=sp(12), color=TEXT_SECONDARY, halign='left', valign='middle')
         self.status_label.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
         status_row.add_widget(self.pulse)
         status_row.add_widget(self.status_label)
         
-        restart_btn = AnimatedButton(text="TAP TO LINK", btn_color=ACCENT_PRIMARY, size_hint_y=None, height=dp(54))
+        restart_btn = AnimatedButton(text="TAP TO LINK", btn_color=ACCENT_PRIMARY, font_size=sp(15), size_hint_y=None, height=dp(50))
         restart_btn.bind(on_press=self.restart_connection)
         
         hero_card.add_widget(status_row)
@@ -606,7 +642,7 @@ class MainScreen(Screen):
         content.add_widget(hero_card)
         
         # ── 3. 2x2 Glassmorphic Action Grid ──────────────────────────────
-        grid = GridLayout(cols=2, spacing=dp(12), size_hint_y=None, height=dp(230))
+        grid = GridLayout(cols=2, spacing=dp(10), size_hint_y=None, height=dp(220))
         
         transfer_card = GridCard(icon="TRANSFER", title="WiFi Transfer", subtitle="Send & receive files", btn_color=CARD_BG, on_press_callback=self.go_transfer)
         vault_card = GridCard(icon="VAULT", title="File Vault", subtitle="Downloaded media", btn_color=CARD_BG, on_press_callback=self.go_vault)
@@ -627,10 +663,37 @@ class MainScreen(Screen):
         self.sending = False
         self.discovered_pc_ip = None
         self._discovery_running = False
+        Window.bind(size=self._update_bg)
 
-    def _update_bg(self, instance, value):
-        self.bg_rect.pos = instance.pos
-        self.bg_rect.size = instance.size
+    def _update_bg(self, *args):
+        win_size = Window.size
+        win_w, win_h = win_size
+        self.base_rect.pos = (0, 0)
+        self.base_rect.size = win_size
+        
+        if self.wp_rect:
+            fit_mode = config.get("wallpaper_fit", "Stretch")
+            if fit_mode == "Zoom" and win_h > 0:
+                # Aspect Ratio Crop / Zoom to fill screen without distortion
+                img_ratio = 1080.0 / 2340.0
+                win_ratio = win_w / float(win_h)
+                if win_ratio > img_ratio:
+                    target_w = win_w
+                    target_h = win_w / img_ratio
+                else:
+                    target_h = win_h
+                    target_w = win_h * img_ratio
+                x = (win_w - target_w) / 2.0
+                y = (win_h - target_h) / 2.0
+                self.wp_rect.pos = (x, y)
+                self.wp_rect.size = (target_w, target_h)
+            else:
+                # Default "Stretch" to fit exactly
+                self.wp_rect.pos = (0, 0)
+                self.wp_rect.size = win_size
+                
+        self.tint_rect.pos = (0, 0)
+        self.tint_rect.size = win_size
 
     def go_transfer(self, instance):
         self.manager.current = 'transfer'
@@ -949,15 +1012,15 @@ class LogsScreen(Screen):
 class SettingsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        layout = ColoredBoxLayout(orientation='vertical', bg_color=DARK_BG, padding=dp(20), spacing=dp(16))
+        layout = ColoredBoxLayout(orientation='vertical', bg_color=DARK_BG, padding=dp(16), spacing=dp(12))
         
-        title = Label(text="App Configuration", font_size=sp(24), bold=True, color=ACCENT_PRIMARY, size_hint_y=None, height=dp(40))
+        title = Label(text="App Configuration", font_size=sp(22), bold=True, color=ACCENT_PRIMARY, size_hint_y=None, height=dp(36))
         layout.add_widget(title)
         
-        card = RoundedCard(orientation='vertical', padding=dp(16), spacing=dp(16), size_hint_y=None, height=dp(260))
+        card = RoundedCard(orientation='vertical', padding=dp(16), spacing=dp(10), size_hint_y=None, height=dp(490))
         
-        log_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50))
-        log_layout.add_widget(Label(text="Enable Session Logging", color=TEXT_PRIMARY, font_size=sp(16), halign='left', size_hint_x=0.7))
+        log_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(42))
+        log_layout.add_widget(Label(text="Enable Session Logging", color=TEXT_PRIMARY, font_size=sp(15), halign='left', size_hint_x=0.7))
         self.log_switch = Switch(active=config.get("logging_enabled", True))
         self.log_switch.bind(active=self.on_log_switch)
         log_layout.add_widget(self.log_switch)
@@ -966,22 +1029,80 @@ class SettingsScreen(Screen):
         self.add_port_spinner(card, "Heartbeat Port (Phone -> PC)", "heartbeat_port")
         self.add_port_spinner(card, "Discovery Port (PC Broadcast)", "discovery_port")
         self.add_port_spinner(card, "scrcpy ADB Port", "adb_port")
+
+        # ── Liquid Glass Opacity Slider ──────────────────────────────────
+        glass_val = float(config.get("glass_opacity", 0.33))
+        self.glass_lbl = Label(text=f"Liquid Glass Opacity: {int(glass_val * 100)}%", color=TEXT_PRIMARY, font_size=sp(14), halign='left', size_hint_y=None, height=dp(20))
+        self.glass_lbl.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        glass_slider = Slider(min=0.10, max=0.90, value=glass_val, step=0.01, size_hint_y=None, height=dp(32))
+        glass_slider.bind(value=self.on_glass_slider)
+        card.add_widget(self.glass_lbl)
+        card.add_widget(glass_slider)
+
+        # ── Wallpaper Dark Tint Slider ───────────────────────────────────
+        tint_val = float(config.get("wallpaper_tint_opacity", 0.33))
+        self.tint_lbl = Label(text=f"Wallpaper Dark Tint: {int(tint_val * 100)}%", color=TEXT_PRIMARY, font_size=sp(14), halign='left', size_hint_y=None, height=dp(20))
+        self.tint_lbl.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+        tint_slider = Slider(min=0.10, max=0.90, value=tint_val, step=0.01, size_hint_y=None, height=dp(32))
+        tint_slider.bind(value=self.on_tint_slider)
+        card.add_widget(self.tint_lbl)
+        card.add_widget(tint_slider)
+
+        # ── Wallpaper Fit Mode Spinner (Stretch vs Zoom) ─────────────────
+        fit_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(44))
+        fit_lbl = Label(text="Wallpaper Fit Mode", color=TEXT_PRIMARY, font_size=sp(13), halign='left', size_hint_x=0.6)
+        fit_lbl.bind(size=fit_lbl.setter('text_size'))
+        fit_box.add_widget(fit_lbl)
+        self.fit_spinner = Spinner(
+            text=config.get("wallpaper_fit", "Stretch"),
+            values=["Stretch", "Zoom"],
+            background_color=INPUT_BG,
+            color=TEXT_PRIMARY,
+            size_hint_x=0.4
+        )
+        self.fit_spinner.bind(text=self.on_fit_change)
+        fit_box.add_widget(self.fit_spinner)
+        card.add_widget(fit_box)
+
+        # ── Version Badge ────────────────────────────────────────────────
+        ver_lbl = Label(text="CelSuite Mobile • Version v269.2.0", color=ACCENT_SECONDARY, font_size=sp(13), bold=True, halign='center', size_hint_y=None, height=dp(24))
+        card.add_widget(ver_lbl)
         
         layout.add_widget(card)
         layout.add_widget(Widget())
         
-        back_btn = AnimatedButton(text="Save & Return", btn_color=ACCENT_PRIMARY, font_size=sp(18), size_hint_y=None, height=dp(50))
+        back_btn = AnimatedButton(text="Save & Return", btn_color=ACCENT_PRIMARY, font_size=sp(16), size_hint_y=None, height=dp(48))
         back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
         
         self.add_widget(layout)
 
+    def on_fit_change(self, instance, text):
+        config["wallpaper_fit"] = text
+        save_config(config)
+        try:
+            main_screen = self.manager.get_screen('main')
+            if hasattr(main_screen, '_update_bg'):
+                main_screen._update_bg()
+        except Exception:
+            pass
+
+    def on_glass_slider(self, instance, value):
+        self.glass_lbl.text = f"Liquid Glass Opacity: {int(value * 100)}%"
+        config["glass_opacity"] = round(value, 2)
+        save_config(config)
+
+    def on_tint_slider(self, instance, value):
+        self.tint_lbl.text = f"Wallpaper Dark Tint: {int(value * 100)}%"
+        config["wallpaper_tint_opacity"] = round(value, 2)
+        save_config(config)
+
     def go_back(self, instance):
         self.manager.current = 'main'
 
     def add_port_spinner(self, layout, label_text, config_key):
-        box = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50))
-        lbl = Label(text=label_text, color=TEXT_PRIMARY, font_size=sp(14), halign='left', size_hint_x=0.6)
+        box = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(44))
+        lbl = Label(text=label_text, color=TEXT_PRIMARY, font_size=sp(13), halign='left', size_hint_x=0.6)
         lbl.bind(size=lbl.setter('text_size'))
         box.add_widget(lbl)
         spinner = Spinner(text=str(config.get(config_key)), values=[str(p) for p in range(5550, 5560)], background_color=INPUT_BG, color=TEXT_PRIMARY, size_hint_x=0.4)
@@ -1015,12 +1136,13 @@ class HelpScreen(Screen):
         content.bind(minimum_height=content.setter('height'))
         
         guide_text = (
+            "[b]CelSuite - Scrcpy Heartbeat v269.2.0[/b]\n\n"
             "[b]Quick Launch Instructions:[/b]\n"
             "1. Link phone and PC to the same WiFi/hotspot.\n"
-            "2. Open the PC PyQt6 client, then open this app on your phone.\n"
+            "2. Open the PC PySide6 CelSuite client, then open this app on your phone.\n"
             "3. High-performance scrcpy mirroring session starts instantly!\n\n"
             "[b]Shizuku Wireless Setup:[/b]\n"
-            "• Execute: [color=8B5CF6]rish -c 'adb tcpip 5555'[/color]\n\n" # ACCENT_PRIMARY approx in hex
+            "• Execute: [color=10B981]rish -c 'adb tcpip 5555'[/color]\n\n"
             "[b]Bidirectional Clipboard Sync:[/b]\n"
             "• Turn on auto-sync on the PC app for seamless, instant, zero-delay copying across systems!\n\n"
             "[b]WiFi File Transfer Hub:[/b]\n"
@@ -1141,7 +1263,10 @@ class VaultScreen(Screen):
 
 
 class HeartbeatApp(App):
-    """The main application class."""
+    """The main application class for CelS - Scrcpy Heartbeat."""
+    title = "CelS - Scrcpy Heartbeat"
+    icon = "icon_mobile.png"
+
     def build(self):
         Window.bind(on_keyboard=self.on_keyboard)
         
@@ -1195,13 +1320,16 @@ class HeartbeatApp(App):
         if "--auto-screenshot" in sys.argv:
             def capture_and_quit(dt):
                 from kivy.core.window import Window
-                target_path = "/home/henry/.gemini/antigravity/brain/755897b6-21b8-41d0-8ad7-f610a2e21dd7/android_auto_screenshot.png"
+                target_path = "/home/henry/.gemini/antigravity/brain/be570357-94fb-45bb-87f4-e9b546ad673b/cels_mobile_preview.png"
+                for arg in sys.argv:
+                    if arg.startswith("--screenshot-path="):
+                        target_path = arg.split("=", 1)[1]
                 Window.screenshot(name=target_path)
                 app_log(f"Auto screenshot saved to {target_path}")
-                Clock.schedule_once(lambda d: App.get_running_app().stop(), 2)
+                Clock.schedule_once(lambda d: App.get_running_app().stop(), 1)
 
-            app_log("Auto-screenshot mode active: capturing in 5 seconds...")
-            Clock.schedule_once(capture_and_quit, 5)
+            app_log("Auto-screenshot mode active: capturing in 2 seconds...")
+            Clock.schedule_once(capture_and_quit, 2)
 
     def on_keyboard(self, window, key, scancode, codepoint, modifier):
         if key == 27:

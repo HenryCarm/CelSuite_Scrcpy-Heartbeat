@@ -39,7 +39,8 @@ from src.ui.widgets.section_card import SectionCard
 
 log = get_logger(__name__)
 
-OFFICIAL_WALLPAPERS_DIR = "/home/henry/Documents/Projects/Python/.png"
+_linux_wp_dir = "/home/henry/Documents/Projects/Python/.png"
+OFFICIAL_WALLPAPERS_DIR = _linux_wp_dir if os.path.isdir(_linux_wp_dir) else os.path.join(APP_DIR, "wallpapers")
 
 
 class SettingsTab(QWidget):

@@ -62,6 +62,10 @@ class DashboardWidget(QGroupBox):
     def update_info(self, info: dict) -> None:
         """Update dashboard cards from a hardware info dict."""
         if "error" in info:
+            err = str(info["error"])
+            self._model_card.set_value("Error")
+            self._android_card.set_value("Check Logs")
+            self._battery_card.set_value(err[:14])
             return
 
         self._model_card.set_value(info.get("model", "—"))
