@@ -94,3 +94,12 @@ See [CHANGELOG.md](CHANGELOG.md) for full version history and release notes.
 ## 📄 License
 
 Distributed under the MIT License.
+
+---
+
+<div align="center">
+
+<img src="banner_green.webp" alt="Cel Banner" width="100%" style="border-radius: 14px; max-width: 820px;" />
+
+</div>
+
