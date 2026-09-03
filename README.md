@@ -1,6 +1,8 @@
 <div align="center">
 
-# 💖 CelSuite — Scrcpy Heartbeat 🚀✨
+<img src="icon.webp" alt="CelSuite Logo" width="130" height="130" />
+
+# CelSuite — Scrcpy Heartbeat
 
 **Seamless, zero-friction wireless Android mirroring, hardware telemetry, bi-directional clipboard sync & high-speed file transfers.**
 
@@ -9,9 +11,9 @@
 [![GUI](https://img.shields.io/badge/GUI-PySide6%20LGPL-success?style=for-the-badge)](https://www.qt.io/qt-for-python)
 [![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)](LICENSE)
 
-<br/>
+<br/><br/>
 
-<img src="icon.png" alt="CelSuite Logo" width="140" height="140" style="border-radius: 28px;" />
+<img src="banner.webp" alt="CelSuite Banner Logo" width="100%" style="border-radius: 14px; max-width: 820px;" />
 
 <br/>
 

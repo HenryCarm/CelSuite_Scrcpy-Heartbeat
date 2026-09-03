@@ -56,11 +56,19 @@ build_nuitka.py
 *.txt
 *.bak
 
-# Proof images / temp
-*.png
-!icon.png
-!src/resources/icon.png
-!android/*.png
-*.jpg
-!android/*.jpg
+# Closed-source project code & build specs (Kept local, never pushed to GitHub)
+*.py
+src/
+android/
+buildozer.spec
+requirements.txt
+p4a_hook.py
+icon.ico
+icon.png
 
+# Media files (Only keep webp assets for README)
+*.png
+*.jpg
+*.jpeg
+!icon.webp
+!banner.webp
