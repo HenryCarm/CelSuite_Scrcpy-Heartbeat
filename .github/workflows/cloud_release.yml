@@ -6,6 +6,16 @@ on:
       - 'v*'
   workflow_dispatch:
     inputs:
+      target:
+        description: 'Build Target'
+        required: true
+        default: 'windows-only'
+        type: choice
+        options:
+          - 'windows-only'
+          - 'all'
+          - 'linux-only'
+          - 'android-only'
       tag_name:
         description: 'Release Tag (e.g. v269.3.1)'
         required: true
@@ -17,6 +27,7 @@ env:
 jobs:
   build-android:
     name: Build Android APK
+    if: ${{ github.event_name == 'push' || github.event.inputs.target == 'all' || github.event.inputs.target == 'android-only' }}
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout Code
@@ -62,6 +73,7 @@ jobs:
 
   build-pc-linux:
     name: Build Linux PC Binary
+    if: ${{ github.event_name == 'push' || github.event.inputs.target == 'all' || github.event.inputs.target == 'linux-only' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -121,6 +133,7 @@ jobs:
 
   build-pc-windows:
     name: Build Windows PC Binary
+    if: ${{ github.event_name == 'push' || github.event.inputs.target == 'all' || github.event.inputs.target == 'windows-only' }}
     runs-on: windows-latest
     steps:
       - name: Checkout Code
@@ -183,7 +196,7 @@ jobs:
   publish-release:
     name: Publish GitHub Release
     needs: [build-android, build-pc-linux, build-pc-windows]
-    if: ${{ always() && !cancelled() }}
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
