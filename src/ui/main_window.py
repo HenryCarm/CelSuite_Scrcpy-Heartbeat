@@ -274,8 +274,20 @@ class MainWindow(QMainWindow):
             port=self._config.get("tcp_transfer_port", 5558),
             save_dir=self._config.screenshot_directory(),
         )
+        self._file_server.file_received.connect(self._on_file_received)
         self._file_server.start()
         log.info("Application started — TCP file server active")
+
+    def _on_file_received(self, filename: str, filepath: str) -> None:
+        """Handle incoming file from phone."""
+        if filename == "clipboard.txt":
+            try:
+                with open(filepath, "r", encoding="utf-8") as f:
+                    content = f.read()
+                QApplication.clipboard().setText(content)
+                log.info("📋 Clipboard synced from phone: %s", content[:50])
+            except Exception as e:
+                log.error("Failed to read received clipboard: %s", e)
 
     # ── Signal Handlers ───────────────────────────────────────────────────
 

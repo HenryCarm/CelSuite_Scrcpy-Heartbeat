@@ -12,9 +12,9 @@ import sys
 
 # ── Application Metadata ──────────────────────────────────────────────────────
 APP_NAME = "CelSuite - Scrcpy Heartbeat"
-APP_VERSION = "269.2.0"
+APP_VERSION = "269.3.0"
 APP_AUTHOR = "Henry"
-APP_DOMAIN = "org.henry.scrcpy"
+APP_DOMAIN = "henry.app"
 
 # ── Path Resolution ───────────────────────────────────────────────────────────
 # When frozen (Nuitka / PyInstaller), sys.argv[0] points to the binary.

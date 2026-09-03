@@ -156,8 +156,13 @@ def app_log(msg):
     except OSError as e:
         print(f"Logging failed: {e}")
 
+_vm_policy_disabled = False
+
 def disable_file_uri_exposure_check():
-    """Disables the FileUriExposedException checks on Android 11+."""
+    """Disables the FileUriExposedException checks on Android 11+ (runs once)."""
+    global _vm_policy_disabled
+    if _vm_policy_disabled:
+        return
     try:
         from jnius import autoclass
         StrictMode = autoclass('android.os.StrictMode')
@@ -165,6 +170,7 @@ def disable_file_uri_exposure_check():
         Builder = autoclass('android.os.StrictMode$VmPolicy$Builder')
         builder = Builder()
         StrictMode.setVmPolicy(builder.build())
+        _vm_policy_disabled = True
         app_log("Disabled VmPolicy FileUriExposedException checks.")
     except Exception as e:
         app_log(f"Failed to disable VmPolicy: {e}")
@@ -232,10 +238,13 @@ class AnimatedButton(Button):
         kwargs.setdefault('background_normal', '')
         kwargs.setdefault('background_down', '')
         kwargs.setdefault('background_color', (0, 0, 0, 0)) # transparent so we draw custom bg
-        kwargs.setdefault('color', TEXT_ON_ACCENT)
+        self.btn_color = kwargs.pop('btn_color', ACCENT_PRIMARY)
+        if self.btn_color == ACCENT_PRIMARY:
+            kwargs.setdefault('color', TEXT_ON_ACCENT)
+        else:
+            kwargs.setdefault('color', (1, 1, 1, 1)) # Bright crisp white for visible text!
         kwargs.setdefault('font_size', sp(15))
         kwargs.setdefault('bold', True)
-        self.btn_color = kwargs.pop('btn_color', ACCENT_PRIMARY)
         super().__init__(**kwargs)
         
         with self.canvas.before:
@@ -765,24 +774,49 @@ class MainScreen(Screen):
             self.sending = True
             threading.Thread(target=self.heartbeat_loop, args=(pc_ip,), daemon=True).start()
 
+    def _get_phone_ip(self, target_ip):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect((target_ip, 80))
+            ip = s.getsockname()[0]
+            s.close()
+            if ip and not ip.startswith("127."):
+                return ip
+        except Exception:
+            pass
+        return "127.0.0.1"
+
     def heartbeat_loop(self, target_ip):
         port = config["heartbeat_port"]
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        except Exception:
+            pass
+
+        try:
             while self.sending:
                 try:
-                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                    s.connect(("8.8.8.8", 80))
-                    phone_ip = s.getsockname()[0]
-                    s.close()
-                    
+                    phone_ip = self._get_phone_ip(target_ip)
                     msg = f"HELLO_USER|{phone_ip}|{config['adb_port']}"
                     sock.sendto(msg.encode('utf-8'), (target_ip, port))
                 except Exception as e:
                     app_log(f"Heartbeat loop error: {e}")
+                    try:
+                        sock.close()
+                    except Exception:
+                        pass
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    try:
+                        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+                    except Exception:
+                        pass
                 time.sleep(4)
         finally:
-            sock.close()
+            try:
+                sock.close()
+            except Exception:
+                pass
 
 
 class FileTransferScreen(Screen):
@@ -806,7 +840,6 @@ class FileTransferScreen(Screen):
         server_group.add_widget(self.serv_progress_lbl)
         server_group.add_widget(self.serv_progress)
         server_group.add_widget(self.serv_stats)
-        layout.add_widget(server_group)
 
         sender_group = RoundedCard(orientation='vertical', padding=dp(16), spacing=dp(12), size_hint_y=None, height=dp(220))
         sender_group.add_widget(Label(text="Send Vault File to PC", font_size=sp(16), bold=True, color=ACCENT_PRIMARY, size_hint_y=None, height=dp(20)))
@@ -823,15 +856,71 @@ class FileTransferScreen(Screen):
         sender_group.add_widget(self.send_progress_lbl)
         sender_group.add_widget(self.send_bar)
         sender_group.add_widget(self.send_btn)
-        layout.add_widget(sender_group)
 
-        layout.add_widget(Widget())
+        # ── 3. Send Clipboard to PC Card ──────────────────────────────
+        clip_group = RoundedCard(orientation='vertical', padding=dp(16), spacing=dp(10), size_hint_y=None, height=dp(160))
+        clip_group.add_widget(Label(text="Clipboard Sync (Phone \u2192 PC)", font_size=sp(16), bold=True, color=ACCENT_PRIMARY, size_hint_y=None, height=dp(20)))
 
-        back_btn = AnimatedButton(text="Back to Home", btn_color=BUTTON_BG, size_hint_y=None, height=dp(50))
+        self.clip_preview_lbl = Label(text="Tap below to send phone clipboard to PC", font_size=sp(13), color=TEXT_SECONDARY, halign='center', size_hint_y=None, height=dp(30))
+        self.clip_preview_lbl.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+        self.clip_send_btn = AnimatedButton(text="\U0001f4cb Send Clipboard to PC", btn_color=ACCENT_SECONDARY, color=(0.02, 0.10, 0.06, 1), size_hint_y=None, height=dp(48))
+        self.clip_send_btn.bind(on_press=self.send_clipboard_to_pc)
+
+        clip_group.add_widget(self.clip_preview_lbl)
+        clip_group.add_widget(self.clip_send_btn)
+
+        scroll = ScrollView(size_hint=(1, 1))
+        content = BoxLayout(orientation='vertical', spacing=dp(14), size_hint_y=None)
+        content.bind(minimum_height=content.setter('height'))
+        content.add_widget(server_group)
+        content.add_widget(sender_group)
+        content.add_widget(clip_group)
+        scroll.add_widget(content)
+
+        layout.add_widget(scroll)
+
+        back_btn = AnimatedButton(text="Back to Home", btn_color=BUTTON_BG, color=(1, 1, 1, 1), size_hint_y=None, height=dp(50))
         back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
         
         self.add_widget(layout)
+
+    def send_clipboard_to_pc(self, instance):
+        try:
+            from kivy.core.clipboard import Clipboard
+            clip_text = Clipboard.paste()
+        except Exception:
+            clip_text = ""
+            
+        if not clip_text:
+            self.clip_preview_lbl.text = "\u26a0\ufe0f Phone clipboard is empty!"
+            return
+
+        main_screen = self.manager.get_screen('main')
+        pc_ip = getattr(main_screen, 'discovered_pc_ip', None)
+        if not pc_ip:
+            self.clip_preview_lbl.text = "\u274c PC not linked yet! Please link first."
+            return
+
+        self.clip_preview_lbl.text = f"Sending {len(clip_text)} chars to PC..."
+        threading.Thread(target=self._push_clipboard_thread, args=(pc_ip, clip_text), daemon=True).start()
+
+    def _push_clipboard_thread(self, pc_ip, clip_text):
+        try:
+            data = clip_text.encode('utf-8')
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(5.0)
+            s.connect((pc_ip, PORT_TCP_TRANSFER))
+            
+            header = f"FILE_SEND|clipboard.txt|{len(data)}\n"
+            s.sendall(header.encode('utf-8'))
+            time.sleep(0.1)
+            s.sendall(data)
+            s.close()
+            Clock.schedule_once(lambda dt: setattr(self.clip_preview_lbl, 'text', "\u2705 Clipboard synced to PC!"))
+        except Exception as e:
+            Clock.schedule_once(lambda dt: setattr(self.clip_preview_lbl, 'text', f"\u274c Transfer error: {e}"))
 
     def go_back(self, instance):
         self.manager.current = 'main'
@@ -1061,7 +1150,7 @@ class SettingsScreen(Screen):
         card.add_widget(fit_box)
 
         # ── Version Badge ────────────────────────────────────────────────
-        ver_lbl = Label(text="CelSuite Mobile • Version v269.2.0", color=ACCENT_SECONDARY, font_size=sp(13), bold=True, halign='center', size_hint_y=None, height=dp(24))
+        ver_lbl = Label(text="CelSuite Mobile • Version v269.3.0", color=ACCENT_SECONDARY, font_size=sp(13), bold=True, halign='center', size_hint_y=None, height=dp(24))
         card.add_widget(ver_lbl)
         
         layout.add_widget(card)
@@ -1132,7 +1221,7 @@ class HelpScreen(Screen):
         content.bind(minimum_height=content.setter('height'))
         
         guide_text = (
-            "[b]CelSuite - Scrcpy Heartbeat v269.2.0[/b]\n\n"
+            "[b]CelSuite - Scrcpy Heartbeat v269.3.0[/b]\n\n"
             "[b]Quick Launch Instructions:[/b]\n"
             "1. Link phone and PC to the same WiFi/hotspot.\n"
             "2. Open the PC PySide6 CelSuite client, then open this app on your phone.\n"

@@ -12,6 +12,7 @@ import os
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QApplication,
     QFileDialog,
     QHBoxLayout,
     QLabel,
@@ -19,6 +20,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QProgressBar,
     QTabWidget,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -39,7 +41,7 @@ log = get_logger(__name__)
 
 
 class TransferTab(QWidget):
-    """File transfer tab with push and pull sub-tabs."""
+    """File transfer tab with push, pull, and clipboard sub-tabs."""
 
     def __init__(self, config: AppConfig, get_phone_ip: callable) -> None:
         super().__init__()
@@ -56,6 +58,7 @@ class TransferTab(QWidget):
         sub_tabs = QTabWidget()
         sub_tabs.addTab(self._build_push_tab(), "\u2b06  Push to Phone")
         sub_tabs.addTab(self._build_pull_tab(), "\u2b07  Pull from Phone")
+        sub_tabs.addTab(self._build_clipboard_tab(), "\U0001f4cb  Send Clipboard")
         layout.addWidget(sub_tabs)
 
     # ── Push Tab ──────────────────────────────────────────────────────────
@@ -304,3 +307,78 @@ class TransferTab(QWidget):
         self._pull_status.style().polish(self._pull_status)
         self._pull_btn.setEnabled(True)
         self._cancel_pull_btn.setEnabled(False)
+
+    # ── Clipboard Tab ─────────────────────────────────────────────────────
+
+    def _build_clipboard_tab(self) -> QWidget:
+        """Build the Clipboard Bridge sub-tab."""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setSpacing(14)
+
+        card = SectionCard("Clipboard Bridge (PC \u21c4 Phone)")
+        card_layout = QVBoxLayout()
+
+        lbl_desc = QLabel("Sync text and links between your PC and phone instantly:")
+        lbl_desc.setObjectName("subtitle")
+        card_layout.addWidget(lbl_desc)
+
+        self._clip_text_edit = QTextEdit()
+        self._clip_text_edit.setPlaceholderText("Current PC clipboard content will appear here...")
+        self._clip_text_edit.setText(QApplication.clipboard().text())
+        self._clip_text_edit.setMaximumHeight(160)
+        card_layout.addWidget(self._clip_text_edit)
+
+        btn_row = QHBoxLayout()
+        refresh_btn = AnimatedButton("\U0001f504  Refresh from PC Clipboard")
+        refresh_btn.clicked.connect(lambda: self._clip_text_edit.setText(QApplication.clipboard().text()))
+        btn_row.addWidget(refresh_btn)
+
+        send_clip_btn = AnimatedButton("\U0001f680  Send Clipboard to Phone")
+        send_clip_btn.setObjectName("action-primary")
+        send_clip_btn.clicked.connect(self._send_clipboard_to_phone)
+        btn_row.addWidget(send_clip_btn)
+
+        card_layout.addLayout(btn_row)
+
+        self._clip_status_lbl = QLabel("")
+        self._clip_status_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        card_layout.addWidget(self._clip_status_lbl)
+
+        card.addLayout(card_layout)
+        layout.addWidget(card)
+        layout.addStretch()
+        return tab
+
+    def _send_clipboard_to_phone(self) -> None:
+        """Send current clipboard text to the connected phone."""
+        text = self._clip_text_edit.toPlainText().strip()
+        if not text:
+            self._clip_status_lbl.setText("\u26a0\ufe0f Clipboard text is empty!")
+            self._clip_status_lbl.setStyleSheet("color: #F59E0B; font-weight: bold;")
+            return
+
+        phone_ip = self._get_phone_ip()
+        if not phone_ip:
+            self._clip_status_lbl.setText("\u274c No phone connected. Please link device first.")
+            self._clip_status_lbl.setStyleSheet("color: #EF4444; font-weight: bold;")
+            return
+
+        adb_port = self._config.get("adb_port", 5555)
+        from src.networking.adb import send_broadcast, set_clipboard_text
+        ok, msg = send_broadcast(
+            self._config,
+            "org.henry.scrcpy.SET_CLIPBOARD",
+            {"text": text},
+            phone_ip=phone_ip,
+            adb_port=adb_port,
+        )
+        if not ok:
+            ok, msg = set_clipboard_text(self._config, text, phone_ip=phone_ip, adb_port=adb_port)
+
+        if ok:
+            self._clip_status_lbl.setText("\u2705 Sent clipboard to Phone successfully!")
+            self._clip_status_lbl.setStyleSheet("color: #10B981; font-weight: bold;")
+        else:
+            self._clip_status_lbl.setText(f"\u274c Failed to send: {msg}")
+            self._clip_status_lbl.setStyleSheet("color: #EF4444; font-weight: bold;")

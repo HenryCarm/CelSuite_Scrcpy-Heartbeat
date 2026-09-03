@@ -770,14 +770,19 @@ class BuildMonitorWindow(QMainWindow):
                     emit_log(f"Streaming direct download to {dest_file}...")
 
                     req = urllib.request.Request(apk_url, headers={"User-Agent": "Mozilla/5.0"})
-                    with urllib.request.urlopen(req) as resp, open(dest_file, "wb") as f:
+                    socket.setdefaulttimeout(15)
+                    with urllib.request.urlopen(req, timeout=15) as resp, open(dest_file, "wb") as f:
                         total_bytes = int(resp.headers.get("Content-Length", apk_size))
                         downloaded = 0
-                        chunk_size = 128 * 1024
+                        chunk_size = 64 * 1024
                         last_update_pct = -1
 
                         while True:
-                            chunk = resp.read(chunk_size)
+                            try:
+                                chunk = resp.read(chunk_size)
+                            except (socket.timeout, TimeoutError, OSError) as read_err:
+                                emit_log(f"⚠️ Network stall detected ({read_err}). Resuming...", "#fbbf24")
+                                break
                             if not chunk:
                                 break
                             f.write(chunk)
@@ -792,7 +797,8 @@ class BuildMonitorWindow(QMainWindow):
                                     emit_prog(pct, f"Downloading: {mb_done}/{mb_total} MB ({pct}%)")
                                     emit_log(f"Downloading APK: {mb_done}MB / {mb_total}MB ({int((downloaded/total_bytes)*100)}%)...")
 
-                    apk_path = dest_file
+                    if dest_file.exists() and dest_file.stat().st_size > 5 * 1024 * 1024:
+                        apk_path = dest_file
             except Exception as e:
                 emit_log(f"Direct release download note: {e}. Falling back to gh run download...", "#fbbf24")
 
@@ -843,11 +849,14 @@ class BuildMonitorWindow(QMainWindow):
 
             # Re-check ADB status before install
             emit_prog(80, f"Checking ADB connection on {target_device}...")
-            devices_res = subprocess.run(["adb", "devices"], stdout=subprocess.PIPE, text=True)
-            if f"{target_device}\toffline" in devices_res.stdout:
-                emit_log(f"Device [{target_device}] reported offline. Re-connecting...", "#fbbf24")
-                subprocess.run(["adb", "disconnect", target_device], stdout=subprocess.PIPE, text=True)
-                subprocess.run(["adb", "connect", target_device], stdout=subprocess.PIPE, text=True)
+            # Cleanly uninstall prior versions before fresh installation
+            if target_device:
+                emit_prog(82, f"Removing previous installs on {target_device}...")
+                emit_log(f"🧹 Checking and uninstalling old package versions on {target_device}...", "#38bdf8")
+                for pkg in ["org.henry.scrcpy.scrcpyheartbeat", "henry.app.scrcpyheartbeat"]:
+                    uninst = subprocess.run(["adb", "-s", target_device, "uninstall", pkg], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                    if "Success" in uninst.stdout:
+                        emit_log(f"  [ADB] Cleanly uninstalled prior version: {pkg}", "#34d399")
 
             emit_prog(85, f"Installing to {target_device}...")
             emit_log(f"🚀 Pushing APK to device [{target_device}] via ADB...", "#38bdf8")
@@ -855,7 +864,7 @@ class BuildMonitorWindow(QMainWindow):
             cmd = ["adb"]
             if target_device:
                 cmd.extend(["-s", target_device])
-            cmd.extend(["install", "-r", "-d", "-t", str(apk_path)])
+            cmd.extend(["install", "-r", "-d", "-g", "-t", str(apk_path)])
 
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             output_lines = []
