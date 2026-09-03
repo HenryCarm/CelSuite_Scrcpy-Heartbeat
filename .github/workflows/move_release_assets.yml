@@ -1,0 +1,19 @@
+name: Move Release Assets
+
+on:
+  workflow_dispatch:
+
+jobs:
+  move:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Transfer Windows Assets and Cleanup
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download build-windows -p "CelSuite-Windows-*" -R ${{ github.repository }}
+          gh release upload v269.3.1 CelSuite-Windows-* --clobber -R ${{ github.repository }}
+          gh release edit v269.3.1 --latest -R ${{ github.repository }}
+          gh release delete build-windows -y -R ${{ github.repository }}

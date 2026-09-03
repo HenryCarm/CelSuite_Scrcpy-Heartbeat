@@ -210,15 +210,15 @@ jobs:
       - name: Create GitHub Release & Attach Binaries
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name != '' && github.ref_name || github.event.inputs.tag_name }}
-          name: CelSuite - Scrcpy Heartbeat ${{ github.ref_name != '' && github.ref_name || github.event.inputs.tag_name }}
+          tag_name: ${{ github.event.inputs.tag_name != '' && github.event.inputs.tag_name || github.ref_name }}
+          name: CelSuite - Scrcpy Heartbeat ${{ github.event.inputs.tag_name != '' && github.event.inputs.tag_name || github.ref_name }}
           make_latest: true
           fail_on_unmatched_files: false
           body: |
             <div align="center">
             <img src="https://github.com/HenryCarm/CelSuite_Scrcpy-Heartbeat/raw/master/banner_green.webp" alt="CelSuite Banner" width="100%" style="border-radius: 12px; max-width: 850px;" />
 
-            # CelSuite — Scrcpy Heartbeat ${{ github.ref_name != '' && github.ref_name || github.event.inputs.tag_name }}
+            # CelSuite — Scrcpy Heartbeat ${{ github.event.inputs.tag_name != '' && github.event.inputs.tag_name || github.ref_name }}
 
             *Seamless, zero-friction wireless Android mirroring, hardware telemetry, bi-directional clipboard sync & high-speed file transfers.*
 
