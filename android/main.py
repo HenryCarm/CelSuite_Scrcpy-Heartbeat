@@ -1150,7 +1150,7 @@ class SettingsScreen(Screen):
         card.add_widget(fit_box)
 
         # ── Version Badge ────────────────────────────────────────────────
-        ver_lbl = Label(text="CelSuite Mobile • Version v269.3.0", color=ACCENT_SECONDARY, font_size=sp(13), bold=True, halign='center', size_hint_y=None, height=dp(24))
+        ver_lbl = Label(text="CelSuite Mobile • Version v269.3.1", color=ACCENT_SECONDARY, font_size=sp(13), bold=True, halign='center', size_hint_y=None, height=dp(24))
         card.add_widget(ver_lbl)
         
         layout.add_widget(card)
@@ -1221,7 +1221,7 @@ class HelpScreen(Screen):
         content.bind(minimum_height=content.setter('height'))
         
         guide_text = (
-            "[b]CelSuite - Scrcpy Heartbeat v269.3.0[/b]\n\n"
+            "[b]CelSuite - Scrcpy Heartbeat v269.3.1[/b]\n\n"
             "[b]Quick Launch Instructions:[/b]\n"
             "1. Link phone and PC to the same WiFi/hotspot.\n"
             "2. Open the PC PySide6 CelSuite client, then open this app on your phone.\n"

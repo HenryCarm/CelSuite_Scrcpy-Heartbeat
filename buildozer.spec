@@ -4,8 +4,8 @@ package.name = ScrcpyHeartbeat
 package.domain = HenryJayZ.CelSuite
 source.dir = android
 source.include_exts = py,png,jpg,kv,atlas,jpeg
-version = 269.3.0
-android.numeric_version = 2690300
+version = 269.3.1
+android.numeric_version = 2690301
 requirements = python3,kivy==2.2.1,pyjnius
 orientation = portrait
 osx.python_version = 3

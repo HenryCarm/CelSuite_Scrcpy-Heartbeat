@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release Tag (e.g. v268.03.5)'
+        description: 'Release Tag (e.g. v269.3.1)'
         required: true
-        default: 'v268.03.5'
+        default: 'v269.3.1'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: true
@@ -60,8 +60,8 @@ jobs:
           name: android-apk
           path: bin/*.apk
 
-  build-pc:
-    name: Build PC Nuitka Binary
+  build-pc-linux:
+    name: Build Linux PC Binary
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -79,9 +79,9 @@ jobs:
           sudo apt-get install -y upx patchelf
 
       - name: Install Dependencies
-        run: pip install nuitka PySide6 requests pyjnius
+        run: pip install nuitka PySide6 requests pyjnius pillow
 
-      - name: Compile PC Binary (Portable Onefile)
+      - name: Compile Linux Binary (Portable Onefile)
         run: |
           python3 -m nuitka \
             --standalone \
@@ -92,10 +92,10 @@ jobs:
             --noinclude-qt-translations \
             --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PySide6.QtQml,PySide6.QtQuick,PySide6.QtWebEngineCore,PySide6.QtWebEngineWidgets,PySide6.Qt3DCore,PySide6.QtPdf,PySide6.QtSql,PySide6.QtMultimedia,PySide6.QtTest,PySide6.QtSensors,PySide6.QtPositioning,PySide6.QtBluetooth,PySide6.QtDesigner \
             --linux-icon=icon.png \
-            --output-filename=ScrcpyHeartbeat-Linux-Portable.bin \
+            --output-filename=CelSuite-Linux-Portable.bin \
             main.py
 
-      - name: Compile PC Binary (Standalone Folder)
+      - name: Compile Linux Binary (Standalone Folder)
         run: |
           python3 -m nuitka \
             --standalone \
@@ -107,19 +107,78 @@ jobs:
             --linux-icon=icon.png \
             --output-dir=standalone_build \
             main.py
-          zip -r ScrcpyHeartbeat-Linux-Standalone.zip standalone_build/main.dist/
+          zip -r CelSuite-Linux-Standalone.zip standalone_build/main.dist/
 
-      - name: Upload PC Binary Artifact
+      - name: Upload Linux Binary Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pc-binary
+          name: linux-binary
           path: |
-            ScrcpyHeartbeat-Linux-Portable.bin
-            ScrcpyHeartbeat-Linux-Standalone.zip
+            CelSuite-Linux-Portable.bin
+            CelSuite-Linux-Standalone.zip
+
+  build-pc-windows:
+    name: Build Windows PC Binary
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools
+          pip install nuitka PySide6 requests pillow
+
+      - name: Ensure icon.ico exists
+        shell: pwsh
+        run: |
+          python -c "from PIL import Image; img = Image.open('icon.png'); img.save('icon.ico', format='ICO', sizes=[(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)])"
+
+      - name: Compile Windows Binary (Portable Onefile)
+        shell: pwsh
+        run: |
+          python -m nuitka `
+            --standalone `
+            --onefile `
+            --enable-plugin=pyside6 `
+            --windows-disable-console `
+            --windows-icon-from-ico=icon.ico `
+            --noinclude-qt-translations `
+            --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PySide6.QtQml,PySide6.QtQuick,PySide6.QtWebEngineCore,PySide6.QtWebEngineWidgets,PySide6.Qt3DCore,PySide6.QtPdf,PySide6.QtSql,PySide6.QtMultimedia,PySide6.QtTest,PySide6.QtSensors,PySide6.QtPositioning,PySide6.QtBluetooth,PySide6.QtDesigner `
+            --output-filename=CelSuite-Windows-Portable.exe `
+            main.py
+
+      - name: Compile Windows Binary (Standalone Folder)
+        shell: pwsh
+        run: |
+          python -m nuitka `
+            --standalone `
+            --enable-plugin=pyside6 `
+            --windows-disable-console `
+            --windows-icon-from-ico=icon.ico `
+            --noinclude-qt-translations `
+            --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PySide6.QtQml,PySide6.QtQuick,PySide6.QtWebEngineCore,PySide6.QtWebEngineWidgets,PySide6.Qt3DCore,PySide6.QtPdf,PySide6.QtSql,PySide6.QtMultimedia,PySide6.QtTest,PySide6.QtSensors,PySide6.QtPositioning,PySide6.QtBluetooth,PySide6.QtDesigner `
+            --output-dir=standalone_win `
+            main.py
+          Compress-Archive -Path standalone_win\main.dist\* -DestinationPath CelSuite-Windows-Standalone.zip
+
+      - name: Upload Windows Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binary
+          path: |
+            CelSuite-Windows-Portable.exe
+            CelSuite-Windows-Standalone.zip
 
   publish-release:
     name: Publish GitHub Release
-    needs: [build-android, build-pc]
+    needs: [build-android, build-pc-linux, build-pc-windows]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
@@ -138,16 +197,41 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name != '' && github.ref_name || github.event.inputs.tag_name }}
-          name: Scrcpy Heartbeat ${{ github.ref_name != '' && github.ref_name || github.event.inputs.tag_name }}
+          name: CelSuite - Scrcpy Heartbeat ${{ github.ref_name != '' && github.ref_name || github.event.inputs.tag_name }}
+          make_latest: true
+          fail_on_unmatched_files: false
           body: |
-            ## Automated Cloud Release
-            Both the PC binary and Android APK were automatically compiled in the cloud by GitHub Actions!
+            # 💖 CelSuite — Scrcpy Heartbeat ${{ github.ref_name != '' && github.ref_name || github.event.inputs.tag_name }} 🚀✨
 
-            ### Download Instructions:
-            - **PC (Linux):** Download `ScrcpyHeartbeat-Linux-Portable.bin` (give execute permissions with `chmod +x`), or unzip `ScrcpyHeartbeat-Linux-Standalone.zip` and run `main.bin`!
-            - **Android:** Download the `.apk` file and install it on your phone!
+            *Seamless, zero-friction wireless Android mirroring, hardware telemetry, bi-directional clipboard sync & high-speed file transfers!*
+
+            ---
+
+            ### 📦 Downloads & Platform Binaries
+
+            | Platform | Package / Executable | Description |
+            | :--- | :--- | :--- |
+            | 📱 **Android** | `*.apk` | Mobile client with Quick Settings Tile & clipboard bridge |
+            | 🪟 **Windows (Portable)** | `CelSuite-Windows-Portable.exe` | Single-file instant executable (no installation needed) |
+            | 🪟 **Windows (Standalone)** | `CelSuite-Windows-Standalone.zip` | Fast-launch extracted folder distribution |
+            | 🐧 **Linux (Portable)** | `CelSuite-Linux-Portable.bin` | Single-file executable (`chmod +x` and launch) |
+            | 🐧 **Linux (Standalone)** | `CelSuite-Linux-Standalone.zip` | Extracted distribution with all native dependencies |
+
+            ---
+
+            ### ✨ What's New in This Release:
+            - 🏷️ **Official Rebrand to CelSuite:** Full ecosystem rename to `HenryJayZ.CelSuite.ScrcpyHeartbeat`.
+            - 🎛️ **Quick Settings Tile:** Toggle wireless mirroring directly from your Samsung One UI / Android Quick Panel!
+            - 📊 **Live Hardware Dashboard:** Real-time battery %, temperature, resolution, and ping without polling lag.
+            - 📋 **Bi-directional Clipboard Sync:** One-tap clipboard transfer between Phone and PC.
+            - 🪟 **Windows 10/11 Native Support:** Silent ADB execution (`CREATE_NO_WINDOW`), automatic platform-tools detection, and private network discovery.
+            - ⚡ **Zero-Auth Build Monitor:** Seamless artifact inspection and auto-ADB installation.
+
+            ---
+            *Built automatically with ❤️ by GitHub Actions Cloud CI/CD.*
           files: |
             ./release-assets/android-apk/*.apk
-            ./release-assets/pc-binary/*
+            ./release-assets/linux-binary/*
+            ./release-assets/windows-binary/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
