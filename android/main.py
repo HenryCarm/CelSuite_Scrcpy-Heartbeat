@@ -40,41 +40,37 @@ PORT_TCP_TRANSFER = 5558
 
 def get_storage_dirs():
     """Determines the correct internal and external storage directories for the app."""
+    external_data_dir = None
+    internal_dir = os.path.join(os.path.expanduser("~"), "scrcpy_link")
+
     try:
         from jnius import autoclass
         PythonActivity = autoclass('org.kivy.android.PythonActivity')
-        internal_dir = PythonActivity.mActivity.getFilesDir().getAbsolutePath()
-    except Exception:
-        internal_dir = os.path.join(os.path.expanduser("~"), "scrcpy_link")
-    
-    external_config = "/sdcard/scrcpy_heartbeat_config.json"
-    external_log_dir = "/sdcard/log"
-    
-    can_write_external = False
-    try:
-        if os.path.exists("/sdcard"):
-            test_file = "/sdcard/.scrcpy_test"
-            with open(test_file, "w") as f:
-                f.write("test")
-            os.remove(test_file)
-            can_write_external = True
-    except OSError:
-        pass
-    
-    if can_write_external:
-        config_file = external_config
-        log_dir = external_log_dir
-    else:
-        os.makedirs(internal_dir, exist_ok=True)
-        config_file = os.path.join(internal_dir, "scrcpy_heartbeat_config.json")
-        log_dir = os.path.join(internal_dir, "log")
-        os.makedirs(log_dir, exist_ok=True)
-    
-    return config_file, log_dir, can_write_external
+        activity = PythonActivity.mActivity
+        if activity:
+            internal_dir = activity.getFilesDir().getAbsolutePath()
+            # Calling getExternalFilesDir(None) automatically creates /sdcard/Android/data/<pkg>/files
+            ext_files = activity.getExternalFilesDir(None)
+            if ext_files:
+                external_data_dir = ext_files.getAbsolutePath()
+    except Exception as exc:
+        print(f"Failed to query Android context: {exc}")
 
-CONFIG_FILE, LOG_DIR, CAN_WRITE_EXTERNAL = get_storage_dirs()
+    # Prefer /sdcard/Android/data/<pkg>/files so user can easily access config/logs/vault
+    base_dir = external_data_dir or internal_dir
+    os.makedirs(base_dir, exist_ok=True)
+    
+    config_file = os.path.join(base_dir, "scrcpy_heartbeat_config.json")
+    log_dir = os.path.join(base_dir, "log")
+    os.makedirs(log_dir, exist_ok=True)
+    vault_dir = os.path.join(base_dir, "Vault")
+    os.makedirs(vault_dir, exist_ok=True)
+    
+    can_write = external_data_dir is not None
+    return config_file, log_dir, vault_dir, can_write
+
+CONFIG_FILE, LOG_DIR, VAULT_DIR, CAN_WRITE_EXTERNAL = get_storage_dirs()
 LOG_FILE = os.path.join(LOG_DIR, "ScrcpyLink.log")
-VAULT_DIR = "/sdcard/ScrcpyUltimateLink" if CAN_WRITE_EXTERNAL else os.path.join(LOG_DIR, "Vault")
 
 try:
     os.makedirs(VAULT_DIR, exist_ok=True)
