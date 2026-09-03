@@ -1,99 +1,94 @@
-# Scrcpy Ultimate Link (Dark Green Edition)
+<div align="center">
 
-A zero-config, cross-platform wireless screen mirroring and control suite built on top of **Scrcpy v4.0+**, featuring an automated Android **Shizuku / Root Heartbeat client** and a close to modern **PyQt6 Tabbed Desktop GUI**.
+# 💖 CelSuite — Scrcpy Heartbeat 🚀✨
 
----
+**Seamless, zero-friction wireless Android mirroring, hardware telemetry, bi-directional clipboard sync & high-speed file transfers.**
 
-## Key Features
+[![Release](https://img.shields.io/github/v/release/HenryCarm/CelSuite_Scrcpy-Heartbeat?style=for-the-badge&color=2ecc71)](https://github.com/HenryCarm/CelSuite_Scrcpy-Heartbeat/releases/latest)
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20Linux-blue?style=for-the-badge)](#-downloads--releases)
+[![GUI](https://img.shields.io/badge/GUI-PySide6%20LGPL-success?style=for-the-badge)](https://www.qt.io/qt-for-python)
+[![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)](LICENSE)
 
-- **Zero-Cable Wireless Mirroring:** Connects your PC and Android device seamlessly over local WiFi or Hotspot without ever needing a dying USB cable.
-- **Android Heartbeat & Shizuku Client:** Native Kivy mobile app that binds TCP port `5555` in the background using the **Shizuku API** or **Magisk Root** with automatic auto-reconnect loops.
-- **PyQt6 Tabbed Desktop GUI:** Clean, resizable desktop application with dedicated tabs for Main Controls, Server Configuration, and Setup Guides.
-- **Smart mDNS Zero-Config Discovery:** Automatically discovers your phone's IP address and ADB debugging ports across network shifts without slow subnet sweeps.
-- **100% Cloud-Compiled Releases:** All standalone Linux desktop binaries and Android APKs are compiled and published automatically via GitHub Actions CI/CD datacenters.
+<br/>
 
----
+<img src="icon.png" alt="CelSuite Logo" width="140" height="140" style="border-radius: 28px;" />
 
-## Quick Start & Installation
+<br/>
 
-### 1. Desktop Application (Linux / Windows)
-
-1. Head over to the [Latest GitHub Release](../../releases/latest) page.
-2. Download the package for your system:
-   - **Portable (Single File):** e.g., `ScrcpyUltimateLink-Windows-Portable` (Just double click and run. Slower startup time as it unpacks to a temp directory).
-   - **Standalone (Folder):** e.g., `ScrcpyUltimateLink-Windows-Standalone` (Extract the ZIP and run the `app.exe` or `app.bin` inside. Extremely fast startup time).
-3. If using Linux, make sure to mark the binary as executable:
-
-```bash
-chmod +x app.bin
-./app.bin
-```
-
-> Ensure you have [Scrcpy v4.0+](https://github.com/Genymobile/scrcpy) installed on your system. The app uses your system PATH default (`scrcpy`), but you can point it to a custom binary in the Settings tab.
-
-### 2. Android Heartbeat Client
-
-1. Download the latest `scrcpyheartbeat-*.apk` from the [Releases](../../releases/latest) tab.
-2. Install the APK on your Android device (enable *Install from Unknown Sources* if prompted).
-3. **Shizuku Setup (Recommended for Unrooted Devices):**
-   - Open your [Shizuku](https://shizuku.rikka.app/) app and ensure the service is running.
-   - Go to **Authorized Applications** inside Shizuku and toggle **Scrcpy Heartbeat** to **ON**.
-   - Open the app and tap **Restart Connection** to instantly bind your wireless debugging port.
+</div>
 
 ---
 
-## How It Works
+## 🌟 Overview
 
-```
-Phone (Heartbeat)                    PC (Listener)
-       |                                  |
-       |--- UDP "HELLO_USER|IP|PORT" --->|  (Auto-Discovery)
-       |                                  |
-       |<--- ADB connect IP:PORT --------|  (TCP Binding)
-       |                                  |
-       |<--- scrcpy --tcpip=IP:PORT -----|  (Mirroring!)
-```
-
-1. The Android app broadcasts a UDP heartbeat packet containing the device IP and ADB port.
-2. The PC listener receives the packet, connects via ADB, and launches `scrcpy` automatically.
-3. If the connection drops, the phone retries every 5 seconds until the PC is back online.
+**CelSuite - Scrcpy Heartbeat** eliminates the hassle of cables, manual IP typing, and failed connections when using [scrcpy](https://github.com/Genymobile/scrcpy). Simply unlock your phone, tap the Quick Settings tile or let the automated UDP heartbeat link your device, and enjoy low-latency wireless screen mirroring, real-time hardware vitals, and one-tap clipboard sharing.
 
 ---
 
-## Architecture & Portability
+## 📦 Downloads & Releases
 
-- **Portable Configuration:** All settings and logs are saved dynamically using `sys.argv[0]` pathing right next to your executable binary. No hardcoded paths anywhere.
-- **Cloud Builds:** Pushing a version tag (`v*`) automatically spins up GitHub Actions to compile both the Nuitka PC executable and the Buildozer Android APK simultaneously, then publishes them as release assets.
-- **Android 11+ Scoped Storage:** Fully supports modern Android storage Intents (`MANAGE_EXTERNAL_STORAGE`) with automatic fallback to internal private app directories.
+All desktop executables and mobile packages are built automatically in the cloud via GitHub Actions.
 
----
+👉 **[Download the Latest Release (v269.3.1)](https://github.com/HenryCarm/CelSuite_Scrcpy-Heartbeat/releases/latest)**
 
-## Development
-
-### Building Locally (Not Recommended on Metered Networks)
-
-**PC Binary (Nuitka):**
-```bash
-python compile_nuitka.py
-```
-
-**Android APK (Buildozer):**
-```bash
-cd android
-buildozer android debug
-```
-
-### Cloud Builds (Recommended)
-
-```bash
-git tag v268.03.17
-git push origin v268.03.17
-```
-
-GitHub Actions will automatically compile and publish both binaries to the Releases page.
+| Platform | Download Asset | Type | Description |
+| :--- | :--- | :--- | :--- |
+| 📱 **Android** | `ScrcpyHeartbeat-*.apk` | Mobile Client | Quick Settings Tile, heartbeat service & clipboard bridge |
+| 🪟 **Windows** | `CelSuite-Windows-Portable.exe` | Single File | Portable executable (zero install, double-click to run) |
+| 🪟 **Windows** | `CelSuite-Windows-Standalone.zip` | Standalone Folder | Unzip and run `main.exe` for instant cold-boot startup |
+| 🐧 **Linux** | `CelSuite-Linux-Portable.bin` | Single Binary | `chmod +x` and launch directly |
+| 🐧 **Linux** | `CelSuite-Linux-Standalone.zip` | Standalone Folder | Pre-packaged folder with all native Qt libraries |
 
 ---
 
-## License
+## ✨ Key Features
 
-MIT License. See [LICENSE](LICENSE) for details.
+- ⚡ **Zero-Cable Wireless Mirroring:** Automatically pairs your phone and PC over WiFi/Hotspot using UDP heartbeat packets.
+- 🎛️ **Quick Settings Tile:** Toggle wireless mirroring directly from your Android / Samsung One UI Quick Panel.
+- 📊 **Real-Time Hardware Telemetry:** Displays live battery %, temperature, device model, resolution, and wireless latency without lag.
+- 📋 **Bi-Directional Clipboard Sync:** Instant one-click clipboard transfer between Phone and PC.
+- 📁 **High-Speed File Transfer:** Drag-and-drop file transfers over local TCP socket (`port 5558`) with integrity verification.
+- 🪟 **Native Windows 10/11 Support:** Fully suppressed background subprocesses (`CREATE_NO_WINDOW`) — no flashing black command prompt windows!
+- 🛡️ **LGPL Compliance:** Built on PySide6 (The Qt Company's official LGPL framework).
+
+---
+
+## 🚀 How It Works
+
+```
+Phone (Android Client)                         PC (CelSuite Desktop)
+       │                                                 │
+       ├──── UDP Heartbeat (Port 5556) ─────────────────>│  (Auto-Discovery)
+       │                                                 │
+       │<─── ADB Connect (Port 5555) ────────────────────┤  (Wireless Bridge)
+       │                                                 │
+       │<─── Scrcpy Video Stream ────────────────────────┤  (Ultra-Low Latency Mirroring)
+       │                                                 │
+       ├──── TCP File & Clipboard Transfer (Port 5558) ─>│  (Bi-Directional Sync)
+```
+
+---
+
+## 🛠️ Quick Setup
+
+### 📱 Android Setup:
+1. Download and install `ScrcpyHeartbeat-*.apk`.
+2. Enable **Wireless Debugging** in Android Developer Options.
+3. *(Optional)* Add the **Scrcpy Tile** to your notification bar quick panel for instant toggling!
+
+### 💻 PC Setup:
+1. Ensure `scrcpy` and `adb` are installed on your system (or in PATH).
+2. Launch `CelSuite-Windows-Portable.exe` (Windows) or `./CelSuite-Linux-Portable.bin` (Linux).
+3. Connect both devices to the same WiFi network or PC Mobile Hotspot — mirroring launches automatically!
+
+---
+
+## 📜 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for full version history and release notes.
+
+---
+
+## 📄 License
+
+Distributed under the MIT License.

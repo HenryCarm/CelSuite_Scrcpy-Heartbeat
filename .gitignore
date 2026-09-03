@@ -49,11 +49,18 @@ scrcpy_heartbeat_config.json
 *.log
 ScrcpyLink.log
 
+# Local Dev & Monitoring Tools (Kept local, never pushed)
+build_monitor_gui.py
+launch_monitor.sh
+build_nuitka.py
+*.txt
+*.bak
+
 # Proof images / temp
 *.png
 !icon.png
+!src/resources/icon.png
 !android/*.png
-!android_face.png
 *.jpg
 !android/*.jpg
-!wallpaper_mobile.jpg
+

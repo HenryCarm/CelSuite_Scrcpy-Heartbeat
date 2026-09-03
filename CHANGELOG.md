@@ -1,5 +1,28 @@
 # Changelog
 
+## [269.3.1] - 2026-09-03
+
+### Ecosystem & Rebranding
+- Rebranded official suite to **CelSuite - Scrcpy Heartbeat** (`HenryJayZ.CelSuite.ScrcpyHeartbeat`)
+- Created clean, unified branding with high-resolution iconography (`icon.png`, `icon.ico`)
+
+### Windows 10/11 Native Support
+- Added dedicated GitHub Actions Windows CI runner compiling both Portable (`.exe`) and Standalone (`.zip`) releases
+- Suppressed all background console windows (`CREATE_NO_WINDOW`) for silent, flicker-free ADB execution
+- Added automatic `--assume-yes-for-downloads` and `--windows-console-mode=disable` for Nuitka packaging
+
+### Android Client
+- Added Samsung One UI / Android Quick Settings Tile (`ScrcpyTileService`) for one-tap mirroring toggles
+- Implemented `p4a.hook` build pipeline injecting `<service>` definitions directly before `</application>`
+- Added bi-directional clipboard sync listener via broadcast receiver
+- Added custom Mobile CelWeave wallpaper with adjustable stretch/zoom scaling
+
+### Desktop GUI (PySide6)
+- Implemented strictly-typed Qt Queued Signals (`_sig_telemetry_ready`) for cross-thread telemetry updates
+- Fixed stat card hardware dashboard values (Battery, Temperature, Latency, Resolution, Model)
+- Added dedicated Send Clipboard action in both Mirroring and Transfer tabs
+- Cleaned and modernized GitHub Actions cloud build pipeline with Beauty Releases page
+
 ## [268.03.17] - 2026-08-03
 
 ### Architecture
