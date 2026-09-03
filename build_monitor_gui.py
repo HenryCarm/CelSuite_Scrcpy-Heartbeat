@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
     QMessageBox, QSizePolicy, QCheckBox
 )
 
-DEFAULT_REPO = "HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher"
+DEFAULT_REPO = "HenryCarm/CelSuite_Scrcpy-Heartbeat"
 DEFAULT_PHONE_IP = "10.132.152.85:5555"
 DESKTOP_APK_DIR = Path("/home/henry/Desktop/ScrcpyAPK")
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -115,7 +115,7 @@ def run_gh_json(args: list[str]) -> list | dict:
 
     # 2. Seamless fallback to public GitHub REST API (No tokens or login required)
     try:
-        repo = "HenryCarm/Scr-Heartbeat-Scrcpy-WiFi-Auto-Launcher"
+        repo = "HenryCarm/CelSuite_Scrcpy-Heartbeat"
         headers = {
             "User-Agent": "CelSuite-Build-Monitor",
             "Accept": "application/vnd.github.v3+json",
