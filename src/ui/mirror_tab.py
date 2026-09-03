@@ -61,6 +61,7 @@ class MirrorTab(QWidget):
     """Main mirror phone tab with connection, controls, and dashboard."""
 
     connection_state_changed = Signal(str)
+    _sig_telemetry_ready = Signal(dict, object)
 
     def __init__(self, config: AppConfig) -> None:
         super().__init__()
@@ -84,6 +85,7 @@ class MirrorTab(QWidget):
         self._build_ui()
 
         # Connect signals
+        self._sig_telemetry_ready.connect(self._on_telemetry_ready)
         self._heartbeat.heartbeat_received.connect(self._on_heartbeat)
         self._heartbeat.state_changed.connect(self._on_state_changed)
         self._scanner.device_found.connect(self._on_device_found)
@@ -356,6 +358,9 @@ class MirrorTab(QWidget):
 
     def _on_heartbeat(self, ip: str, port: int) -> None:
         """Handle incoming heartbeat — connect and launch."""
+        if self._connected and self._phone_ip == ip:
+            # Already actively connected and mirroring; heartbeat is just a keep-alive
+            return
         self._connect_worker(ip, port)
 
     def _on_state_changed(self, state: str) -> None:
@@ -461,6 +466,11 @@ class MirrorTab(QWidget):
         if self._dashboard_timer:
             self._dashboard_timer.stop()
 
+    def _on_telemetry_ready(self, info: dict, lat: object) -> None:
+        """Update dashboard widgets on main GUI thread via queued signal."""
+        self._dashboard.update_info(info)
+        self._dashboard.update_latency(lat)
+
     def _refresh_dashboard(self) -> None:
         """Refresh hardware info with logging."""
         phone_ip = self._phone_ip
@@ -483,8 +493,7 @@ class MirrorTab(QWidget):
                 self._config, phone_ip, adb_port
             )
             lat, _ = latency.measure_latency(phone_ip, adb_port)
-            QTimer.singleShot(0, lambda: self._dashboard.update_info(info))
-            QTimer.singleShot(0, lambda: self._dashboard.update_latency(lat))
+            self._sig_telemetry_ready.emit(info, lat)
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -535,7 +544,7 @@ class MirrorTab(QWidget):
                 threading.Thread(
                     target=lambda: adb.send_broadcast(
                         self._config,
-                        "org.henry.scrcpy.SET_CLIPBOARD",
+                        "HenryJayZ.CelSuite.ScrcpyHeartbeat.SET_CLIPBOARD",
                         {"text": text},
                         self._phone_ip, self._adb_port,
                     ),
@@ -548,7 +557,7 @@ class MirrorTab(QWidget):
         threading.Thread(
             target=lambda: adb.send_broadcast(
                 self._config,
-                "org.henry.scrcpy.GET_CLIPBOARD",
+                "HenryJayZ.CelSuite.ScrcpyHeartbeat.GET_CLIPBOARD",
                 phone_ip=self._phone_ip, adb_port=self._adb_port,
             ),
             daemon=True,

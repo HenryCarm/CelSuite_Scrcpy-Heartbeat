@@ -1386,18 +1386,34 @@ class HeartbeatApp(App):
             
             def on_clipboard_intent(context, intent):
                 action = intent.getAction()
-                if action == "org.henry.scrcpy.SET_CLIPBOARD":
+                if action in ("HenryJayZ.CelSuite.ScrcpyHeartbeat.SET_CLIPBOARD", "org.henry.scrcpy.SET_CLIPBOARD"):
                     txt = intent.getStringExtra("text")
                     if txt:
                         self.set_local_clipboard(txt)
-                elif action == "org.henry.scrcpy.GET_CLIPBOARD":
+                elif action in ("HenryJayZ.CelSuite.ScrcpyHeartbeat.GET_CLIPBOARD", "org.henry.scrcpy.GET_CLIPBOARD"):
                     self.send_local_clipboard_to_pc()
+                elif action in ("HenryJayZ.CelSuite.ScrcpyHeartbeat.TOGGLE_HEARTBEAT", "org.henry.scrcpy.TOGGLE_HEARTBEAT"):
+                    active = intent.getBooleanExtra("active", True)
+                    if active and not self.heartbeat_running:
+                        self.toggle_heartbeat(None)
+                    elif not active and self.heartbeat_running:
+                        self.toggle_heartbeat(None)
             
-            receiver = BroadcastReceiver(on_clipboard_intent, actions=["org.henry.scrcpy.SET_CLIPBOARD", "org.henry.scrcpy.GET_CLIPBOARD"])
+            receiver = BroadcastReceiver(
+                on_clipboard_intent,
+                actions=[
+                    "HenryJayZ.CelSuite.ScrcpyHeartbeat.SET_CLIPBOARD",
+                    "HenryJayZ.CelSuite.ScrcpyHeartbeat.GET_CLIPBOARD",
+                    "HenryJayZ.CelSuite.ScrcpyHeartbeat.TOGGLE_HEARTBEAT",
+                    "org.henry.scrcpy.SET_CLIPBOARD",
+                    "org.henry.scrcpy.GET_CLIPBOARD",
+                    "org.henry.scrcpy.TOGGLE_HEARTBEAT",
+                ]
+            )
             receiver.start()
-            app_log("Clipboard broadcast receiver bound successfully.")
+            app_log("System broadcast receiver bound successfully.")
         except Exception as e:
-            app_log(f"Clipboard receiver bind failed: {e}")
+            app_log(f"System receiver bind failed: {e}")
             
         return self.root_sm
 

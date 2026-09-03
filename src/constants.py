@@ -14,7 +14,7 @@ import sys
 APP_NAME = "CelSuite - Scrcpy Heartbeat"
 APP_VERSION = "269.3.0"
 APP_AUTHOR = "Henry"
-APP_DOMAIN = "henry.app"
+APP_DOMAIN = "HenryJayZ.CelSuite"
 
 # ── Path Resolution ───────────────────────────────────────────────────────────
 # When frozen (Nuitka / PyInstaller), sys.argv[0] points to the binary.

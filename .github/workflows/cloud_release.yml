@@ -11,6 +11,9 @@ on:
         required: true
         default: 'v268.03.5'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: true
+
 jobs:
   build-android:
     name: Build Android APK
@@ -20,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'

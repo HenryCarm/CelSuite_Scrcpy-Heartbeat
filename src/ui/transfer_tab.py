@@ -368,7 +368,7 @@ class TransferTab(QWidget):
         from src.networking.adb import send_broadcast, set_clipboard_text
         ok, msg = send_broadcast(
             self._config,
-            "org.henry.scrcpy.SET_CLIPBOARD",
+            "HenryJayZ.CelSuite.ScrcpyHeartbeat.SET_CLIPBOARD",
             {"text": text},
             phone_ip=phone_ip,
             adb_port=adb_port,

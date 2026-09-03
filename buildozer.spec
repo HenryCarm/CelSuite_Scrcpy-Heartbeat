@@ -1,7 +1,7 @@
 [app]
 title = CelS - Scrcpy Heartbeat
-package.name = scrcpyheartbeat
-package.domain = henry.app
+package.name = ScrcpyHeartbeat
+package.domain = HenryJayZ.CelSuite
 source.dir = android
 source.include_exts = py,png,jpg,kv,atlas,jpeg
 version = 269.3.0
@@ -11,6 +11,7 @@ orientation = portrait
 osx.python_version = 3
 osx.kivy_version = 1.11.1
 android.archs = arm64-v8a
+p4a.hook = p4a_hook.py
 
 android.gradle_dependencies = dev.rikka.shizuku:api:13.1.5, dev.rikka.shizuku:provider:13.1.5
 android.add_repositories = mavenCentral()
@@ -25,8 +26,8 @@ p4a.branch = v2024.01.21
 android.accept_sdk_license = True
 android.add_src = android/src/java
 android.application = org.kivy.android.ScrcpyApplication
-android.entrypoint = org.henry.scrcpy.ScrcpyActivity
-android.activity_class_name = org.henry.scrcpy.ScrcpyActivity
+android.entrypoint = HenryJayZ.CelSuite.ScrcpyHeartbeat.ScrcpyActivity
+android.activity_class_name = HenryJayZ.CelSuite.ScrcpyHeartbeat.ScrcpyActivity
 
 # App icon - use local icon in repo
 icon.filename = icon.png

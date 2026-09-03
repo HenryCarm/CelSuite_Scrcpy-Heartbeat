@@ -1,4 +1,4 @@
-package org.henry.scrcpy;
+package HenryJayZ.CelSuite.ScrcpyHeartbeat;
 
 import android.content.Context;
 import android.hardware.DummySensorManager;

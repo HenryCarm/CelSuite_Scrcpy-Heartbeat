@@ -1,4 +1,4 @@
-package org.henry.scrcpy;
+package HenryJayZ.CelSuite.ScrcpyHeartbeat;
 
 import android.content.Intent;
 import android.service.quicksettings.Tile;
@@ -25,7 +25,7 @@ public class ScrcpyTileService extends TileService {
 
         isServiceRunning = !isServiceRunning;
 
-        Intent intent = new Intent("org.henry.scrcpy.TOGGLE_HEARTBEAT");
+        Intent intent = new Intent("HenryJayZ.CelSuite.ScrcpyHeartbeat.TOGGLE_HEARTBEAT");
         intent.putExtra("active", isServiceRunning);
         sendBroadcast(intent);
 

@@ -42,6 +42,13 @@ if sys.platform == "win32":
     _SUBPROCESS_FLAGS["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
 
 
+def _run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+    """Run a subprocess command with Windows CREATE_NO_WINDOW flags."""
+    opts = dict(_SUBPROCESS_FLAGS)
+    opts.update(kwargs)
+    return subprocess.run(cmd, **opts)
+
+
 def _clear_device_cache() -> None:
     """Invalidate the device cache."""
     global _device_cache_time
@@ -120,7 +127,7 @@ def is_adb_available(config: AppConfig) -> bool:
     """Check if ADB is reachable."""
     adb = find_adb_binary(config)
     try:
-        result = subprocess.run(
+        result = _run(
             [adb, "version"],
             capture_output=True, text=True,
             timeout=ADB_COMMAND_TIMEOUT_SEC,
@@ -134,7 +141,7 @@ def get_adb_version(config: AppConfig) -> str:
     """Return the ADB version string, or an error message."""
     adb = find_adb_binary(config)
     try:
-        result = subprocess.run(
+        result = _run(
             [adb, "version"],
             capture_output=True, text=True,
             timeout=ADB_COMMAND_TIMEOUT_SEC,
@@ -167,7 +174,7 @@ def get_adb_devices(config: AppConfig) -> list[dict[str, str]]:
     adb = find_adb_binary(config)
     devices: list[dict[str, str]] = []
     try:
-        result = subprocess.run(
+        result = _run(
             [adb, "devices"],
             capture_output=True, text=True,
             timeout=ADB_COMMAND_TIMEOUT_SEC,
@@ -242,7 +249,7 @@ def connect(
 
     log.info("Connecting to phone at %s ...", target)
     try:
-        result = subprocess.run(
+        result = _run(
             [adb, "connect", target],
             capture_output=True, text=True,
             timeout=ADB_CONNECT_TIMEOUT_SEC,
@@ -272,7 +279,7 @@ def disconnect(
     adb = find_adb_binary(config)
     target = f"{phone_ip}:{adb_port}"
     try:
-        result = subprocess.run(
+        result = _run(
             [adb, "disconnect", target],
             capture_output=True, text=True,
             timeout=ADB_COMMAND_TIMEOUT_SEC,
@@ -287,7 +294,7 @@ def disconnect_all(config: AppConfig) -> None:
     """Disconnect all ADB devices (cleanup on app exit)."""
     adb = find_adb_binary(config)
     try:
-        subprocess.run(
+        _run(
             [adb, "disconnect"],
             capture_output=True, text=True,
             timeout=ADB_COMMAND_TIMEOUT_SEC,
@@ -314,7 +321,7 @@ def send_keyevent(
     adb = find_adb_binary(config)
     target = f"{phone_ip}:{adb_port}"
     try:
-        result = subprocess.run(
+        result = _run(
             [adb, "-s", target, "shell", "input", "keyevent", str(key_code)],
             capture_output=True, text=True,
             timeout=ADB_COMMAND_TIMEOUT_SEC,
@@ -345,7 +352,7 @@ def send_broadcast(
             cmd.extend(["--es", key, value])
 
     try:
-        result = subprocess.run(
+        result = _run(
             cmd, capture_output=True, text=True,
             timeout=ADB_COMMAND_TIMEOUT_SEC,
         )
@@ -372,7 +379,7 @@ def open_url(
     adb = find_adb_binary(config)
     target = f"{phone_ip}:{adb_port}"
     try:
-        result = subprocess.run(
+        result = _run(
             [adb, "-s", target, "shell", "am", "start",
              "-a", "android.intent.action.VIEW", "-d", url],
             capture_output=True, text=True,
@@ -423,7 +430,7 @@ def get_hardware_info(
     )
 
     try:
-        result = subprocess.run(
+        result = _run(
             [adb, "-s", target, "shell", batch_cmd],
             capture_output=True, text=True,
             timeout=ADB_COMMAND_TIMEOUT_SEC + 3,
@@ -526,18 +533,18 @@ def take_screenshot(
     remote_path = "/sdcard/scrcpy_screenshot_tmp.png"
 
     try:
-        subprocess.run(
+        _run(
             [adb, "-s", target, "shell", "screencap", "-p", remote_path],
             capture_output=True, text=True,
             timeout=ADB_COMMAND_TIMEOUT_SEC,
         )
-        subprocess.run(
+        _run(
             [adb, "-s", target, "pull", remote_path, save_path],
             capture_output=True, text=True,
             timeout=ADB_COMMAND_TIMEOUT_SEC,
         )
         # Clean up remote temp file
-        subprocess.run(
+        _run(
             [adb, "-s", target, "shell", "rm", remote_path],
             capture_output=True, text=True,
             timeout=ADB_COMMAND_TIMEOUT_SEC,
