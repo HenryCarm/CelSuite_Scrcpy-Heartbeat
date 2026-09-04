@@ -101,6 +101,8 @@ jobs:
             --enable-plugin=upx \
             --upx-binary=$(which upx) \
             --noinclude-qt-translations \
+            --include-data-file=wallpaper.jpg=wallpaper.jpg \
+            --include-data-file=icon.png=icon.png \
             --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PySide6.QtQml,PySide6.QtQuick,PySide6.QtWebEngineCore,PySide6.QtWebEngineWidgets,PySide6.Qt3DCore,PySide6.QtPdf,PySide6.QtSql,PySide6.QtMultimedia,PySide6.QtTest,PySide6.QtSensors,PySide6.QtPositioning,PySide6.QtBluetooth,PySide6.QtDesigner \
             --linux-icon=icon.png \
             --output-filename=CelSuite-Linux-Portable.bin \
@@ -115,6 +117,8 @@ jobs:
             --enable-plugin=upx \
             --upx-binary=$(which upx) \
             --noinclude-qt-translations \
+            --include-data-file=wallpaper.jpg=wallpaper.jpg \
+            --include-data-file=icon.png=icon.png \
             --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PySide6.QtQml,PySide6.QtQuick,PySide6.QtWebEngineCore,PySide6.QtWebEngineWidgets,PySide6.Qt3DCore,PySide6.QtPdf,PySide6.QtSql,PySide6.QtMultimedia,PySide6.QtTest,PySide6.QtSensors,PySide6.QtPositioning,PySide6.QtBluetooth,PySide6.QtDesigner \
             --linux-icon=icon.png \
             --output-dir=standalone_build \
@@ -150,7 +154,7 @@ jobs:
       - name: Ensure icon.ico exists
         shell: pwsh
         run: |
-          python -c "from PIL import Image; img = Image.open('icon.png'); img.save('icon.ico', format='ICO', sizes=[(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)])"
+          python -c "from PIL import Image; img = Image.open('icon.webp'); img.save('icon.png', 'PNG'); img = Image.open('icon.png'); img.save('icon.ico', format='ICO', sizes=[(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)])"
 
       - name: Compile Windows Binary (Portable Onefile)
         shell: pwsh
@@ -161,6 +165,8 @@ jobs:
             --assume-yes-for-downloads `
             --enable-plugin=pyside6 `
             --windows-console-mode=disable `
+            --include-data-file=wallpaper.jpg=wallpaper.jpg `
+            --include-data-file=icon.png=icon.png `
             --windows-icon-from-ico=icon.ico `
             --noinclude-qt-translations `
             --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PySide6.QtQml,PySide6.QtQuick,PySide6.QtWebEngineCore,PySide6.QtWebEngineWidgets,PySide6.Qt3DCore,PySide6.QtPdf,PySide6.QtSql,PySide6.QtMultimedia,PySide6.QtTest,PySide6.QtSensors,PySide6.QtPositioning,PySide6.QtBluetooth,PySide6.QtDesigner `
@@ -175,6 +181,8 @@ jobs:
             --assume-yes-for-downloads `
             --enable-plugin=pyside6 `
             --windows-console-mode=disable `
+            --include-data-file=wallpaper.jpg=wallpaper.jpg `
+            --include-data-file=icon.png=icon.png `
             --windows-icon-from-ico=icon.ico `
             --noinclude-qt-translations `
             --nofollow-import-to=tkinter,test,unittest,pydoc,doctest,email,html,http,xml,distutils,setuptools,numpy,scipy,matplotlib,curses,PySide6.QtQml,PySide6.QtQuick,PySide6.QtWebEngineCore,PySide6.QtWebEngineWidgets,PySide6.Qt3DCore,PySide6.QtPdf,PySide6.QtSql,PySide6.QtMultimedia,PySide6.QtTest,PySide6.QtSensors,PySide6.QtPositioning,PySide6.QtBluetooth,PySide6.QtDesigner `
