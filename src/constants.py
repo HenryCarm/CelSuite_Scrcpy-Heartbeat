@@ -33,9 +33,17 @@ _linux_icon = "/home/henry/Documents/Projects/Python/Scrcpy Heartbeat/icon.png"
 DEFAULT_ICON = _linux_icon if os.path.exists(_linux_icon) else _local_icon
 
 CONFIG_FILENAME = "config.json"
-CONFIG_FILE = os.path.join(APP_DIR, CONFIG_FILENAME)
 LOG_FILENAME = "ScrcpyHeartbeat.log"
-LOG_FILE = os.path.join(APP_DIR, LOG_FILENAME)
+
+# CONFIG_DIR needs to be where the executable is so settings persist.
+# Nuitka onefile extracts to a temp dir, so APP_DIR is volatile.
+if getattr(sys, "frozen", False):
+    CONFIG_DIR = os.path.dirname(os.path.abspath(sys.executable))
+else:
+    CONFIG_DIR = APP_DIR
+
+CONFIG_FILE = os.path.join(CONFIG_DIR, CONFIG_FILENAME)
+LOG_FILE = os.path.join(CONFIG_DIR, LOG_FILENAME)
 
 # ── Network Defaults ──────────────────────────────────────────────────────────
 DEFAULT_HEARTBEAT_PORT = 5556   # Phone → PC heartbeat UDP
