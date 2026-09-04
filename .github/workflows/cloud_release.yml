@@ -154,7 +154,7 @@ jobs:
       - name: Ensure icon.ico exists
         shell: pwsh
         run: |
-          python -c "from PIL import Image; img = Image.open('icon.png'); img.save('icon.ico', format='ICO', sizes=[(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)])"
+          python -c "from PIL import Image; img = Image.open('icon.webp'); img.save('icon.png', 'PNG'); img = Image.open('icon.png'); img.save('icon.ico', format='ICO', sizes=[(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)])"
 
       - name: Compile Windows Binary (Portable Onefile)
         shell: pwsh
